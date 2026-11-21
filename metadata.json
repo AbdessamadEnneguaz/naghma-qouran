@@ -1,0 +1,6 @@
+{
+  "name": "Noor — Holy Quran PWA",
+  "description": "Offline-first Holy Quran reader and 604-page Madani Mushaf supporting Hafs & Warsh narrations, 25+ reciters with ayah-by-ayah audio sync, Tafsir Al-Muyassar, and fast client-side search.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
