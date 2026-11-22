@@ -55,6 +55,7 @@ export default defineConfig(() => {
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+          navigateFallbackDenylist: [/\.apk$/i],
           runtimeCaching: [
             {
               urlPattern: /\/data\/.*\.json$/i,
@@ -105,6 +106,29 @@ export default defineConfig(() => {
           type: 'module',
         },
       }),
+      {
+        name: 'serve-android-apk-headers',
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (req.url && /\.apk(\?.*)?$/i.test(req.url)) {
+              res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+              res.setHeader('Content-Disposition', 'attachment; filename="naghma-quran.apk"');
+              res.setHeader('X-Content-Type-Options', 'nosniff');
+            }
+            next();
+          });
+        },
+        configurePreviewServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (req.url && /\.apk(\?.*)?$/i.test(req.url)) {
+              res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+              res.setHeader('Content-Disposition', 'attachment; filename="naghma-quran.apk"');
+              res.setHeader('X-Content-Type-Options', 'nosniff');
+            }
+            next();
+          });
+        },
+      },
       {
         name: 'copy-unbundled-src-assets',
         apply: 'build',

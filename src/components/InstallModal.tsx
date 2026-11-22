@@ -84,10 +84,14 @@ export const InstallModal: React.FC<InstallModalProps> = ({
               <a
                 href={apkUrl}
                 download="naghma-quran.apk"
+                type="application/vnd.android.package-archive"
                 className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#059669] dark:bg-[#10B981] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white dark:text-[#06100D] hover:opacity-90 transition-opacity"
               >
                 <Download className="h-4 w-4 shrink-0" />
                 <span>{t.downloadApkCta}</span>
+                <span className="text-xs opacity-85 tabular-nums" dir="ltr">
+                  (6.5 MB)
+                </span>
               </a>
               <ol className="space-y-1.5 text-[11px] sm:text-xs text-[#57534E] dark:text-[#9CAFA6] pt-1">
                 <li>{t.apkStep1}</li>

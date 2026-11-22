@@ -361,7 +361,7 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     downloadPageHeading: 'Naghma Quran for Android',
     downloadPageSubheading:
       'Carry the complete 604-page Madani Mushaf, Hafs & Warsh narrations, instant Hifz mask, and Adhkar sanctuary offline on Android.',
-    downloadVersionMeta: 'v1.0.0 · Free · ~18 MB · 100% Offline',
+    downloadVersionMeta: 'v1.0.0 · Free · 6.5 MB · 100% Offline',
     downloadHighlightsTitle: 'Built for Distraction-Free Recitation',
     downloadHighlight1: '604-Page Madani Mushaf with zero-gap Hafs & Warsh audio',
     downloadHighlight2: 'Instant Arabic & English voice Hifz verification',
@@ -581,7 +581,7 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     downloadPageHeading: 'نَغمة القرآن لأجهزة أندرويد',
     downloadPageSubheading:
       'احمل مصحف المدينة (٦٠٤ صفحة) بروايتي حفص وورش مع وضع الحفظ والأذكار والختمة الذكية بالكامل دون اتصال.',
-    downloadVersionMeta: 'v1.0.0 · مجاني · ~18 MB · يعمل دون إنترنت',
+    downloadVersionMeta: 'v1.0.0 · مجاني · 6.5 MB · يعمل دون إنترنت',
     downloadHighlightsTitle: 'تجربة خاشعة ومتكاملة دون إنترنت',
     downloadHighlight1: 'مصحف المدينة المنورة (٦٠٤ صفحة) مع تلاوة متصلة بلا تقطع',
     downloadHighlight2: 'إخفاء الآيات والتلقين والتسميع الصوتي بالذكاء المحلي',

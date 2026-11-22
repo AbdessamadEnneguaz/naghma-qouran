@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   CheckCircle2,
   Code2,
@@ -9,6 +9,13 @@ import {
 } from 'lucide-react';
 import type {AppLang, Translations} from '../i18n/translations';
 import {getApkDownloadUrl} from '../hooks/usePWAInstall';
+import {
+  DEFAULT_APK_FILENAME,
+  DEFAULT_APK_MIME,
+  DEFAULT_APK_SIZE_BYTES,
+  formatApkSizeMb,
+  isLocalApkPath,
+} from '../utils/apkHelpers';
 import {NaghmaEmblemSvg} from './OrnamentalSvg';
 
 interface DownloadApkPageProps {
@@ -27,6 +34,31 @@ export const DownloadApkPage: React.FC<DownloadApkPageProps> = ({
   onTriggerNativeInstall,
 }) => {
   const apkUrl = getApkDownloadUrl();
+  const [apkSizeLabel, setApkSizeLabel] = useState<string>(() =>
+    formatApkSizeMb(DEFAULT_APK_SIZE_BYTES)
+  );
+  const [apkVerified, setApkVerified] = useState<boolean>(false);
+  const [downloadStarted, setDownloadStarted] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!isLocalApkPath(apkUrl) || isInstalled) return;
+    let active = true;
+    fetch(apkUrl, {method: 'HEAD'})
+      .then((res) => {
+        if (!active || !res.ok) return;
+        const len = Number(res.headers.get('content-length') || 0);
+        if (len > 0) {
+          setApkSizeLabel(formatApkSizeMb(len));
+        }
+        setApkVerified(true);
+      })
+      .catch(() => {
+        // Leave fallback size label intact
+      });
+    return () => {
+      active = false;
+    };
+  }, [apkUrl, isInstalled]);
 
   const highlights = [
     t.downloadHighlight1,
@@ -35,6 +67,11 @@ export const DownloadApkPage: React.FC<DownloadApkPageProps> = ({
     t.downloadHighlight4,
   ];
 
+  const versionMetaText =
+    lang === 'ar'
+      ? `v1.0.0 · مجاني · ${apkSizeLabel} · يعمل دون إنترنت`
+      : `v1.0.0 · Free · ${apkSizeLabel} · 100% Offline`;
+
   return (
     <div className="mx-auto max-w-6xl px-3.5 sm:px-6 md:px-8 pt-6 sm:pt-9 pb-36 md:pb-28 space-y-8">
       {/* Main 2-Column Split: Download Details + Styled Android Device Mockup */}
@@ -42,9 +79,18 @@ export const DownloadApkPage: React.FC<DownloadApkPageProps> = ({
         {/* Left: Copy, Version Metadata, Download CTAs & 3-Step Guide */}
         <div className="lg:col-span-7 space-y-5">
           <div className="space-y-2">
-            <div className="flex items-center gap-2.5 text-xs font-semibold text-[#B4891B] dark:text-[#D4AF37] tabular-nums">
+            <div className="flex flex-wrap items-center gap-2.5 text-xs font-semibold text-[#B4891B] dark:text-[#D4AF37] tabular-nums">
               <Smartphone className="h-4 w-4 shrink-0" />
-              <span>{t.downloadVersionMeta}</span>
+              <span data-testid="apk-version-meta">{versionMetaText}</span>
+              {apkVerified && (
+                <span
+                  data-testid="apk-verified-badge"
+                  className="inline-flex items-center gap-1 rounded-md border border-[#10B981]/35 bg-[#10B981]/12 px-2 py-0.5 text-[11px] font-semibold text-[#059669] dark:text-[#34D399]"
+                >
+                  <CheckCircle2 className="h-3 w-3 shrink-0" />
+                  <span>{lang === 'ar' ? 'ملف APK متاح للتحميل' : 'APK Ready'}</span>
+                </span>
+              )}
             </div>
 
             <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-[#1C1917] dark:text-[#F4F1EA] [text-wrap:balance]">
@@ -62,26 +108,44 @@ export const DownloadApkPage: React.FC<DownloadApkPageProps> = ({
               <span>{t.installedStandalone}</span>
             </div>
           ) : (
-            <div className="flex flex-wrap items-center gap-3">
-              <a
-                href={apkUrl}
-                download="naghma-quran.apk"
-                data-testid="download-page-apk-cta"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B4891B] px-6 py-3.5 text-sm font-bold text-[#0B0E11] shadow-lg shadow-[#D4AF37]/20 hover:opacity-95 transition-opacity whitespace-nowrap"
-              >
-                <Download className="h-4.5 w-4.5 shrink-0" />
-                <span>{t.downloadApkCta}</span>
-              </a>
-
-              {isInstallable && (
-                <button
-                  type="button"
-                  onClick={() => void onTriggerNativeInstall()}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#10B981]/40 bg-[#10B981]/12 px-5 py-3.5 text-sm font-semibold text-[#059669] dark:text-[#34D399] hover:bg-[#10B981]/20 transition-colors whitespace-nowrap"
+            <div className="space-y-2.5">
+              <div className="flex flex-wrap items-center gap-3">
+                <a
+                  href={apkUrl}
+                  download={DEFAULT_APK_FILENAME}
+                  type={DEFAULT_APK_MIME}
+                  data-testid="download-page-apk-cta"
+                  onClick={() => setDownloadStarted(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B4891B] px-6 py-3.5 text-sm font-bold text-[#0B0E11] shadow-lg shadow-[#D4AF37]/20 hover:opacity-95 transition-opacity whitespace-nowrap"
                 >
-                  <ShieldCheck className="h-4 w-4 shrink-0" />
-                  <span>{t.installNowBtn}</span>
-                </button>
+                  <Download className="h-4.5 w-4.5 shrink-0" />
+                  <span>{t.downloadApkCta}</span>
+                  <span className="text-xs font-semibold opacity-80 tabular-nums" dir="ltr">
+                    ({apkSizeLabel})
+                  </span>
+                </a>
+
+                {isInstallable && (
+                  <button
+                    type="button"
+                    onClick={() => void onTriggerNativeInstall()}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#10B981]/40 bg-[#10B981]/12 px-5 py-3.5 text-sm font-semibold text-[#059669] dark:text-[#34D399] hover:bg-[#10B981]/20 transition-colors whitespace-nowrap"
+                  >
+                    <ShieldCheck className="h-4 w-4 shrink-0" />
+                    <span>{t.installNowBtn}</span>
+                  </button>
+                )}
+              </div>
+
+              {downloadStarted && (
+                <p className="text-xs font-medium text-[#059669] dark:text-[#34D399] flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    {lang === 'ar'
+                      ? 'بدأ تنزيل naghma-quran.apk — افتح الملف من إشعارات المتصفح للتثبيت.'
+                      : 'Downloading naghma-quran.apk — open the file from your browser downloads to install.'}
+                  </span>
+                </p>
               )}
             </div>
           )}
