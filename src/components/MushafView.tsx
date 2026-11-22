@@ -12,6 +12,7 @@ import {
   Loader2,
   Maximize2,
   Play,
+  Share2,
   X,
 } from 'lucide-react';
 import type {
@@ -25,12 +26,18 @@ import type {
 import {
   formatHizbLabel,
   stripLeadingBismillah,
+  stripTashkeel,
   toArabicDigits,
   tokenizeVerseWords,
 } from '../utils/quranLogic';
 import {getVerseTextByRiwayat} from '../services/quranLoader';
 import {SurahCartoucheBanner} from './OrnamentalSvg';
 import type {AppLang, Translations} from '../i18n/translations';
+
+const JUZ_START_PAGES = [
+  1, 22, 42, 62, 82, 102, 121, 142, 162, 182, 201, 222, 242, 262, 282, 302, 322,
+  342, 362, 382, 402, 422, 442, 462, 482, 502, 522, 542, 562, 582,
+];
 
 interface MushafViewProps {
   lang: AppLang;
@@ -50,7 +57,6 @@ interface MushafViewProps {
   bookmarks: BookmarkEntry[];
   offlineRecords: OfflineSurahRecord[];
   downloadProgress: {surah: number; completed: number; total: number} | null;
-  // Tarteel Focus & Hifz & Voice Follow props
   focusMode: boolean;
   hifzMode: boolean;
   hifzFirstWordHint: boolean;
@@ -71,6 +77,8 @@ interface MushafViewProps {
   onToggleBookmark: (verse: QuranVerse) => void;
   onDownloadSurah: (surahMeta: SurahMeta) => void;
 }
+
+type ReaderBrowseTab = 'quran' | 'surah' | 'juz' | 'page';
 
 export const MushafView: React.FC<MushafViewProps> = ({
   lang,
@@ -110,9 +118,11 @@ export const MushafView: React.FC<MushafViewProps> = ({
   onToggleBookmark,
   onDownloadSurah,
 }) => {
+  const [browseTab, setBrowseTab] = useState<ReaderBrowseTab>('quran');
+  const [surahQuery, setSurahQuery] = useState('');
   const [actionMenuVerse, setActionMenuVerse] = useState<QuranVerse | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [showPageJumper, setShowPageJumper] = useState(false);
+  const [sharedKey, setSharedKey] = useState<string | null>(null);
   const [pageJumpInput, setPageJumpInput] = useState(String(currentPage));
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
@@ -133,7 +143,6 @@ export const MushafView: React.FC<MushafViewProps> = ({
     [bookmarks]
   );
 
-  // Strict Page-by-Page Madani Mushaf pagination (Pages 1 to 604)
   const displayVerses = useMemo(
     () => verses.filter((v) => v.page === currentPage),
     [verses, currentPage]
@@ -182,12 +191,24 @@ export const MushafView: React.FC<MushafViewProps> = ({
     return groups;
   }, [displayVerses, surahMap]);
 
+  const filteredSurahs = useMemo(() => {
+    const q = surahQuery.trim().toLowerCase();
+    const qAr = stripTashkeel(surahQuery.trim());
+    if (!q) return surahs;
+    return surahs.filter(
+      (s) =>
+        String(s.id) === q ||
+        s.nameEn.toLowerCase().includes(q) ||
+        s.meaningEn.toLowerCase().includes(q) ||
+        stripTashkeel(s.nameAr).includes(qAr)
+    );
+  }, [surahs, surahQuery]);
+
   const fontClass =
     settings.font === 'amiri' ? 'font-quran-amiri' : 'font-quran-scheherazade';
 
   const lastScrolledPlayingRef = useRef<string | null>(null);
 
-  // Smooth auto-scroll only when the active playing verse actually changes
   useEffect(() => {
     if (!isPlaying || !containerRef.current) {
       if (!isPlaying) lastScrolledPlayingRef.current = null;
@@ -204,7 +225,6 @@ export const MushafView: React.FC<MushafViewProps> = ({
     }
   }, [isPlaying, playingSurah, playingAyah, currentPage]);
 
-  // Scroll mid-page opening ayah (e.g., Al-Kahf 18:1 on Page 293) into view when selected
   useEffect(() => {
     if (!selectedAyahKey || !containerRef.current) return;
     const idx = displayVerses.findIndex(
@@ -227,11 +247,11 @@ export const MushafView: React.FC<MushafViewProps> = ({
   };
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStartX.current === null || touchStartY.current === null) return;
+    if (browseTab !== 'quran') return;
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     const dy = e.changedTouches[0].clientY - touchStartY.current;
     touchStartX.current = null;
     touchStartY.current = null;
-    // Ignore vertical scrolls; trigger clean horizontal page flip when swipe > 48px
     if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.15) return;
     if (dx > 48 && currentPage < 604) {
       onChangePage(currentPage + 1);
@@ -240,8 +260,8 @@ export const MushafView: React.FC<MushafViewProps> = ({
     }
   };
 
-  // Tap empty space on Mushaf canvas to toggle Tap-to-Focus Mode
   const handleCanvasTap = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (browseTab !== 'quran') return;
     const target = e.target as HTMLElement;
     if (target.closest('button, [role="button"], select, input, a, [role="region"]')) {
       return;
@@ -258,12 +278,16 @@ export const MushafView: React.FC<MushafViewProps> = ({
     setActionMenuVerse(verse);
   };
 
+  const formatVersePayload = (verse: QuranVerse) => {
+    const text = getVerseTextByRiwayat(verse, settings.riwayat, warshTexts);
+    const sMeta = surahMap.get(verse.surah);
+    const tr = translations?.[verse.index];
+    return `${text} ﴿${toArabicDigits(verse.ayah)}﴾${tr ? `\n"${tr}"` : ''}\n[${sMeta?.nameEn || verse.surah} ${verse.surah}:${verse.ayah} · Najm Quran]`;
+  };
+
   const handleCopyVerse = async (verse: QuranVerse) => {
     try {
-      const text = getVerseTextByRiwayat(verse, settings.riwayat, warshTexts);
-      const sMeta = surahMap.get(verse.surah);
-      const payload = `${text} ﴿${toArabicDigits(verse.ayah)}﴾\n[${sMeta?.nameEn || verse.surah} ${verse.surah}:${verse.ayah}]`;
-      await navigator.clipboard.writeText(payload);
+      await navigator.clipboard.writeText(formatVersePayload(verse));
       const key = `${verse.surah}:${verse.ayah}`;
       setCopiedKey(key);
       setTimeout(() => setCopiedKey(null), 1800);
@@ -272,10 +296,37 @@ export const MushafView: React.FC<MushafViewProps> = ({
     }
   };
 
+  const handleShareVerse = async (verse: QuranVerse) => {
+    const key = `${verse.surah}:${verse.ayah}`;
+    const payload = formatVersePayload(verse);
+    try {
+      if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+        await navigator.share({
+          title: `Najm Quran ${verse.surah}:${verse.ayah}`,
+          text: payload,
+        });
+      } else {
+        await navigator.clipboard.writeText(payload);
+      }
+      setSharedKey(key);
+      setTimeout(() => setSharedKey(null), 1800);
+    } catch {
+      // Fallback copy if share cancelled
+      try {
+        await navigator.clipboard.writeText(payload);
+        setSharedKey(key);
+        setTimeout(() => setSharedKey(null), 1800);
+      } catch {
+        // ignore clipboard failure
+      }
+    }
+  };
+
   const actionKey = actionMenuVerse
     ? `${actionMenuVerse.surah}:${actionMenuVerse.ayah}`
     : null;
   const isActionVerseBookmarked = !!actionKey && bookmarkIds.has(actionKey);
+  const numFmt = (n: number) => (lang === 'ar' ? toArabicDigits(n) : String(n));
 
   return (
     <div
@@ -284,25 +335,61 @@ export const MushafView: React.FC<MushafViewProps> = ({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       className={`min-h-[calc(100vh-52px)] mushaf-frame transition-all duration-300 ${
-        focusMode ? 'pt-5 pb-16' : 'pt-2 sm:pt-3 pb-44 md:pb-32'
+        focusMode ? 'pt-5 pb-16' : 'pt-2 sm:pt-4 pb-44 md:pb-32'
       }`}
     >
-      {/* Minimal Mushaf Navigation Strip (Smoothly fades out in Focus Mode) */}
+      {/* Top Reader Bar & Interactive Quran / Surah / Juz / Page Toggle */}
       <div
-        className={`mx-auto max-w-3xl px-4 sm:px-10 transition-all duration-300 ${
+        className={`mx-auto max-w-3xl px-4 sm:px-8 transition-all duration-300 ${
           focusMode
             ? 'h-0 overflow-hidden opacity-0 pointer-events-none'
-            : 'opacity-100 mb-3 sm:mb-4'
+            : 'opacity-100 mb-3 sm:mb-4 space-y-2.5'
         }`}
       >
-        <div className="flex flex-wrap items-center justify-between gap-2 py-2 border-b border-[#B4891B]/16 dark:border-white/8">
-          {/* Quick Surah Selector + Clickable Page Jumper + Juz Indicator */}
-          <div className="flex items-center gap-2 min-w-0">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {/* Interactive Segmented Toggle: Quran | Surah | Juz | Page */}
+          <div
+            role="tablist"
+            aria-label="Mushaf Browse Modes"
+            data-testid="mushaf-browse-toggle"
+            className="inline-flex items-center rounded-full bg-amber-500/12 dark:bg-[#241B15] border border-amber-500/15 p-1"
+          >
+            {(
+              [
+                {id: 'quran', label: t.modeQuran},
+                {id: 'surah', label: t.modeSurah},
+                {id: 'juz', label: t.modeJuz},
+                {id: 'page', label: t.modePage},
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                data-testid={`mushaf-tab-${tab.id}`}
+                aria-selected={browseTab === tab.id}
+                onClick={() => setBrowseTab(tab.id)}
+                className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
+                  browseTab === tab.id
+                    ? 'bg-white dark:bg-[#D97706] text-[#B45309] dark:text-white shadow-sm'
+                    : 'text-[#6E5649] dark:text-[#D6C7B8] hover:text-[#2D231E] dark:hover:text-[#FAF5EE]'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Right Compact Controls: Page Counter, Riwayat Switch, Offline Download */}
+          <div className="flex items-center gap-1.5">
             <select
               aria-label={t.surahWord}
               value={headerSurahMeta?.id || currentSurahId}
-              onChange={(e) => onChangeSurah(Number(e.target.value))}
-              className="max-w-[140px] sm:max-w-[195px] rounded-lg border border-[#B4891B]/22 dark:border-white/12 bg-[#F3ECE0]/80 dark:bg-[#13181E] px-2.5 py-1.5 text-xs font-semibold text-[#1C1917] dark:text-[#F4F1EA] focus:outline-none focus:ring-2 focus:ring-[#10B981] truncate"
+              onChange={(e) => {
+                onChangeSurah(Number(e.target.value));
+                setBrowseTab('quran');
+              }}
+              className="hidden sm:block max-w-[165px] rounded-full border border-amber-500/20 bg-white/80 dark:bg-[#221914] px-3 py-1.5 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] focus:outline-none focus:ring-2 focus:ring-[#D97706] truncate"
             >
               {surahs.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -315,35 +402,10 @@ export const MushafView: React.FC<MushafViewProps> = ({
 
             <button
               type="button"
-              onClick={() => setShowPageJumper((v) => !v)}
-              aria-expanded={showPageJumper}
-              aria-label={t.jumpToPageLabel}
-              className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] sm:text-xs font-semibold tabular-nums whitespace-nowrap transition-colors ${
-                showPageJumper
-                  ? 'border-[#10B981] bg-[#10B981]/15 text-[#059669] dark:text-[#10B981]'
-                  : 'border-[#B4891B]/22 dark:border-white/12 bg-[#F3ECE0]/60 dark:bg-[#13181E] text-[#1C1917] dark:text-[#F4F1EA] hover:border-[#10B981]'
-              }`}
-            >
-              <span>
-                {lang === 'ar'
-                  ? `${t.pageWord} ${toArabicDigits(currentPage)} ${t.ofWord} ٦٠٤`
-                  : `${t.pageWord} ${currentPage} ${t.ofWord} 604`}
-              </span>
-            </button>
-
-            <span className="hidden sm:inline text-xs text-[#57534E] dark:text-[#9CA3AF] tabular-nums whitespace-nowrap">
-              · {lang === 'ar' ? `الجزء ${toArabicDigits(primaryVerse?.juz || 1)}` : `Juz' ${primaryVerse?.juz || 1}`}
-            </span>
-          </div>
-
-          {/* Riwayat + Offline */}
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
               onClick={() =>
                 onUpdateSettings({riwayat: settings.riwayat === 'hafs' ? 'warsh' : 'hafs'})
               }
-              className="px-2.5 py-1.5 rounded-lg border border-[#B4891B]/25 dark:border-[#D4AF37]/30 bg-[#F3ECE0]/60 dark:bg-[#13181E] text-[11px] font-semibold text-[#B4891B] dark:text-[#D4AF37] whitespace-nowrap"
+              className="px-3 py-1.5 rounded-full border border-amber-500/20 bg-white/80 dark:bg-[#221914] text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] whitespace-nowrap"
             >
               {settings.riwayat === 'hafs'
                 ? lang === 'ar'
@@ -361,10 +423,10 @@ export const MushafView: React.FC<MushafViewProps> = ({
                 disabled={isDownloadingThisSurah}
                 title={isSurahDownloaded ? t.offlineReady : t.downloadSurahOffline}
                 aria-label={isSurahDownloaded ? t.offlineReady : t.downloadSurahOffline}
-                className={`h-7 w-7 flex items-center justify-center rounded-lg border transition-colors ${
+                className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors ${
                   isSurahDownloaded
-                    ? 'border-[#10B981]/35 bg-[#10B981]/15 text-[#059669] dark:text-[#10B981]'
-                    : 'border-[#B4891B]/20 dark:border-white/12 bg-[#F3ECE0]/60 dark:bg-[#13181E] text-[#57534E] dark:text-[#9CA3AF] hover:text-[#10B981]'
+                    ? 'border-[#D97706]/40 bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
+                    : 'border-amber-500/20 bg-white/80 dark:bg-[#221914] text-[#6E5649] dark:text-[#D6C7B8] hover:text-[#D97706]'
                 }`}
               >
                 {isDownloadingThisSurah ? (
@@ -379,23 +441,142 @@ export const MushafView: React.FC<MushafViewProps> = ({
           </div>
         </div>
 
-        {/* Quick 1–604 Page Slider & Direct Jumper */}
-        {showPageJumper && (
-          <div className="mt-2.5 rounded-xl border border-[#B4891B]/25 dark:border-white/12 bg-[#F3ECE0]/90 dark:bg-[#13181E]/95 p-3 space-y-2.5">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold text-[#1C1917] dark:text-[#F4F1EA]">
-                {t.jumpToPageLabel}
-              </span>
+        {/* Hifz Mode Active Strip */}
+        {hifzMode && browseTab === 'quran' && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-3.5 py-2 text-xs">
+            <span className="font-semibold text-[#B45309] dark:text-[#FBBF24]">
+              {t.hifzActiveBanner}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={onToggleFirstWordHint}
+                className={`px-2.5 py-1 rounded-full font-semibold transition-colors ${
+                  hifzFirstWordHint
+                    ? 'bg-[#D97706] text-white'
+                    : 'bg-white/75 dark:bg-[#221914] text-[#2D231E] dark:text-[#FAF5EE]'
+                }`}
+              >
+                {t.hifzHintLabel}
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  revealedAyahKeys.size >= pageAyahKeys.length
+                    ? onMaskAllOnPage()
+                    : onRevealAllOnPage(pageAyahKeys)
+                }
+                className="px-2.5 py-1 rounded-full bg-white/75 dark:bg-[#221914] font-semibold text-[#2D231E] dark:text-[#FAF5EE]"
+              >
+                {revealedAyahKeys.size >= pageAyahKeys.length ? t.hideAll : t.revealAll}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Inline Tab: SURAH LIST */}
+      {browseTab === 'surah' && (
+        <div className="mx-auto max-w-3xl px-4 sm:px-8 space-y-3" data-testid="mushaf-surah-panel">
+          <input
+            type="text"
+            value={surahQuery}
+            onChange={(e) => setSurahQuery(e.target.value)}
+            placeholder={t.filterSurahPlaceholder}
+            aria-label={t.filterSurahPlaceholder}
+            className="w-full rounded-2xl border border-amber-500/18 bg-white/80 dark:bg-[#211914] px-4 py-2.5 text-sm text-[#2D231E] dark:text-[#FAF5EE] focus:outline-none focus:ring-2 focus:ring-[#D97706]"
+          />
+          <div className="rounded-3xl border border-amber-500/12 bg-white/75 dark:bg-[#211914]/85 divide-y divide-amber-500/10 overflow-hidden shadow-sm">
+            {filteredSurahs.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => {
+                  onChangeSurah(s.id);
+                  setBrowseTab('quran');
+                }}
+                className="w-full px-4 py-3 text-start hover:bg-amber-500/8 transition-colors flex items-center justify-between gap-3"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="h-8 w-8 rounded-full bg-amber-500/12 text-xs font-bold text-[#B45309] dark:text-[#FBBF24] flex items-center justify-center tabular-nums shrink-0">
+                    {String(s.id).padStart(2, '0')}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE] truncate">
+                      {lang === 'ar' ? s.nameAr : s.nameEn}
+                    </div>
+                    <div className="text-xs text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
+                      {numFmt(s.totalAyahs)} {t.ayahsWord} · {t.pageShort} {numFmt(s.startPage)}
+                    </div>
+                  </div>
+                </div>
+                <span
+                  dir="rtl"
+                  className="font-quran-scheherazade text-lg text-[#B45309] dark:text-[#FBBF24] shrink-0"
+                >
+                  {s.nameAr.replace('سُورَةُ ', '')}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Inline Tab: JUZ LIST */}
+      {browseTab === 'juz' && (
+        <div className="mx-auto max-w-3xl px-4 sm:px-8" data-testid="mushaf-juz-panel">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
+            {JUZ_START_PAGES.map((startPage, idx) => {
+              const juzNum = idx + 1;
+              return (
+                <button
+                  key={juzNum}
+                  type="button"
+                  onClick={() => {
+                    onChangePage(startPage);
+                    setBrowseTab('quran');
+                  }}
+                  className="rounded-2xl border border-amber-500/15 bg-white/80 dark:bg-[#211914] p-4 text-start hover:border-[#D97706] transition-colors space-y-1 shadow-sm"
+                >
+                  <div className="text-sm font-bold text-[#2D231E] dark:text-[#FAF5EE] tabular-nums">
+                    {t.juzWord} {numFmt(juzNum)}
+                  </div>
+                  <div className="font-quran-scheherazade text-base text-[#B45309] dark:text-[#FBBF24]">
+                    الجزء {toArabicDigits(juzNum)}
+                  </div>
+                  <div className="text-xs text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
+                    {t.pageShort} {numFmt(startPage)}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Inline Tab: PAGE JUMPER */}
+      {browseTab === 'page' && (
+        <div className="mx-auto max-w-3xl px-4 sm:px-8" data-testid="mushaf-page-panel">
+          <div className="rounded-3xl border border-amber-500/15 bg-white/80 dark:bg-[#211914] p-5 sm:p-6 shadow-sm space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-bold text-[#2D231E] dark:text-[#FAF5EE]">
+                  {t.jumpToPageLabel}
+                </h2>
+                <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
+                  {t.pageWord} {numFmt(currentPage)} {t.ofWord} {numFmt(604)}
+                </p>
+              </div>
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
                   const num = Number(pageJumpInput);
                   if (Number.isFinite(num) && num >= 1 && num <= 604) {
                     onChangePage(Math.round(num));
-                    setShowPageJumper(false);
+                    setBrowseTab('quran');
                   }
                 }}
-                className="flex items-center gap-1.5"
+                className="flex items-center gap-2"
               >
                 <input
                   type="number"
@@ -404,11 +585,11 @@ export const MushafView: React.FC<MushafViewProps> = ({
                   value={pageJumpInput}
                   onChange={(e) => setPageJumpInput(e.target.value)}
                   aria-label={t.pageWord}
-                  className="w-16 rounded-lg border border-[#B4891B]/25 dark:border-white/14 bg-[#FAF6EE] dark:bg-[#0B0E11] px-2 py-1 text-xs font-semibold text-[#1C1917] dark:text-[#F4F1EA] tabular-nums focus:outline-none focus:ring-2 focus:ring-[#10B981]"
+                  className="w-20 rounded-full border border-amber-500/25 bg-[#FDFBF7] dark:bg-[#17110D] px-3 py-1.5 text-xs font-bold text-[#2D231E] dark:text-[#FAF5EE] tabular-nums"
                 />
                 <button
                   type="submit"
-                  className="rounded-lg bg-[#059669] dark:bg-[#10B981] px-2.5 py-1 text-xs font-semibold text-white dark:text-[#0B0E11]"
+                  className="rounded-full bg-[#D97706] px-4 py-1.5 text-xs font-semibold text-white"
                 >
                   {t.goBtn}
                 </button>
@@ -421,432 +602,429 @@ export const MushafView: React.FC<MushafViewProps> = ({
               value={currentPage}
               onChange={(e) => onChangePage(Number(e.target.value))}
               aria-label={t.jumpToPageLabel}
-              className="w-full accent-[#10B981] cursor-pointer"
+              className="w-full accent-[#D97706] cursor-pointer"
             />
+            <div className="flex flex-wrap gap-2 pt-1">
+              {[
+                {label: lang === 'ar' ? 'الفاتحة · ص ١' : 'Al-Fatihah · p.1', p: 1},
+                {label: lang === 'ar' ? 'البقرة · ص ٢' : 'Al-Baqarah · p.2', p: 2},
+                {label: lang === 'ar' ? 'الكهف · ص ٢٩٣' : 'Al-Kahf · p.293', p: 293},
+                {label: lang === 'ar' ? 'يس · ص ٤٤٠' : 'Ya-Sin · p.440', p: 440},
+                {label: lang === 'ar' ? 'الملك · ص ٥٦٢' : 'Al-Mulk · p.562', p: 562},
+              ].map((item) => (
+                <button
+                  key={item.p}
+                  type="button"
+                  onClick={() => {
+                    onChangePage(item.p);
+                    setBrowseTab('quran');
+                  }}
+                  className="rounded-full border border-amber-500/20 bg-[#FAF5EE] dark:bg-[#17110D] px-3.5 py-1.5 text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] hover:border-[#D97706]"
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Hifz Mode Active Strip */}
-        {hifzMode && (
-          <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#10B981]/25 bg-[#10B981]/10 px-3 py-2 text-xs">
-            <span className="font-medium text-[#059669] dark:text-[#34D399]">
-              {t.hifzActiveBanner}
-            </span>
-            <div className="flex items-center gap-1.5">
+      {/* Main Warm Borderless Mushaf Reading Canvas */}
+      {browseTab === 'quran' && (
+        <div className="relative mx-auto max-w-4xl lg:px-14 pb-6" dir="ltr">
+          {!focusMode && (
+            <>
               <button
                 type="button"
-                onClick={onToggleFirstWordHint}
-                className={`px-2 py-1 rounded-md font-semibold transition-colors ${
-                  hifzFirstWordHint
-                    ? 'bg-[#10B981] text-[#0B0E11]'
-                    : 'bg-black/5 dark:bg-white/10 text-[#1C1917] dark:text-[#F4F1EA]'
-                }`}
+                onClick={() => onChangePage(Math.min(604, currentPage + 1))}
+                disabled={currentPage >= 604}
+                aria-label={`${t.nextPage} (${Math.min(604, currentPage + 1)})`}
+                className="hidden lg:flex absolute left-1 top-1/2 -translate-y-1/2 h-10 w-10 items-center justify-center rounded-full border border-amber-500/20 bg-white/85 dark:bg-[#221914]/90 text-[#B45309] dark:text-[#FBBF24] hover:border-[#D97706] disabled:opacity-25 shadow-sm transition-all"
               >
-                {t.hifzHintLabel}
+                <ChevronLeft className="h-5 w-5" />
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  revealedAyahKeys.size >= pageAyahKeys.length
-                    ? onMaskAllOnPage()
-                    : onRevealAllOnPage(pageAyahKeys)
-                }
-                className="px-2 py-1 rounded-md bg-black/5 dark:bg-white/10 font-semibold text-[#1C1917] dark:text-[#F4F1EA] hover:bg-[#10B981]/20"
+                onClick={() => onChangePage(Math.max(1, currentPage - 1))}
+                disabled={currentPage <= 1}
+                aria-label={`${t.prevPage} (${Math.max(1, currentPage - 1)})`}
+                className="hidden lg:flex absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 items-center justify-center rounded-full border border-amber-500/20 bg-white/85 dark:bg-[#221914]/90 text-[#B45309] dark:text-[#FBBF24] hover:border-[#D97706] disabled:opacity-25 shadow-sm transition-all"
               >
-                {revealedAyahKeys.size >= pageAyahKeys.length ? t.hideAll : t.revealAll}
+                <ChevronRight className="h-5 w-5" />
               </button>
-            </div>
-          </div>
-        )}
-      </div>
+            </>
+          )}
 
-      {/* Structured Ornamental Mushaf Frame Container */}
-      <div className="relative mx-auto max-w-4xl lg:px-14 pb-6" dir="ltr">
-        {/* Desktop Floating Side Page-Turn Arrows */}
-        {!focusMode && (
-          <>
-            <button
-              type="button"
-              onClick={() => onChangePage(Math.min(604, currentPage + 1))}
-              disabled={currentPage >= 604}
-              aria-label={`${t.nextPage} (${Math.min(604, currentPage + 1)})`}
-              className="hidden lg:flex absolute left-1 top-1/2 -translate-y-1/2 h-10 w-10 items-center justify-center rounded-full border border-[#B4891B]/25 dark:border-white/12 bg-[#FAF6EE]/90 dark:bg-[#13181E]/90 text-[#B4891B] dark:text-[#D4AF37] hover:border-[#10B981] disabled:opacity-25 transition-all"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onChangePage(Math.max(1, currentPage - 1))}
-              disabled={currentPage <= 1}
-              aria-label={`${t.prevPage} (${Math.max(1, currentPage - 1)})`}
-              className="hidden lg:flex absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 items-center justify-center rounded-full border border-[#B4891B]/25 dark:border-white/12 bg-[#FAF6EE]/90 dark:bg-[#13181E]/90 text-[#B4891B] dark:text-[#D4AF37] hover:border-[#10B981] disabled:opacity-25 transition-all"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
-          </>
-        )}
+          <article
+            data-testid="mushaf-page-frame"
+            dir={lang === 'ar' ? 'rtl' : 'ltr'}
+            className="relative mx-2.5 my-1 sm:mx-auto max-w-3xl rounded-3xl border border-amber-500/15 bg-white/80 dark:bg-[#211914]/90 backdrop-blur-md p-4 sm:p-8 shadow-sm shadow-amber-500/5 overflow-hidden"
+          >
+            <div className="relative z-10 px-0.5 sm:px-2 py-0.5 sm:py-1">
+              {/* Top Minimal Page Meta Strip */}
+              <div
+                dir="ltr"
+                className="flex items-center justify-between gap-1.5 text-[11px] sm:text-xs text-[#6E5649] dark:text-[#D6C7B8] px-2 sm:px-4 pt-0.5 pb-2.5 mb-3.5 sm:mb-5 border-b border-amber-500/12 tabular-nums"
+              >
+                <span className="font-quran-scheherazade text-xs sm:text-base text-[#B45309] dark:text-[#FBBF24] whitespace-nowrap">
+                  الجزء {toArabicDigits(primaryVerse?.juz || 1)} · الحزب{' '}
+                  {toArabicDigits(hizbInfo.hizb)}
+                </span>
+                <span className="font-semibold whitespace-nowrap">
+                  {lang === 'ar'
+                    ? `${t.pageWord} ${toArabicDigits(currentPage)} ${t.ofWord} ٦٠٤`
+                    : `${t.pageWord} ${currentPage} ${t.ofWord} 604`}
+                </span>
+                <span className="font-quran-scheherazade text-xs sm:text-base text-[#B45309] dark:text-[#FBBF24] whitespace-nowrap">
+                  {headerSurahMeta?.nameAr.replace('سُورَةُ ', '')}
+                </span>
+              </div>
 
-        <article
-          data-testid="mushaf-page-frame"
-          dir={lang === 'ar' ? 'rtl' : 'ltr'}
-          className="relative mx-2.5 my-2 sm:mx-auto max-w-3xl rounded-2xl border border-[#B4891B]/30 dark:border-white/12 bg-[#FDFBF7] dark:bg-[#0E1318] p-4 sm:p-8 shadow-sm overflow-hidden"
-        >
-          <div className="relative z-10 px-0.5 sm:px-2 py-0.5 sm:py-1">
-            {/* Subtle Mushaf Page Header Metadata */}
-            <div
-              dir="ltr"
-              className="flex items-center justify-between gap-1.5 text-[11px] sm:text-xs text-[#57534E] dark:text-[#9CA3AF] px-3 sm:px-5 pt-0.5 pb-2.5 mb-3.5 sm:mb-6 border-b border-[#B4891B]/18 dark:border-white/8 tabular-nums"
-            >
-              <span className="font-quran-scheherazade text-xs sm:text-base text-[#B4891B] dark:text-[#D4AF37] whitespace-nowrap">
-                الجزء {toArabicDigits(primaryVerse?.juz || 1)} · الحزب{' '}
-                {toArabicDigits(hizbInfo.hizb)}
-              </span>
-              <span className="font-medium whitespace-nowrap">
-                {lang === 'ar'
-                  ? `${t.pageWord} ${toArabicDigits(currentPage)} ${t.ofWord} ٦٠٤`
-                  : `${t.pageWord} ${currentPage} ${t.ofWord} 604`}
-              </span>
-              <span className="font-quran-scheherazade text-xs sm:text-base text-[#B4891B] dark:text-[#D4AF37] whitespace-nowrap">
-                {headerSurahMeta?.nameAr.replace('سُورَةُ ', '')}
-              </span>
-            </div>
+              {/* Surah Groups */}
+              <div className="space-y-5 sm:space-y-8">
+                {surahGroups.map(({surah, items}) => {
+                  const startsAtBeginning = items[0]?.ayah === 1;
+                  const showBismillah =
+                    startsAtBeginning && surah.id !== 1 && surah.id !== 9;
 
-          {/* Surah Groups */}
-          <div className="space-y-5 sm:space-y-8">
-            {surahGroups.map(({surah, items}) => {
-              const startsAtBeginning = items[0]?.ayah === 1;
-              const showBismillah =
-                startsAtBeginning && surah.id !== 1 && surah.id !== 9;
+                  return (
+                    <div key={surah.id} className="space-y-3.5 sm:space-y-5">
+                      {startsAtBeginning && (
+                        <SurahCartoucheBanner
+                          surah={surah}
+                          lang={lang}
+                          t={t}
+                          onPlaySurah={() => onPlayAyah(surah.id, 1)}
+                        />
+                      )}
 
-              return (
-                <div key={surah.id} className="space-y-3.5 sm:space-y-5">
-                  {startsAtBeginning && (
-                    <SurahCartoucheBanner
-                      surah={surah}
-                      lang={lang}
-                      t={t}
-                      onPlaySurah={() => onPlayAyah(surah.id, 1)}
-                    />
-                  )}
+                      {showBismillah && (
+                        <div
+                          dir="rtl"
+                          className={`${fontClass} tracking-normal text-center text-[21px] sm:text-3xl leading-[2.05] text-[#B45309] dark:text-[#FBBF24] py-0.5`}
+                        >
+                          بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+                        </div>
+                      )}
 
-                  {showBismillah && (
-                    <div
-                      dir="rtl"
-                      className={`${fontClass} tracking-normal text-center text-[21px] sm:text-3xl leading-[2.05] text-[#B4891B] dark:text-[#D4AF37] py-0.5`}
-                    >
-                      بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
-                    </div>
-                  )}
+                      {settings.showTranslation ? (
+                        <div className="divide-y divide-amber-500/10">
+                          {items.map((verse) => {
+                            const ayahKey = `${verse.surah}:${verse.ayah}`;
+                            const isActiveAudio =
+                              isPlaying &&
+                              playingSurah === verse.surah &&
+                              playingAyah === verse.ayah;
+                            const isSelected =
+                              selectedAyahKey === ayahKey ||
+                              actionKey === ayahKey ||
+                              isActiveAudio;
+                            const isBookmarked = bookmarkIds.has(ayahKey);
+                            const isRevealed = !hifzMode || revealedAyahKeys.has(ayahKey);
+                            const rawText = getVerseTextByRiwayat(
+                              verse,
+                              settings.riwayat,
+                              warshTexts
+                            );
+                            const displayText =
+                              settings.riwayat === 'hafs'
+                                ? stripLeadingBismillah(rawText, verse.surah, verse.ayah)
+                                : rawText;
+                            const words = tokenizeVerseWords(displayText);
 
-                  {settings.showTranslation ? (
-                    <div className="divide-y divide-[#B4891B]/12 dark:divide-white/8">
-                      {items.map((verse) => {
-                        const ayahKey = `${verse.surah}:${verse.ayah}`;
-                        const isActiveAudio =
-                          isPlaying &&
-                          playingSurah === verse.surah &&
-                          playingAyah === verse.ayah;
-                        const isSelected =
-                          selectedAyahKey === ayahKey ||
-                          actionKey === ayahKey ||
-                          isActiveAudio;
-                        const isBookmarked = bookmarkIds.has(ayahKey);
-                        const isRevealed = !hifzMode || revealedAyahKeys.has(ayahKey);
-                        const rawText = getVerseTextByRiwayat(
-                          verse,
-                          settings.riwayat,
-                          warshTexts
-                        );
-                        const displayText =
-                          settings.riwayat === 'hafs'
-                            ? stripLeadingBismillah(rawText, verse.surah, verse.ayah)
-                            : rawText;
-                        const words = tokenizeVerseWords(displayText);
-
-                        return (
-                          <div
-                            key={ayahKey}
-                            data-ayah-key={ayahKey}
-                            className={`py-4 px-2 sm:px-3 rounded-xl transition-colors ${
-                              isSelected
-                                ? 'bg-[#10B981]/10 dark:bg-[#10B981]/10'
-                                : 'hover:bg-black/3 dark:hover:bg-white/[0.03]'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between gap-2 mb-2">
-                              <span className="text-xs font-semibold text-[#B4891B] dark:text-[#D4AF37] tabular-nums">
-                                {verse.surah}:{verse.ayah}
-                                {verse.sajda && (
-                                  <span className="ms-2 text-[#059669] dark:text-[#10B981]">
-                                    · Sajdah ۩
-                                  </span>
-                                )}
-                              </span>
-
-                              <div className="flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => onPlayAyah(verse.surah, verse.ayah)}
-                                  aria-label={`Play Ayah ${verse.surah}:${verse.ayah}`}
-                                  className="min-h-[32px] min-w-[32px] flex items-center justify-center rounded-lg text-[#059669] dark:text-[#10B981] hover:bg-[#10B981]/10"
-                                >
-                                  <Play className="h-3.5 w-3.5 fill-current" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => onToggleBookmark(verse)}
-                                  aria-label={`Bookmark Ayah ${verse.surah}:${verse.ayah}`}
-                                  className={`min-h-[32px] min-w-[32px] flex items-center justify-center rounded-lg ${
-                                    isBookmarked
-                                      ? 'text-[#B4891B] dark:text-[#D4AF37]'
-                                      : 'text-[#57534E] dark:text-[#9CA3AF] hover:text-[#D4AF37]'
-                                  }`}
-                                >
-                                  <Bookmark
-                                    className={`h-3.5 w-3.5 ${
-                                      isBookmarked ? 'fill-current' : ''
-                                    }`}
-                                  />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => onOpenTafsir(verse)}
-                                  aria-label={`Open Tafsir for Ayah ${verse.surah}:${verse.ayah}`}
-                                  className="min-h-[32px] px-2 flex items-center gap-1 rounded-lg text-xs text-[#57534E] dark:text-[#9CA3AF] hover:text-[#1C1917] dark:hover:text-[#F4F1EA]"
-                                >
-                                  <BookOpenText className="h-3.5 w-3.5" />
-                                  <span>{t.tafsir}</span>
-                                </button>
-                              </div>
-                            </div>
-
-                            <div
-                              role="button"
-                              tabIndex={0}
-                              onClick={() => handleVerseInteraction(verse)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  e.preventDefault();
-                                  handleVerseInteraction(verse);
-                                }
-                              }}
-                              dir="rtl"
-                              className={`w-full text-right ${fontClass} mushaf-script-flow tracking-normal text-[#1C1917] dark:text-[#F4F1EA] cursor-pointer`}
-                              style={
-                                {
-                                  '--q-size': `${settings.fontSize}px`,
-                                  '--q-lh': String(settings.lineHeight),
-                                } as React.CSSProperties
-                              }
-                            >
-                              {words.map((word, wIdx) => {
-                                const wKey = `${ayahKey}:${wIdx}`;
-                                const isWordMatched = matchedWordKeys.has(wKey);
-                                const isWordMissed =
-                                  missedWordKeys.has(wKey) || mistakePulseKey === wKey;
-                                const isWordVisible =
-                                  isRevealed ||
-                                  isWordMatched ||
-                                  (hifzFirstWordHint && wIdx === 0);
-
-                                return (
-                                  <React.Fragment key={wKey}>
-                                    <span
-                                      className={`inline tracking-normal transition-all duration-300 rounded-sm ${
-                                        !isWordVisible
-                                          ? 'blur-[7px] opacity-25 select-none'
-                                          : isWordMissed
-                                            ? 'bg-rose-500/20 text-amber-600 dark:text-amber-300 underline decoration-rose-400 underline-offset-8 animate-pulse'
-                                            : isWordMatched
-                                              ? 'text-[#059669] dark:text-[#34D399]'
-                                              : ''
-                                      }`}
-                                    >
-                                      {word}
-                                    </span>{' '}
-                                  </React.Fragment>
-                                );
-                              })}
-                              <span className="inline-block whitespace-nowrap align-baseline mx-1 text-[0.8em] leading-none text-[#B4891B] dark:text-[#D4AF37]">
-                                ﴿{toArabicDigits(verse.ayah)}﴾
-                              </span>
-                            </div>
-
-                            {translations && translations[verse.index] && (
-                              <p
-                                dir="ltr"
-                                className={`mt-2.5 text-sm leading-relaxed text-[#57534E] dark:text-[#9CA3AF] text-left transition-all duration-300 ${
-                                  !isRevealed ? 'blur-[4px] opacity-25 select-none' : ''
+                            return (
+                              <div
+                                key={ayahKey}
+                                data-ayah-key={ayahKey}
+                                className={`py-4 px-2.5 sm:px-4 rounded-2xl transition-colors ${
+                                  isSelected
+                                    ? 'bg-amber-500/12 dark:bg-amber-500/15'
+                                    : 'hover:bg-amber-500/[0.04]'
                                 }`}
                               >
-                                {translations[verse.index]}
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    /* Print-Grade Connected RTL Mushaf Flow with Word-Level Hifz & Voice Follow */
-                    <div
-                      dir="rtl"
-                      className={`${fontClass} mushaf-script-flow px-2 sm:px-3 tracking-normal text-right md:text-justify md:[text-align-last:center] text-[#1C1917] dark:text-[#F4F1EA]`}
-                      style={
-                        {
-                          '--q-size': `${settings.fontSize}px`,
-                          '--q-lh': String(settings.lineHeight),
-                        } as React.CSSProperties
-                      }
-                    >
-                      {items.map((verse) => {
-                        const ayahKey = `${verse.surah}:${verse.ayah}`;
-                        const isActiveAudio =
-                          playingSurah === verse.surah &&
-                          playingAyah === verse.ayah &&
-                          isPlaying;
-                        const isSelected =
-                          selectedAyahKey === ayahKey || actionKey === ayahKey;
-                        const isBookmarked = bookmarkIds.has(ayahKey);
-                        const isRevealed = !hifzMode || revealedAyahKeys.has(ayahKey);
-                        const rawText = getVerseTextByRiwayat(
-                          verse,
-                          settings.riwayat,
-                          warshTexts
-                        );
-                        const displayText =
-                          settings.riwayat === 'hafs'
-                            ? stripLeadingBismillah(rawText, verse.surah, verse.ayah)
-                            : rawText;
-                        const words = tokenizeVerseWords(displayText);
+                                <div className="flex items-center justify-between gap-2 mb-2">
+                                  <span className="rounded-full bg-amber-500/12 px-2.5 py-0.5 text-xs font-bold text-[#B45309] dark:text-[#FBBF24] tabular-nums">
+                                    {verse.surah}:{verse.ayah}
+                                    {verse.sajda && (
+                                      <span className="ms-1.5 text-[#D97706]">· Sajdah ۩</span>
+                                    )}
+                                  </span>
 
-                        return (
-                          <span
-                            key={ayahKey}
-                            data-ayah-key={ayahKey}
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => handleVerseInteraction(verse)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                handleVerseInteraction(verse);
-                              }
-                            }}
-                            aria-label={`Ayah ${verse.surah}:${verse.ayah}`}
-                            className={`inline px-1 py-0.5 [box-decoration-break:clone] tracking-normal rounded-md transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10B981] ${
-                              isActiveAudio || isSelected
-                                ? 'bg-[#D4AF37]/20 text-[#9A710D] dark:text-[#FDE68A]'
-                                : '[@media(hover:hover)]:hover:bg-black/[0.04] dark:[@media(hover:hover)]:hover:bg-white/[0.04]'
-                            }`}
-                          >
-                            {words.map((word, wIdx) => {
-                              const wKey = `${ayahKey}:${wIdx}`;
-                              const isWordMatched = matchedWordKeys.has(wKey);
-                              const isWordMissed =
-                                missedWordKeys.has(wKey) || mistakePulseKey === wKey;
-                              const isWordVisible =
-                                isRevealed ||
-                                isWordMatched ||
-                                (hifzFirstWordHint && wIdx === 0);
+                                  <button
+                                    type="button"
+                                    onClick={() => onOpenTafsir(verse)}
+                                    className="text-xs font-semibold text-[#6E5649] dark:text-[#D6C7B8] hover:text-[#D97706]"
+                                  >
+                                    {t.tafsir}
+                                  </button>
+                                </div>
 
-                              return (
-                                <React.Fragment key={wKey}>
-                                  <span
-                                    className={`inline tracking-normal transition-all duration-300 rounded-sm ${
-                                      !isWordVisible
-                                        ? 'blur-[7px] opacity-25 select-none'
-                                        : isWordMissed
-                                          ? 'bg-rose-500/20 text-amber-600 dark:text-amber-300 underline decoration-rose-400 underline-offset-8 animate-pulse'
-                                          : isWordMatched
-                                            ? 'text-[#059669] dark:text-[#34D399]'
-                                            : ''
+                                <div
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={() => handleVerseInteraction(verse)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault();
+                                      handleVerseInteraction(verse);
+                                    }
+                                  }}
+                                  dir="rtl"
+                                  className={`w-full text-right ${fontClass} mushaf-script-flow tracking-normal text-[#2D231E] dark:text-[#FAF5EE] cursor-pointer`}
+                                  style={
+                                    {
+                                      '--q-size': `${settings.fontSize}px`,
+                                      '--q-lh': String(settings.lineHeight),
+                                    } as React.CSSProperties
+                                  }
+                                >
+                                  {words.map((word, wIdx) => {
+                                    const wKey = `${ayahKey}:${wIdx}`;
+                                    const isWordMatched = matchedWordKeys.has(wKey);
+                                    const isWordMissed =
+                                      missedWordKeys.has(wKey) || mistakePulseKey === wKey;
+                                    const isWordVisible =
+                                      isRevealed ||
+                                      isWordMatched ||
+                                      (hifzFirstWordHint && wIdx === 0);
+
+                                    return (
+                                      <React.Fragment key={wKey}>
+                                        <span
+                                          className={`inline tracking-normal transition-all duration-300 rounded-sm ${
+                                            !isWordVisible
+                                              ? 'blur-[7px] opacity-25 select-none'
+                                              : isWordMissed
+                                                ? 'bg-rose-500/20 text-rose-600 dark:text-rose-300 underline decoration-rose-400 underline-offset-8 animate-pulse'
+                                                : isWordMatched
+                                                  ? 'text-[#059669] dark:text-[#34D399]'
+                                                  : ''
+                                          }`}
+                                        >
+                                          {word}
+                                        </span>{' '}
+                                      </React.Fragment>
+                                    );
+                                  })}
+                                  <span className="inline-block whitespace-nowrap align-baseline mx-1 text-[0.8em] leading-none text-[#B45309] dark:text-[#FBBF24]">
+                                    ﴿{toArabicDigits(verse.ayah)}﴾
+                                  </span>
+                                </div>
+
+                                {translations && translations[verse.index] && (
+                                  <p
+                                    dir="ltr"
+                                    className={`mt-2.5 text-sm leading-relaxed text-[#4E3629] dark:text-[#D6C7B8] text-left transition-all duration-300 ${
+                                      !isRevealed ? 'blur-[4px] opacity-25 select-none' : ''
                                     }`}
                                   >
-                                    {word}
-                                  </span>{' '}
-                                </React.Fragment>
-                              );
-                            })}
-                            <span
-                              className={`inline-block whitespace-nowrap align-baseline mx-1 tracking-normal text-[0.8em] leading-none ${
-                                isBookmarked
-                                  ? 'text-[#059669] dark:text-[#10B981]'
-                                  : 'text-[#B4891B] dark:text-[#D4AF37]'
-                              }`}
-                            >
-                              {verse.sajda ? '۩ ' : ''}﴿{toArabicDigits(verse.ayah)}﴾
-                            </span>{' '}
-                          </span>
-                        );
-                      })}
+                                    {translations[verse.index]}
+                                  </p>
+                                )}
+
+                                {/* Subtle Quick Amber Circular Action Icons Below Each Verse */}
+                                <div className="mt-3 flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => onPlayAyah(verse.surah, verse.ayah)}
+                                    aria-label={`Play Ayah ${verse.surah}:${verse.ayah}`}
+                                    className="h-8 w-8 flex items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10 text-[#B45309] dark:text-[#FBBF24] hover:bg-amber-500 hover:text-white transition-colors"
+                                  >
+                                    <Play className="h-3.5 w-3.5 fill-current ms-0.5" />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => onToggleBookmark(verse)}
+                                    aria-label={`Bookmark Ayah ${verse.surah}:${verse.ayah}`}
+                                    className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors ${
+                                      isBookmarked
+                                        ? 'border-[#D97706] bg-[#D97706] text-white'
+                                        : 'border-amber-500/25 bg-amber-500/10 text-[#B45309] dark:text-[#FBBF24] hover:bg-amber-500/20'
+                                    }`}
+                                  >
+                                    <Bookmark className={`h-3.5 w-3.5 ${isBookmarked ? 'fill-current' : ''}`} />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleShareVerse(verse)}
+                                    aria-label={`Share Ayah ${verse.surah}:${verse.ayah}`}
+                                    className="h-8 w-8 flex items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10 text-[#B45309] dark:text-[#FBBF24] hover:bg-amber-500/20 transition-colors"
+                                  >
+                                    {sharedKey === ayahKey ? (
+                                      <Check className="h-3.5 w-3.5" />
+                                    ) : (
+                                      <Share2 className="h-3.5 w-3.5" />
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        /* Connected Warm Paper RTL Mushaf Flow */
+                        <div
+                          dir="rtl"
+                          className={`${fontClass} mushaf-script-flow px-2 sm:px-3 tracking-normal text-right md:text-justify md:[text-align-last:center] text-[#2D231E] dark:text-[#FAF5EE]`}
+                          style={
+                            {
+                              '--q-size': `${settings.fontSize}px`,
+                              '--q-lh': String(settings.lineHeight),
+                            } as React.CSSProperties
+                          }
+                        >
+                          {items.map((verse) => {
+                            const ayahKey = `${verse.surah}:${verse.ayah}`;
+                            const isActiveAudio =
+                              playingSurah === verse.surah &&
+                              playingAyah === verse.ayah &&
+                              isPlaying;
+                            const isSelected =
+                              selectedAyahKey === ayahKey || actionKey === ayahKey;
+                            const isBookmarked = bookmarkIds.has(ayahKey);
+                            const isRevealed = !hifzMode || revealedAyahKeys.has(ayahKey);
+                            const rawText = getVerseTextByRiwayat(
+                              verse,
+                              settings.riwayat,
+                              warshTexts
+                            );
+                            const displayText =
+                              settings.riwayat === 'hafs'
+                                ? stripLeadingBismillah(rawText, verse.surah, verse.ayah)
+                                : rawText;
+                            const words = tokenizeVerseWords(displayText);
+
+                            return (
+                              <span
+                                key={ayahKey}
+                                data-ayah-key={ayahKey}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => handleVerseInteraction(verse)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    handleVerseInteraction(verse);
+                                  }
+                                }}
+                                aria-label={`Ayah ${verse.surah}:${verse.ayah}`}
+                                className={`inline px-1.5 py-0.5 [box-decoration-break:clone] tracking-normal rounded-xl transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D97706] ${
+                                  isActiveAudio || isSelected
+                                    ? 'bg-amber-500/14 text-[#B45309] dark:text-[#FDE68A]'
+                                    : '[@media(hover:hover)]:hover:bg-amber-500/[0.06]'
+                                }`}
+                              >
+                                {words.map((word, wIdx) => {
+                                  const wKey = `${ayahKey}:${wIdx}`;
+                                  const isWordMatched = matchedWordKeys.has(wKey);
+                                  const isWordMissed =
+                                    missedWordKeys.has(wKey) || mistakePulseKey === wKey;
+                                  const isWordVisible =
+                                    isRevealed ||
+                                    isWordMatched ||
+                                    (hifzFirstWordHint && wIdx === 0);
+
+                                  return (
+                                    <React.Fragment key={wKey}>
+                                      <span
+                                        className={`inline tracking-normal transition-all duration-300 rounded-sm ${
+                                          !isWordVisible
+                                            ? 'blur-[7px] opacity-25 select-none'
+                                            : isWordMissed
+                                              ? 'bg-rose-500/20 text-rose-600 dark:text-rose-300 underline decoration-rose-400 underline-offset-8 animate-pulse'
+                                              : isWordMatched
+                                                ? 'text-[#059669] dark:text-[#34D399]'
+                                                : ''
+                                        }`}
+                                      >
+                                        {word}
+                                      </span>{' '}
+                                    </React.Fragment>
+                                  );
+                                })}
+                                <span
+                                  className={`inline-block whitespace-nowrap align-baseline mx-1 tracking-normal text-[0.8em] leading-none ${
+                                    isBookmarked
+                                      ? 'text-[#EA580C] dark:text-[#FB923C]'
+                                      : 'text-[#B45309] dark:text-[#FBBF24]'
+                                  }`}
+                                >
+                                  {verse.sajda ? '۩ ' : ''}﴿{toArabicDigits(verse.ayah)}﴾
+                                </span>{' '}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
 
-          {/* Bottom Page Navigation Footer */}
-          <div
-            dir="ltr"
-            className={`mt-6 sm:mt-8 pt-3.5 sm:pt-4 px-3 sm:px-5 pb-0.5 border-t border-[#B4891B]/16 dark:border-white/8 flex items-center justify-between gap-2 sm:gap-4 transition-opacity duration-300 ${
-              focusMode ? 'opacity-30 hover:opacity-100' : 'opacity-100'
-            }`}
-          >
-            <button
-              type="button"
-              onClick={() => onChangePage(Math.min(604, currentPage + 1))}
-              disabled={currentPage >= 604}
-              className="min-h-[40px] inline-flex items-center gap-1 sm:gap-1.5 rounded-xl border border-[#B4891B]/25 dark:border-white/12 px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-[#1C1917] dark:text-[#F4F1EA] disabled:opacity-35 hover:border-[#10B981] transition-colors whitespace-nowrap"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              <span>{t.nextPage}</span>
-            </button>
+              {/* Bottom Page Navigation Footer */}
+              <div
+                dir="ltr"
+                className={`mt-6 sm:mt-8 pt-3.5 sm:pt-4 px-2 sm:px-4 pb-0.5 border-t border-amber-500/12 flex items-center justify-between gap-2 sm:gap-4 transition-opacity duration-300 ${
+                  focusMode ? 'opacity-30 hover:opacity-100' : 'opacity-100'
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => onChangePage(Math.min(604, currentPage + 1))}
+                  disabled={currentPage >= 604}
+                  className="min-h-[40px] inline-flex items-center gap-1 sm:gap-1.5 rounded-full border border-amber-500/20 px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE] disabled:opacity-35 hover:border-[#D97706] transition-colors whitespace-nowrap"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span>{t.nextPage}</span>
+                </button>
 
-            <button
-              type="button"
-              onClick={() => setShowPageJumper((v) => !v)}
-              className="min-h-[38px] inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full border border-[#B4891B]/25 dark:border-[#D4AF37]/25 bg-[#F3ECE0]/80 dark:bg-[#13181E] text-[#B4891B] dark:text-[#D4AF37] tabular-nums hover:border-[#10B981] transition-colors whitespace-nowrap"
-            >
-              <span className="font-quran-scheherazade text-base sm:text-lg leading-none">
-                {toArabicDigits(currentPage)} / ٦٠٤
-              </span>
-            </button>
+                <button
+                  type="button"
+                  onClick={() => setBrowseTab('page')}
+                  className="min-h-[38px] inline-flex items-center justify-center gap-1.5 px-4 py-1 rounded-full border border-amber-500/25 bg-[#FAF5EE] dark:bg-[#19120E] text-[#B45309] dark:text-[#FBBF24] tabular-nums hover:border-[#D97706] transition-colors whitespace-nowrap"
+                >
+                  <span className="font-quran-scheherazade text-base sm:text-lg leading-none">
+                    {toArabicDigits(currentPage)} / ٦٠٤
+                  </span>
+                </button>
 
-            <button
-              type="button"
-              onClick={() => onChangePage(Math.max(1, currentPage - 1))}
-              disabled={currentPage <= 1}
-              className="min-h-[40px] inline-flex items-center gap-1 sm:gap-1.5 rounded-xl border border-[#B4891B]/25 dark:border-white/12 px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-[#1C1917] dark:text-[#F4F1EA] disabled:opacity-35 hover:border-[#10B981] transition-colors whitespace-nowrap"
-            >
-              <span>{t.prevPage}</span>
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-          </div>
-        </article>
-      </div>
+                <button
+                  type="button"
+                  onClick={() => onChangePage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage <= 1}
+                  className="min-h-[40px] inline-flex items-center gap-1 sm:gap-1.5 rounded-full border border-amber-500/20 px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE] disabled:opacity-35 hover:border-[#D97706] transition-colors whitespace-nowrap"
+                >
+                  <span>{t.prevPage}</span>
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+      )}
 
       {/* Subtle Corner Chip to Exit Tap-to-Focus Mode */}
       {focusMode && (
         <button
           type="button"
           onClick={onToggleFocusMode}
-          className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-[#13181E]/90 backdrop-blur-md px-3.5 py-2 text-xs font-semibold text-[#F4F1EA] shadow-lg hover:border-[#10B981]"
+          className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-white/90 dark:bg-[#221914]/95 backdrop-blur-md px-3.5 py-2 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] shadow-lg hover:border-[#D97706]"
         >
-          <Maximize2 className="h-3.5 w-3.5 text-[#10B981]" />
+          <Maximize2 className="h-3.5 w-3.5 text-[#D97706]" />
           <span>{t.exitFocus}</span>
         </button>
       )}
 
-      {/* Tap-Ayah Floating Action Menu */}
+      {/* Tap-Ayah Floating Action Menu (Play, Bookmark, Share, Tafsir, Copy) */}
       {actionMenuVerse && (
         <div
           role="region"
           aria-label={`Actions for Ayah ${actionMenuVerse.surah}:${actionMenuVerse.ayah}`}
-          className="fixed bottom-[calc(8.1rem+env(safe-area-inset-bottom,0px))] md:bottom-[76px] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-xl rounded-2xl border border-[#B4891B]/40 dark:border-white/16 bg-[#FAF6EE]/96 dark:bg-[#13181E]/96 backdrop-blur-md px-3 py-2 shadow-2xl flex items-center justify-between gap-2"
+          className="fixed bottom-[calc(8.9rem+env(safe-area-inset-bottom,0px))] md:bottom-[76px] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-xl rounded-full border border-amber-500/30 bg-white/95 dark:bg-[#221914]/95 backdrop-blur-md px-3.5 py-2 shadow-xl flex items-center justify-between gap-2"
         >
-          <span className="text-xs font-bold text-[#B4891B] dark:text-[#D4AF37] tabular-nums px-1 whitespace-nowrap">
+          <span className="text-xs font-bold text-[#B45309] dark:text-[#FBBF24] tabular-nums px-1 whitespace-nowrap">
             {actionMenuVerse.surah}:{actionMenuVerse.ayah}
           </span>
 
@@ -857,7 +1035,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
                 onPlayAyah(actionMenuVerse.surah, actionMenuVerse.ayah);
                 setActionMenuVerse(null);
               }}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#059669] dark:bg-[#10B981] px-3 py-1.5 text-xs font-semibold text-white dark:text-[#0B0E11] whitespace-nowrap hover:opacity-90"
+              className="inline-flex items-center gap-1 rounded-full bg-[#D97706] px-3 py-1.5 text-xs font-semibold text-white whitespace-nowrap hover:bg-[#B45309]"
             >
               <Play className="h-3.5 w-3.5 fill-current" />
               <span>{t.playFromHere}</span>
@@ -870,7 +1048,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
                   onToggleRevealAyah(actionKey);
                   setActionMenuVerse(null);
                 }}
-                className="inline-flex items-center gap-1 rounded-xl border border-[#B4891B]/25 dark:border-white/15 px-2.5 py-1.5 text-xs font-semibold text-[#1C1917] dark:text-[#F4F1EA] whitespace-nowrap"
+                className="inline-flex items-center gap-1 rounded-full border border-amber-500/25 px-2.5 py-1.5 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] whitespace-nowrap"
               >
                 {revealedAyahKeys.has(actionKey) ? (
                   <EyeOff className="h-3.5 w-3.5" />
@@ -883,10 +1061,10 @@ export const MushafView: React.FC<MushafViewProps> = ({
             <button
               type="button"
               onClick={() => onToggleBookmark(actionMenuVerse)}
-              className={`inline-flex items-center gap-1 rounded-xl border px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
+              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
                 isActionVerseBookmarked
-                  ? 'border-[#D4AF37] bg-[#D4AF37]/15 text-[#B4891B] dark:text-[#D4AF37]'
-                  : 'border-[#B4891B]/25 dark:border-white/15 text-[#1C1917] dark:text-[#F4F1EA]'
+                  ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
+                  : 'border-amber-500/20 text-[#2D231E] dark:text-[#FAF5EE]'
               }`}
             >
               <Bookmark
@@ -899,30 +1077,40 @@ export const MushafView: React.FC<MushafViewProps> = ({
 
             <button
               type="button"
+              onClick={() => void handleShareVerse(actionMenuVerse)}
+              className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 px-2.5 py-1.5 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] whitespace-nowrap"
+            >
+              {sharedKey === actionKey ? (
+                <Check className="h-3.5 w-3.5 text-[#D97706]" />
+              ) : (
+                <Share2 className="h-3.5 w-3.5 text-[#B45309] dark:text-[#FBBF24]" />
+              )}
+              <span className="hidden sm:inline">{t.shareWord}</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => {
                 const target = actionMenuVerse;
                 setActionMenuVerse(null);
                 onOpenTafsir(target);
               }}
-              className="inline-flex items-center gap-1 rounded-xl border border-[#B4891B]/25 dark:border-white/15 px-2.5 py-1.5 text-xs font-semibold text-[#1C1917] dark:text-[#F4F1EA] hover:border-[#D4AF37] whitespace-nowrap"
+              className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 px-2.5 py-1.5 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] whitespace-nowrap"
             >
-              <BookOpenText className="h-3.5 w-3.5 text-[#B4891B] dark:text-[#D4AF37]" />
+              <BookOpenText className="h-3.5 w-3.5 text-[#B45309] dark:text-[#FBBF24]" />
               <span>{t.tafsir}</span>
             </button>
 
             <button
               type="button"
               onClick={() => void handleCopyVerse(actionMenuVerse)}
-              className="inline-flex items-center gap-1 rounded-xl border border-[#B4891B]/25 dark:border-white/15 px-2.5 py-1.5 text-xs font-semibold text-[#1C1917] dark:text-[#F4F1EA] hover:border-[#D4AF37] whitespace-nowrap"
+              className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 px-2.5 py-1.5 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] whitespace-nowrap"
             >
               {copiedKey === actionKey ? (
-                <Check className="h-3.5 w-3.5 text-[#10B981]" />
+                <Check className="h-3.5 w-3.5 text-[#D97706]" />
               ) : (
                 <Copy className="h-3.5 w-3.5" />
               )}
-              <span className="hidden sm:inline">
-                {copiedKey === actionKey ? t.copied : t.copy}
-              </span>
             </button>
           </div>
 
@@ -930,7 +1118,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
             type="button"
             onClick={() => setActionMenuVerse(null)}
             aria-label="Close Ayah action menu"
-            className="min-h-[32px] min-w-[32px] flex items-center justify-center rounded-lg text-[#57534E] dark:text-[#9CA3AF] hover:text-[#1C1917] dark:hover:text-[#F4F1EA]"
+            className="min-h-[30px] min-w-[30px] flex items-center justify-center rounded-full text-[#6E5649] dark:text-[#D6C7B8] hover:text-[#2D231E]"
           >
             <X className="h-4 w-4" />
           </button>

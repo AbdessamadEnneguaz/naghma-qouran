@@ -58,19 +58,18 @@ export const SearchModal: React.FC<SearchModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-6 pt-10 sm:pt-16"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/55 backdrop-blur-sm p-3 sm:p-6 pt-10 sm:pt-16"
       role="dialog"
       aria-modal="true"
       aria-label={t.searchBtn}
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl max-h-[82vh] flex flex-col rounded-2xl border border-[#B4891B]/25 dark:border-[#D4AF37]/25 bg-[#FAF6EE] dark:bg-[#13181E] shadow-2xl overflow-hidden"
+        className="w-full max-w-2xl max-h-[82vh] flex flex-col rounded-3xl border border-amber-500/20 bg-[#FDFBF7] dark:bg-[#1B1410] shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Search Input Bar */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[#B4891B]/16 dark:border-[#D4AF37]/14">
-          <Search className="h-5 w-5 text-[#B4891B] dark:text-[#D4AF37] shrink-0" />
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-amber-500/12">
+          <Search className="h-5 w-5 text-[#D97706] shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -78,13 +77,13 @@ export const SearchModal: React.FC<SearchModalProps> = ({
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t.searchPlaceholder}
             aria-label={t.searchBtn}
-            className="flex-1 min-w-0 bg-transparent text-sm sm:text-base text-[#1C1917] dark:text-[#F7F4EB] placeholder:text-[#57534E]/60 dark:placeholder:text-[#9CAFA6]/55 focus:outline-none"
+            className="flex-1 min-w-0 bg-transparent text-sm sm:text-base text-[#2D231E] dark:text-[#FAF5EE] placeholder:text-[#6E5649]/60 focus:outline-none"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery('')}
-              className="text-xs font-medium text-[#57534E] dark:text-[#9CAFA6] hover:text-[#1C1917] dark:hover:text-[#F7F4EB] px-2 py-1"
+              className="text-xs font-medium text-[#6E5649] dark:text-[#D6C7B8] hover:text-[#2D231E] px-2 py-1"
             >
               {t.clear}
             </button>
@@ -93,17 +92,16 @@ export const SearchModal: React.FC<SearchModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close Search"
-            className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-[#57534E] dark:text-[#9CAFA6] hover:bg-[#EAE3D5] dark:hover:bg-[#06100D]"
+            className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-full text-[#6E5649] dark:text-[#D6C7B8] hover:bg-amber-500/10"
           >
             <X className="h-4.5 w-4.5" />
           </button>
         </div>
 
-        {/* Results / Suggestions */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {!query.trim() ? (
             <div className="space-y-4 py-2">
-              <p className="text-xs font-semibold text-[#57534E] dark:text-[#9CAFA6]">
+              <p className="text-xs font-semibold text-[#6E5649] dark:text-[#D6C7B8]">
                 {t.searchShortcutsTitle}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -112,24 +110,24 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                     key={s.query}
                     type="button"
                     onClick={() => setQuery(s.query)}
-                    className="rounded-xl border border-[#B4891B]/18 dark:border-[#D4AF37]/16 bg-[#F3ECE0] dark:bg-[#06100D] px-3.5 py-2.5 text-start text-xs sm:text-sm font-medium text-[#1C1917] dark:text-[#F7F4EB] hover:border-[#D4AF37] transition-colors flex items-center justify-between"
+                    className="rounded-2xl border border-amber-500/15 bg-white/80 dark:bg-[#241B15] px-3.5 py-2.5 text-start text-xs sm:text-sm font-medium text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] transition-colors flex items-center justify-between"
                   >
                     <span>{s.label}</span>
-                    <DirArrow className="h-3.5 w-3.5 text-[#B4891B] dark:text-[#D4AF37]" />
+                    <DirArrow className="h-3.5 w-3.5 text-[#D97706]" />
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-[#57534E] dark:text-[#9CAFA6]">
+              <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8]">
                 {t.searchFooterNote}
               </p>
             </div>
           ) : results.length === 0 ? (
-            <div className="py-12 text-center text-sm text-[#57534E] dark:text-[#9CAFA6]">
+            <div className="py-12 text-center text-sm text-[#6E5649] dark:text-[#D6C7B8]">
               {t.noSearchMatch}
             </div>
           ) : (
             <div className="space-y-2">
-              <p className="text-xs text-[#57534E] dark:text-[#9CAFA6] tabular-nums">
+              <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
                 {lang === 'ar' ? toArabicDigits(results.length) : results.length} {t.matchesFound}
               </p>
               {results.map((item, idx) => (
@@ -140,9 +138,9 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                     onSelectResult(item);
                     onClose();
                   }}
-                  className="w-full text-start rounded-xl border border-[#B4891B]/16 dark:border-[#D4AF37]/14 bg-[#F3ECE0]/60 dark:bg-[#06100D]/70 p-3.5 hover:border-[#D4AF37] transition-colors space-y-1.5"
+                  className="w-full text-start rounded-2xl border border-amber-500/14 bg-white/80 dark:bg-[#241B15] p-3.5 hover:border-[#D97706] transition-colors space-y-1.5"
                 >
-                  <div className="flex items-center justify-between text-xs font-semibold text-[#B4891B] dark:text-[#D4AF37] tabular-nums">
+                  <div className="flex items-center justify-between text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] tabular-nums">
                     <span>
                       {lang === 'ar' ? item.surahNameAr : item.surahNameEn} ·{' '}
                       {lang === 'ar'
@@ -156,17 +154,17 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                   </div>
                   <p
                     dir="rtl"
-                    className="font-quran-amiri text-xl leading-[2.0] tracking-normal text-[#1C1917] dark:text-[#F7F4EB]"
+                    className="font-quran-amiri text-xl leading-[2.0] tracking-normal text-[#2D231E] dark:text-[#FAF5EE]"
                   >
                     {item.text}{' '}
-                    <span className="text-[#B4891B] dark:text-[#D4AF37]">
+                    <span className="text-[#B45309] dark:text-[#FBBF24]">
                       ﴿{toArabicDigits(item.ayah)}﴾
                     </span>
                   </p>
                   {item.translation && (
                     <p
                       dir="ltr"
-                      className="text-xs text-[#57534E] dark:text-[#9CAFA6] line-clamp-2"
+                      className="text-xs text-[#6E5649] dark:text-[#D6C7B8] line-clamp-2"
                     >
                       {item.translation}
                     </p>

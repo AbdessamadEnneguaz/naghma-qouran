@@ -1,25 +1,25 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Naghma Quran (نَغمة القرآن) — Holy Quran & Madani Mushaf</title>
+    <title>Najm Quran (نَجم القرآن) — Holy Quran, Madani Mushaf & Qibla</title>
     <meta
       name="description"
-      content="Offline-first Holy Quran reader & 604-page Madani Mushaf with Hafs & Warsh narrations, 25+ reciters, ayah-synced audio, and Tafsir Al-Muyassar."
+      content="Warm, distraction-free Holy Quran & 604-page Madani Mushaf with Hafs & Warsh narrations, ayah-synced recitation, Prayer Times, Qibla compass, and Tafsir Al-Muyassar."
     />
-    <meta property="og:title" content="Naghma Quran (نَغمة القرآن) — Holy Quran & Madani Mushaf" />
+    <meta property="og:title" content="Najm Quran (نَجم القرآن) — Holy Quran, Madani Mushaf & Qibla" />
     <meta
       property="og:description"
-      content="Offline-first Holy Quran reader & 604-page Madani Mushaf with Hafs & Warsh narrations, 25+ reciters, ayah-synced audio, and Tafsir Al-Muyassar."
+      content="Warm, distraction-free Holy Quran & 604-page Madani Mushaf with Hafs & Warsh narrations, ayah-synced recitation, Prayer Times, and Qibla compass."
     />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#0B0E11" />
+    <meta name="theme-color" content="#FDFBF7" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Naghma" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Najm Quran" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -31,15 +31,15 @@
     <script>
       (function () {
         try {
-          var saved = localStorage.getItem('naghma_theme') || localStorage.getItem('noor_theme');
-          var theme = saved === 'light' ? 'light' : 'dark';
+          var saved = localStorage.getItem('najm_theme') || localStorage.getItem('naghma_theme');
+          var theme = saved === 'dark' ? 'dark' : 'light';
           var root = document.documentElement;
           if (theme === 'dark') {
             root.classList.add('dark');
           } else {
             root.classList.remove('dark');
           }
-          var savedLang = localStorage.getItem('naghma_lang') || localStorage.getItem('noor_lang');
+          var savedLang = localStorage.getItem('najm_lang') || localStorage.getItem('naghma_lang');
           var lang = savedLang === 'ar' ? 'ar' : 'en';
           root.lang = lang;
           root.dir = lang === 'ar' ? 'rtl' : 'ltr';
@@ -47,7 +47,7 @@
       })();
     </script>
   </head>
-  <body class="bg-[#FAF6EE] text-[#1C1917] dark:bg-[#0B0E11] dark:text-[#F4F1EA] antialiased selection:bg-[#D4AF37]/30">
+  <body class="bg-[#FDFBF7] text-[#2D231E] dark:bg-[#17110D] dark:text-[#FAF5EE] antialiased selection:bg-[#D97706]/25">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

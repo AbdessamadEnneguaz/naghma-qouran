@@ -5,6 +5,7 @@ export interface Translations {
   navHome: string;
   navSurahs: string;
   navMushaf: string;
+  navQibla: string;
   navAdhkar: string;
   navKhatma: string;
   navVault: string;
@@ -18,7 +19,8 @@ export interface Translations {
   themeToLight: string;
   themeToDark: string;
   offlineBanner: string;
-  // Home
+  // Home & Hero
+  lastReadLabel: string;
   continueReading: string;
   beginRecitation: string;
   resumePage: string;
@@ -50,7 +52,25 @@ export interface Translations {
   noBookmarksDesc: string;
   noSurahMatch: string;
   offlineTag: string;
-  // Mushaf Reader
+  // Prayer Times & Smart Features
+  prayerTimesTitle: string;
+  remainingTimeLabel: string;
+  smartFeaturesTitle: string;
+  featureReminder: string;
+  featureMemorize: string;
+  featureRuqyah: string;
+  featureDuaQa: string;
+  // Qibla Finder
+  qiblaTitle: string;
+  qiblaAngleLabel: string;
+  useGpsBtn: string;
+  selectCityLabel: string;
+  compassCalibrationHint: string;
+  // Mushaf Reader & Sliding Mode Toggle
+  modeQuran: string;
+  modeSurah: string;
+  modeJuz: string;
+  modePage: string;
   backToSurahs: string;
   mushafPageMode: string;
   surahViewMode: string;
@@ -74,13 +94,14 @@ export interface Translations {
   nextSurah: string;
   prevSurah: string;
   surahWord: string;
-  // Tap-Ayah Floating Menu
+  // Tap-Ayah Floating Menu & Inline Actions
   playFromHere: string;
   bookmark: string;
   bookmarked: string;
   tafsir: string;
   copy: string;
   copied: string;
+  shareWord: string;
   // Audio Player
   fullSurah: string;
   repeatOff: string;
@@ -234,27 +255,29 @@ export interface Translations {
 
 export const TRANSLATIONS: Record<AppLang, Translations> = {
   en: {
-    appName: 'Naghma Quran',
+    appName: 'Najm Quran',
     navHome: 'Home',
     navSurahs: 'Surahs',
-    navMushaf: 'Mushaf',
-    navAdhkar: 'Adhkar',
+    navMushaf: 'Quran',
+    navQibla: 'Qibla',
+    navAdhkar: 'Tasbih',
     navKhatma: 'Khatma',
     navVault: 'Vault',
     navMore: 'More',
-    mobileMenuTitle: 'Naghma Menu',
+    mobileMenuTitle: 'Najm Menu',
     mobileThemeLabel: 'Appearance',
     mobileLangLabel: 'Language',
-    browseAllSurahsBtn: 'Browse All 114 Surahs',
+    browseAllSurahsBtn: 'Browse Surahs',
     allJuzFilter: "All Juz'",
     langToggleLabel: 'عربي',
-    themeToLight: 'Switch to Warm Parchment light mode',
-    themeToDark: 'Switch to Deep Emerald dark mode',
+    themeToLight: 'Switch to Warm Sand light mode',
+    themeToDark: 'Switch to Warm Espresso dark mode',
     offlineBanner: 'Offline Mode — Reading from local IndexedDB Quran Vault',
-    continueReading: 'Continue Reading · علامة الوقف',
-    beginRecitation: 'Begin Recitation · علامة الوقف',
-    resumePage: 'Resume Page',
-    openMushafPage1: 'Open Mushaf Page 1',
+    lastReadLabel: 'Last Read',
+    continueReading: 'Last Read',
+    beginRecitation: 'Last Read',
+    resumePage: 'Resume Reading',
+    openMushafPage1: 'Open Quran',
     dailyWird: 'Daily Wird · Al-Kahf',
     searchBtn: 'Search',
     narrationLabel: 'Narration · الرواية',
@@ -262,7 +285,7 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     warshLabel: "Warsh 'an Nafi' · ورش",
     surahsCached: 'Surahs Cached',
     jumpToPageLabel: 'Jump to Mushaf Page (1 – 604)',
-    jumpPlaceholder: 'e.g. 128 or 604',
+    jumpPlaceholder: 'Page 1–604',
     goBtn: 'Go',
     quickOpen: 'Quick Open:',
     tabSurahs: '114 Surahs',
@@ -282,6 +305,22 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     noBookmarksDesc: 'Tap any Ayah while reading to bookmark it offline.',
     noSurahMatch: 'No Surahs matched your filter.',
     offlineTag: 'Offline',
+    prayerTimesTitle: 'Prayer Times',
+    remainingTimeLabel: 'Remaining Time',
+    smartFeaturesTitle: 'Smart Features',
+    featureReminder: 'Reminder',
+    featureMemorize: 'Memorize',
+    featureRuqyah: 'Ruqyah',
+    featureDuaQa: 'Dua & Adhkar',
+    qiblaTitle: 'Qibla Finder',
+    qiblaAngleLabel: "Device's angle to qibla",
+    useGpsBtn: 'Use Live GPS',
+    selectCityLabel: 'City',
+    compassCalibrationHint: 'Rotate compass dial or enable device sensors',
+    modeQuran: 'Quran',
+    modeSurah: 'Surah',
+    modeJuz: 'Juz',
+    modePage: 'Page',
     backToSurahs: 'Back to Surahs',
     mushafPageMode: 'Mushaf Page',
     surahViewMode: 'Surah View',
@@ -305,12 +344,13 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     nextSurah: 'Next Surah',
     prevSurah: 'Prev Surah',
     surahWord: 'Surah',
-    playFromHere: 'Play from here',
+    playFromHere: 'Play',
     bookmark: 'Bookmark',
-    bookmarked: 'Bookmarked',
+    bookmarked: 'Saved',
     tafsir: 'Tafsir',
     copy: 'Copy',
     copied: 'Copied',
+    shareWord: 'Share',
     fullSurah: 'Full Surah',
     repeatOff: 'Repeat: Off',
     repeatAyah: 'Repeat Ayah',
@@ -349,30 +389,30 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     savedAudioTitle: 'Saved Offline Audio',
     clearAllAudio: 'Clear All Audio',
     noAudioSavedDesc: 'No MP3 recitations cached yet. Save any Surah above or inside the reader.',
-    installAppTitle: 'Install Naghma Quran (Android APK & PWA)',
-    installAppDesc: 'Install Naghma Quran as an offline standalone app on Android, desktop, or iOS.',
+    installAppTitle: 'Install Najm Quran (Android APK & PWA)',
+    installAppDesc: 'Install Najm Quran as an offline standalone app on Android, desktop, or iOS.',
     installNowBtn: 'Install Web App',
-    installedStandalone: 'Naghma Quran is running in standalone installed mode.',
+    installedStandalone: 'Najm Quran is running in standalone installed mode.',
     downloadApkBtn: 'Download APK',
     downloadApkHeroCta: 'Download Android APK',
     downloadApkTitle: 'Android App (APK)',
-    downloadApkDesc: 'Download the native Android WebView APK for 100% offline reading and recitation.',
-    downloadApkCta: 'Download naghma-quran.apk',
-    downloadPageHeading: 'Naghma Quran for Android',
+    downloadApkDesc: 'Download the Android APK for offline reading, prayer times, and Qibla compass.',
+    downloadApkCta: 'Download najm-quran.apk',
+    downloadPageHeading: 'Najm Quran for Android',
     downloadPageSubheading:
-      'Carry the complete 604-page Madani Mushaf, Hafs & Warsh narrations, instant Hifz mask, and Adhkar sanctuary offline on Android.',
-    downloadVersionMeta: 'v1.0.0 · Free · 6.5 MB · 100% Offline',
-    downloadHighlightsTitle: 'Built for Distraction-Free Recitation',
+      'Carry the complete 604-page Madani Mushaf, Hafs & Warsh narrations, Prayer Times, Qibla compass, and Adhkar offline on Android.',
+    downloadVersionMeta: 'v2.1.0 · Free · 6.5 MB · Live OTA Updates',
+    downloadHighlightsTitle: 'Built for Serene Daily Recitation',
     downloadHighlight1: '604-Page Madani Mushaf with zero-gap Hafs & Warsh audio',
-    downloadHighlight2: 'Instant Arabic & English voice Hifz verification',
+    downloadHighlight2: 'Accurate Qibla Compass & astronomical Prayer Times',
     downloadHighlight3: 'Morning, Evening & Post-Prayer Adhkar with tactile Tasbih',
     downloadHighlight4: 'Smart Khatma planner with daily reminder alerts',
-    downloadAndroidStudioTitle: 'Ready for Capacitor & Android Studio',
+    downloadAndroidStudioTitle: 'Capacitor & Android Studio Ready',
     downloadAndroidStudioDesc:
-      'Includes preconfigured capacitor.config.json (com.naghmaquran.app) to build a signed APK locally in Android Studio.',
-    apkStep1: '1. Tap Download naghma-quran.apk to save the Android installer package.',
+      'Preconfigured capacitor.config.json (com.najmquran.app) with custom Najm Quran icons to build a signed APK in Android Studio.',
+    apkStep1: '1. Tap Download najm-quran.apk to save the Android installer package.',
     apkStep2: '2. Open the downloaded file and allow "Install unknown apps" for your browser if prompted.',
-    apkStep3: '3. Tap Install and launch Naghma Quran directly from your home screen.',
+    apkStep3: '3. Tap Install and launch Najm Quran directly from your home screen.',
     hifzMode: 'Hifz Mask',
     hifzActiveBanner: 'Hifz Mode · Tap any veiled Ayah to peek or recite aloud',
     hifzHintLabel: 'First-Word Hint',
@@ -396,7 +436,7 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     bentoSectionTitle: 'Daily Spiritual Workspace',
     bentoKhatmaTitle: 'Smart Khatma Planner',
     bentoKhatmaSubtitle: 'Adaptive daily target',
-    bentoAdhkarTitle: 'Adhkar Sabaa & Masaa',
+    bentoAdhkarTitle: 'Adhkar & Tasbih',
     bentoAdhkarSubtitle: 'Tap Tasbih & supplications',
     bentoTalqeenTitle: 'Talqeen Hifz',
     bentoTalqeenSubtitle: 'Listen & repeat pause loop',
@@ -446,35 +486,37 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     talqeenPromptPrefix: 'Repeat aloud · Next Ayah in',
     talqeenSkipPause: 'Next Now',
     talqeenSwitchAyahNote: 'Switch to an Ayah-by-Ayah reciter for verse-level Talqeen pauses.',
-    heartGuideTitle: 'Verses for Your Heart',
+    heartGuideTitle: 'Verses for Your Heart & Ruqyah',
     saveStoryCardBtn: 'Save Story Card',
     openInMushafBtn: 'Open in Mushaf',
-    storyCardReadyTitle: 'Emerald & Gold Story Card Exported',
+    storyCardReadyTitle: 'Desert Gold Story Card Exported',
     storyCardReadyDesc: '1080×1920 PNG saved locally for WhatsApp & Instagram',
     downloadPngAgain: 'Download PNG',
   },
   ar: {
-    appName: 'نَغمة القرآن',
+    appName: 'نَجم القرآن',
     navHome: 'الرئيسية',
     navSurahs: 'السور',
-    navMushaf: 'المصحف',
-    navAdhkar: 'الأذكار',
+    navMushaf: 'القرآن',
+    navQibla: 'القبلة',
+    navAdhkar: 'التسبيح',
     navKhatma: 'الختمة',
     navVault: 'المحفوظات',
     navMore: 'المزيد',
-    mobileMenuTitle: 'قائمة نَغمة',
+    mobileMenuTitle: 'قائمة نَجم القرآن',
     mobileThemeLabel: 'المظهر',
     mobileLangLabel: 'اللغة',
-    browseAllSurahsBtn: 'تصفح جميع السور (١١٤)',
+    browseAllSurahsBtn: 'تصفح السور',
     allJuzFilter: 'كل الأجزاء',
     langToggleLabel: 'EN',
-    themeToLight: 'التبديل إلى وضع المصحف النهاري',
-    themeToDark: 'التبديل إلى الوضع الزمردي الليلي',
+    themeToLight: 'التبديل إلى وضع الرمل الدافئ النهاري',
+    themeToDark: 'التبديل إلى الوضع الدافئ الليلي',
     offlineBanner: 'وضع عدم الاتصال — القراءة من الذاكرة المحلية للمصحف',
-    continueReading: 'أكمل القراءة · علامة الوقف',
-    beginRecitation: 'ابدأ التلاوة · علامة الوقف',
-    resumePage: 'متابعة الصفحة',
-    openMushafPage1: 'فتح المصحف · صفحة ١',
+    lastReadLabel: 'آخر قراءة',
+    continueReading: 'آخر قراءة',
+    beginRecitation: 'آخر قراءة',
+    resumePage: 'متابعة القراءة',
+    openMushafPage1: 'فتح القرآن',
     dailyWird: 'الورد اليومي · الكهف',
     searchBtn: 'بحث',
     narrationLabel: 'الرواية المعتمدة',
@@ -482,7 +524,7 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     warshLabel: 'ورش عن نافع',
     surahsCached: 'سور محفوظة',
     jumpToPageLabel: 'الانتقال إلى صفحة المصحف (١ – ٦٠٤)',
-    jumpPlaceholder: 'مثال: ١٢٨ أو 604',
+    jumpPlaceholder: 'صفحة ١–٦٠٤',
     goBtn: 'انتقال',
     quickOpen: 'وصول سريع:',
     tabSurahs: 'السور (١١٤)',
@@ -502,6 +544,22 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     noBookmarksDesc: 'اضغط على أي آية أثناء القراءة لحفظها والعودة إليها لاحقاً.',
     noSurahMatch: 'لا توجد سورة مطابقة للبحث.',
     offlineTag: 'محفوظة',
+    prayerTimesTitle: 'مواقيت الصلاة',
+    remainingTimeLabel: 'الوقت المتبقي',
+    smartFeaturesTitle: 'الأدوات الذكية',
+    featureReminder: 'التذكير',
+    featureMemorize: 'الحفظ',
+    featureRuqyah: 'الرقية والسكينة',
+    featureDuaQa: 'الأدعية والأذكار',
+    qiblaTitle: 'بوصلة القبلة',
+    qiblaAngleLabel: 'زاوية الجهاز نحو القبلة',
+    useGpsBtn: 'تحديد موقعي GPS',
+    selectCityLabel: 'المدينة',
+    compassCalibrationHint: 'أدر قرص البوصلة أو فعّل مستشعرات الجهاز',
+    modeQuran: 'القرآن',
+    modeSurah: 'سورة',
+    modeJuz: 'جزء',
+    modePage: 'صفحة',
     backToSurahs: 'العودة للسور',
     mushafPageMode: 'صفحات المصحف',
     surahViewMode: 'عرض السورة',
@@ -525,12 +583,13 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     nextSurah: 'السورة التالية',
     prevSurah: 'السورة السابقة',
     surahWord: 'سورة',
-    playFromHere: 'التلاوة من هنا',
-    bookmark: 'حفظ علامة',
-    bookmarked: 'تم الحفظ',
+    playFromHere: 'تشغيل',
+    bookmark: 'حفظ',
+    bookmarked: 'محفوظة',
     tafsir: 'التفسير',
     copy: 'نسخ',
     copied: 'تم النسخ',
+    shareWord: 'مشاركة',
     fullSurah: 'السورة كاملة',
     repeatOff: 'التكرار: متوقف',
     repeatAyah: 'تكرار الآية',
@@ -569,30 +628,30 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     savedAudioTitle: 'السور المحفوظة صوتياً',
     clearAllAudio: 'حذف جميع الصوتيات',
     noAudioSavedDesc: 'لا توجد تلاوات محملة بعد. يمكنك تحميل أي سورة للاستماع دون إنترنت.',
-    installAppTitle: 'تثبيت نَغمة القرآن (APK / PWA)',
-    installAppDesc: 'ثبّت تطبيق نَغمة القرآن على هاتفك الأندرويد أو الآيفون أو الحاسوب للعمل دون إنترنت.',
+    installAppTitle: 'تثبيت نَجم القرآن (APK / PWA)',
+    installAppDesc: 'ثبّت تطبيق نَجم القرآن على هاتفك الأندرويد أو الآيفون أو الحاسوب للعمل دون إنترنت.',
     installNowBtn: 'تثبيت كتطبيق ويب',
-    installedStandalone: 'تطبيق نَغمة القرآن يعمل الآن كتطبيق مثبت ومستقل.',
+    installedStandalone: 'تطبيق نَجم القرآن يعمل الآن كتطبيق مثبت ومستقل.',
     downloadApkBtn: 'تحميل APK',
     downloadApkHeroCta: 'تحميل تطبيق الأندرويد APK',
     downloadApkTitle: 'تطبيق أندرويد (APK)',
-    downloadApkDesc: 'حمّل ملف APK لتشغيل المصحف والتلاوة كـتطبيق أندرويد مستقل دون إنترنت.',
-    downloadApkCta: 'تنزيل naghma-quran.apk',
-    downloadPageHeading: 'نَغمة القرآن لأجهزة أندرويد',
+    downloadApkDesc: 'حمّل تطبيق أندرويد للاستماع وقراءة المصحف ومواقيت الصلاة والقبلة دون إنترنت.',
+    downloadApkCta: 'تنزيل najm-quran.apk',
+    downloadPageHeading: 'نَجم القرآن لأجهزة أندرويد',
     downloadPageSubheading:
-      'احمل مصحف المدينة (٦٠٤ صفحة) بروايتي حفص وورش مع وضع الحفظ والأذكار والختمة الذكية بالكامل دون اتصال.',
-    downloadVersionMeta: 'v1.0.0 · مجاني · 6.5 MB · يعمل دون إنترنت',
+      'احمل مصحف المدينة (٦٠٤ صفحة) بروايتي حفص وورش ومواقيت الصلاة وبوصلة القبلة والأذكار دون اتصال.',
+    downloadVersionMeta: 'v2.1.0 · مجاني · 6.5 MB · تحديث تلقائي مباشر',
     downloadHighlightsTitle: 'تجربة خاشعة ومتكاملة دون إنترنت',
     downloadHighlight1: 'مصحف المدينة المنورة (٦٠٤ صفحة) مع تلاوة متصلة بلا تقطع',
-    downloadHighlight2: 'إخفاء الآيات والتلقين والتسميع الصوتي بالذكاء المحلي',
+    downloadHighlight2: 'بوصلة القبلة الدقيقة ومواقيت الصلاة الفلكية',
     downloadHighlight3: 'أذكار الصباح والمساء وبعد الصلاة مع عدّاد تسبيح تفاعلي',
     downloadHighlight4: 'مُخطِّط الختمة الذكي مع تنبيهات الورد اليومي',
     downloadAndroidStudioTitle: 'جاهز للبناء عبر Capacitor و Android Studio',
     downloadAndroidStudioDesc:
-      'يتضمن المشروع ملف capacitor.config.json الجاهز لبناء ملف APK موقّع داخل Android Studio.',
-    apkStep1: '١. اضغط على «تنزيل naghma-quran.apk» لحفظ ملف التثبيت.',
+      'يتضمن المشروع ملف capacitor.config.json وأيقونات نَجم القرآن لبناء ملف APK موقّع داخل Android Studio.',
+    apkStep1: '١. اضغط على «تنزيل najm-quran.apk» لحفظ ملف التثبيت.',
     apkStep2: '٢. افتح الملف واسمح بتثبيت التطبيقات من هذا المتصفح عند الطلب.',
-    apkStep3: '٣. اضغط «تثبيت» وافتح نَغمة القرآن مباشرة من شاشتك الرئيسية.',
+    apkStep3: '٣. اضغط «تثبيت» وافتح نَجم القرآن مباشرة من شاشتك الرئيسية.',
     hifzMode: 'وضع الحفظ',
     hifzActiveBanner: 'وضع الحفظ · اضغط على أي آية مخفية للمراجعة أو ابدأ التسميع الصوتي',
     hifzHintLabel: 'إظهار أول كلمة',
@@ -616,11 +675,11 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     bentoSectionTitle: 'الواحة الإيمانية اليومية',
     bentoKhatmaTitle: 'مُخطِّط الختمة الذكي',
     bentoKhatmaSubtitle: 'تعديل تلقائي للأوراد اليومية',
-    bentoAdhkarTitle: 'أذكار الصباح والمساء',
+    bentoAdhkarTitle: 'الأذكار والتسبيح',
     bentoAdhkarSubtitle: 'عدّاد تسبيح تفاعلي دون اتصال',
     bentoTalqeenTitle: 'التلقين والحفظ',
     bentoTalqeenSubtitle: 'تكرار مع مهلة للترديد',
-    bentoHeartTitle: 'دليل الآيات للقلب',
+    bentoHeartTitle: 'دليل الآيات والرقية',
     bentoHeartSubtitle: 'حالات القلب وبطاقات القصص',
     khatmaTitle: 'مُخطِّط الختمة التكيفي الذكي',
     khatmaSubtitle: 'يُعيد حساب الصفحات المتبقية تلقائياً إذا تقدمت أو فاتك يوم',
@@ -666,7 +725,7 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     talqeenPromptPrefix: 'ردِّد الآن · الآية التالية خلال',
     talqeenSkipPause: 'تخطي المهلة',
     talqeenSwitchAyahNote: 'اختر قارئاً بنظام الآية لتفعيل مهلة التلقين بين الآيات.',
-    heartGuideTitle: 'دليل الآيات لقلبك',
+    heartGuideTitle: 'دليل الآيات لقلبك والرقية',
     saveStoryCardBtn: 'حفظ بطاقة قصة',
     openInMushafBtn: 'عرض في المصحف',
     storyCardReadyTitle: 'تم تصميم بطاقة القصة الذهبية',

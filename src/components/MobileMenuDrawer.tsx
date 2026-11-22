@@ -56,23 +56,23 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
       aria-modal="true"
       aria-label={t.mobileMenuTitle}
       data-testid="mobile-menu-drawer"
-      className="fixed inset-0 z-50 flex justify-end bg-black/55 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="w-[82%] max-w-xs h-full pt-safe-top pb-safe-bottom border-s border-[#B4891B]/20 dark:border-white/10 bg-[#FAF6EE] dark:bg-[#0E1318] shadow-2xl flex flex-col justify-between overflow-y-auto"
+        className="w-[82%] max-w-xs h-full pt-safe-top pb-safe-bottom border-s border-amber-500/20 bg-[#FDFBF7] dark:bg-[#1B1410] shadow-2xl flex flex-col justify-between overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="space-y-4">
           {/* Minimal Drawer Header */}
-          <div className="p-5 border-b border-[#B4891B]/12 dark:border-white/8 flex items-center justify-between gap-3">
+          <div className="p-5 border-b border-amber-500/12 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <NaghmaAppIconImg alt={t.appName} className="h-9 w-9 rounded-xl shrink-0" />
               <div>
-                <div className="font-bold text-sm text-[#1C1917] dark:text-[#F4F1EA]">
+                <div className="font-bold text-sm text-[#2D231E] dark:text-[#FAF5EE]">
                   {t.appName}
                 </div>
-                <div className="text-[11px] text-[#57534E] dark:text-[#9CA3AF] tabular-nums">
+                <div className="text-[11px] text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
                   v{currentVersion}
                 </div>
               </div>
@@ -81,14 +81,38 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
               type="button"
               onClick={onClose}
               aria-label={t.closeWord}
-              className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-xl text-[#57534E] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/8"
+              className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-xl text-[#6E5649] dark:text-[#D6C7B8] hover:bg-amber-500/10"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          {/* Clean Text-First Destinations (Zero Icon Clutter) */}
+          {/* Clean Text-First Destinations */}
           <div className="px-3.5 space-y-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onNavigate('surahs');
+              }}
+              className="w-full flex items-center justify-between rounded-2xl px-3.5 py-3 text-start text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:bg-amber-500/10 transition-colors"
+            >
+              <span>{t.navSurahs}</span>
+              <span className="text-xs text-[#6E5649] dark:text-[#D6C7B8]">›</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onNavigate('qibla');
+              }}
+              className="w-full flex items-center justify-between rounded-2xl px-3.5 py-3 text-start text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:bg-amber-500/10 transition-colors"
+            >
+              <span>{t.qiblaTitle}</span>
+              <span className="text-xs text-[#D97706] dark:text-[#FBBF24]">›</span>
+            </button>
+
             <button
               type="button"
               data-testid="drawer-adhkar-btn"
@@ -96,10 +120,10 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                 onClose();
                 onNavigate('adhkar');
               }}
-              className="w-full flex items-center justify-between rounded-xl px-3.5 py-3 text-start text-sm font-semibold text-[#1C1917] dark:text-[#F4F1EA] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              className="w-full flex items-center justify-between rounded-2xl px-3.5 py-3 text-start text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:bg-amber-500/10 transition-colors"
             >
               <span>{t.bentoAdhkarTitle}</span>
-              <span className="text-xs text-[#57534E] dark:text-[#9CA3AF]">›</span>
+              <span className="text-xs text-[#6E5649] dark:text-[#D6C7B8]">›</span>
             </button>
 
             <button
@@ -108,10 +132,10 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                 onClose();
                 onNavigate('khatma');
               }}
-              className="w-full flex items-center justify-between rounded-xl px-3.5 py-3 text-start text-sm font-semibold text-[#1C1917] dark:text-[#F4F1EA] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              className="w-full flex items-center justify-between rounded-2xl px-3.5 py-3 text-start text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:bg-amber-500/10 transition-colors"
             >
               <span>{t.bentoKhatmaTitle}</span>
-              <span className="text-xs font-semibold text-[#059669] dark:text-[#34D399] tabular-nums">
+              <span className="text-xs font-semibold text-[#D97706] dark:text-[#FBBF24] tabular-nums">
                 {numFmt(khatmaPercent)}%
               </span>
             </button>
@@ -122,10 +146,10 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                 onClose();
                 onOpenHeartGuide();
               }}
-              className="w-full flex items-center justify-between rounded-xl px-3.5 py-3 text-start text-sm font-semibold text-[#1C1917] dark:text-[#F4F1EA] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              className="w-full flex items-center justify-between rounded-2xl px-3.5 py-3 text-start text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:bg-amber-500/10 transition-colors"
             >
               <span>{t.bentoHeartTitle}</span>
-              <span className="text-xs text-[#57534E] dark:text-[#9CA3AF]">›</span>
+              <span className="text-xs text-[#6E5649] dark:text-[#D6C7B8]">›</span>
             </button>
 
             <button
@@ -134,10 +158,10 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                 onClose();
                 onNavigate('vault');
               }}
-              className="w-full flex items-center justify-between rounded-xl px-3.5 py-3 text-start text-sm font-semibold text-[#1C1917] dark:text-[#F4F1EA] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              className="w-full flex items-center justify-between rounded-2xl px-3.5 py-3 text-start text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:bg-amber-500/10 transition-colors"
             >
               <span>{t.navVault}</span>
-              <span className="text-xs text-[#57534E] dark:text-[#9CA3AF] tabular-nums">
+              <span className="text-xs text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
                 {numFmt(cachedSurahCount)}
               </span>
             </button>
@@ -150,7 +174,7 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                   onClose();
                   onNavigate('download');
                 }}
-                className="w-full flex items-center justify-between rounded-xl border border-[#D4AF37]/35 bg-[#D4AF37]/12 px-3.5 py-3 text-start text-sm font-bold text-[#9A6E10] dark:text-[#FDE68A]"
+                className="w-full flex items-center justify-between rounded-2xl border border-amber-500/30 bg-amber-500/12 px-3.5 py-3 text-start text-sm font-bold text-[#B45309] dark:text-[#FBBF24]"
               >
                 <span>{t.downloadApkHeroCta}</span>
                 <span className="text-xs">APK ›</span>
@@ -164,7 +188,7 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                   type="button"
                   data-testid="drawer-apply-update-btn"
                   onClick={onApplyUpdate}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#10B981] px-3.5 py-2.5 text-xs font-bold text-[#0A0D10]"
+                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#D97706] px-3.5 py-2.5 text-xs font-bold text-white"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
                   <span>
@@ -176,7 +200,7 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                   type="button"
                   data-testid="drawer-check-update-btn"
                   onClick={onCheckUpdates}
-                  className="w-full flex items-center justify-between rounded-xl border border-[#B4891B]/18 dark:border-white/10 px-3.5 py-2.5 text-xs font-medium text-[#57534E] dark:text-[#9CA3AF] hover:text-[#1C1917] dark:hover:text-[#F4F1EA]"
+                  className="w-full flex items-center justify-between rounded-2xl border border-amber-500/15 px-3.5 py-2.5 text-xs font-medium text-[#6E5649] dark:text-[#D6C7B8] hover:text-[#2D231E] dark:hover:text-[#FAF5EE]"
                 >
                   <span>{lang === 'ar' ? 'التحقق من التحديثات' : 'Check for Updates'}</span>
                   <span className="text-[11px]">
@@ -201,11 +225,11 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
         </div>
 
         {/* Footer Controls */}
-        <div className="p-4 border-t border-[#B4891B]/12 dark:border-white/8 grid grid-cols-2 gap-2.5">
+        <div className="p-4 border-t border-amber-500/12 grid grid-cols-2 gap-2.5">
           <button
             type="button"
             onClick={onToggleTheme}
-            className="rounded-xl border border-[#B4891B]/20 dark:border-white/12 bg-[#F4EFE4] dark:bg-[#11171D] py-2.5 px-3 text-xs font-semibold text-[#1C1917] dark:text-[#F4F1EA]"
+            className="rounded-2xl border border-amber-500/20 bg-white/80 dark:bg-[#241B15] py-2.5 px-3 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE]"
           >
             {theme === 'dark' ? (lang === 'ar' ? 'الوضع النهاري' : 'Light Mode') : (lang === 'ar' ? 'الوضع الليلي' : 'Dark Mode')}
           </button>
@@ -213,7 +237,7 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
           <button
             type="button"
             onClick={onToggleLang}
-            className="rounded-xl border border-[#B4891B]/20 dark:border-white/12 bg-[#F4EFE4] dark:bg-[#11171D] py-2.5 px-3 text-xs font-semibold text-[#1C1917] dark:text-[#F4F1EA]"
+            className="rounded-2xl border border-amber-500/20 bg-white/80 dark:bg-[#241B15] py-2.5 px-3 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE]"
           >
             {t.langToggleLabel}
           </button>

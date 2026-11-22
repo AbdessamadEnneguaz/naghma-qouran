@@ -14,7 +14,7 @@ export default defineConfig(() => {
         registerType: 'autoUpdate',
         includeAssets: [
           'icon.svg',
-          'naghma-app-icon.png',
+          'najm-app-icon.png',
           'apple-touch-icon.png',
           'pwa-192x192.png',
           'pwa-512x512.png',
@@ -22,12 +22,12 @@ export default defineConfig(() => {
         ],
         manifest: {
           id: '/',
-          name: 'Naghma Quran',
-          short_name: 'Naghma',
+          name: 'Najm Quran',
+          short_name: 'Najm',
           description:
-            'Offline-first Holy Quran & 604-page Madani Mushaf (نَغمة القرآن) with Hafs & Warsh narrations, 25+ reciters, and Tafsir Al-Muyassar.',
-          theme_color: '#0B0E11',
-          background_color: '#0B0E11',
+            'Offline-first Holy Quran, 604-page Madani Mushaf (نَجم القرآن), Prayer Times & Qibla Finder with Hafs & Warsh narrations.',
+          theme_color: '#FDFBF7',
+          background_color: '#FDFBF7',
           display: 'standalone',
           orientation: 'any',
           start_url: '/',
@@ -119,7 +119,7 @@ export default defineConfig(() => {
               res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
               res.end(
                 JSON.stringify({
-                  version: '2.0.0',
+                  version: '2.1.0',
                   buildId: devBuildId,
                   apkUrl: '/naghma-quran.apk',
                 })
@@ -128,7 +128,7 @@ export default defineConfig(() => {
             }
             if (req.url && /\.apk(\?.*)?$/i.test(req.url)) {
               res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-              res.setHeader('Content-Disposition', 'attachment; filename="naghma-quran.apk"');
+              res.setHeader('Content-Disposition', 'attachment; filename="najm-quran.apk"');
               res.setHeader('X-Content-Type-Options', 'nosniff');
             }
             next();
@@ -141,7 +141,7 @@ export default defineConfig(() => {
             }
             if (req.url && /\.apk(\?.*)?$/i.test(req.url)) {
               res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-              res.setHeader('Content-Disposition', 'attachment; filename="naghma-quran.apk"');
+              res.setHeader('Content-Disposition', 'attachment; filename="najm-quran.apk"');
               res.setHeader('X-Content-Type-Options', 'nosniff');
             }
             next();
@@ -165,7 +165,7 @@ export default defineConfig(() => {
             fs.writeFileSync(
               path.join(distDir, 'version.json'),
               JSON.stringify({
-                version: '2.0.0',
+                version: '2.1.0',
                 buildId: `prod-${Date.now()}`,
                 apkUrl: '/naghma-quran.apk',
               }),

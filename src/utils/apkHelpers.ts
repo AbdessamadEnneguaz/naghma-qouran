@@ -1,7 +1,7 @@
-export const DEFAULT_APK_FILENAME = 'naghma-quran.apk';
+export const DEFAULT_APK_FILENAME = 'najm-quran.apk';
 export const DEFAULT_APK_MIME = 'application/vnd.android.package-archive';
 export const DEFAULT_APK_SIZE_BYTES = 6830321;
-export const APP_VERSION = '2.0.0';
+export const APP_VERSION = '2.1.0';
 
 export function formatApkSizeMb(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) {

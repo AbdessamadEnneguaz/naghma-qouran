@@ -51,7 +51,6 @@ interface AudioPlayerBarProps {
   settings: ReaderSettings;
   offlineRecords: OfflineSurahRecord[];
   downloadProgress: {surah: number; completed: number; total: number} | null;
-  // Tarteel Focus, Hifz & Voice Follow props
   focusMode: boolean;
   hifzMode: boolean;
   isListening: boolean;
@@ -74,7 +73,6 @@ interface AudioPlayerBarProps {
   onChangeSleepTimer: (opt: SleepTimerOption) => void;
   onDownloadSurah: (surahMeta: SurahMeta) => void;
   onJumpToActiveAyah: () => void;
-  // Talqeen Memorization props
   talqeen: TalqeenConfig;
   talqeenCountdown: number | null;
   forceExpandSignal: number;
@@ -185,7 +183,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
 
   return (
     <div
-      className={`fixed bottom-[calc(3.625rem+env(safe-area-inset-bottom,0px))] md:bottom-0 left-0 right-0 z-40 transition-all duration-300 ${
+      className={`fixed bottom-[calc(4.6rem+env(safe-area-inset-bottom,0px))] md:bottom-0 left-0 right-0 z-30 transition-all duration-300 ${
         hideOnMobileIdle ? 'hidden md:block' : ''
       } ${
         focusMode
@@ -197,25 +195,25 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
       {(isListening || voiceError) && (
         <div className="mx-auto max-w-3xl px-3 mb-2">
           {voiceError ? (
-            <div className="rounded-xl border border-amber-500/35 bg-[#FAF6EE]/96 dark:bg-[#13181E]/96 backdrop-blur-md px-3.5 py-2.5 text-xs text-amber-700 dark:text-amber-300 shadow-lg flex items-center justify-between gap-2">
+            <div className="rounded-2xl border border-amber-500/35 bg-white/95 dark:bg-[#221914]/95 backdrop-blur-md px-3.5 py-2.5 text-xs text-[#B45309] dark:text-[#FBBF24] shadow-lg flex items-center justify-between gap-2">
               <span>{voiceError}</span>
               <button
                 type="button"
                 onClick={onClearVoiceError}
                 aria-label="Dismiss microphone notice"
-                className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 shrink-0"
+                className="p-1 rounded-lg hover:bg-amber-500/10 shrink-0"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>
           ) : (
-            <div className="rounded-xl border border-[#10B981]/35 bg-[#FAF6EE]/96 dark:bg-[#13181E]/96 backdrop-blur-md px-3.5 py-2 text-xs shadow-lg flex items-center justify-between gap-2">
+            <div className="rounded-2xl border border-amber-500/35 bg-white/95 dark:bg-[#221914]/95 backdrop-blur-md px-3.5 py-2 text-xs shadow-lg flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <span className="relative flex h-2.5 w-2.5 shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#10B981]" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F97316] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D97706]" />
                 </span>
-                <span className="font-semibold text-[#059669] dark:text-[#34D399] truncate">
+                <span className="font-semibold text-[#B45309] dark:text-[#FBBF24] truncate">
                   {hasMistakePulse
                     ? t.micSkippedHint
                     : interimText
@@ -224,7 +222,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                 </span>
               </div>
               <div className="flex items-center gap-2 shrink-0 tabular-nums">
-                <span className="text-[11px] font-semibold text-[#B4891B] dark:text-[#D4AF37]">
+                <span className="text-[11px] font-semibold text-[#4E3629] dark:text-[#D6C7B8]">
                   {lang === 'ar' ? toArabicDigits(matchedCount) : matchedCount} {t.micMatchedWords}
                 </span>
                 {matchedCount > 0 && (
@@ -233,7 +231,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                     onClick={onResetVoiceProgress}
                     title="Reset"
                     aria-label="Reset voice follow progress"
-                    className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/10 text-[#57534E] dark:text-[#9CA3AF]"
+                    className="p-1 rounded-md hover:bg-amber-500/10 text-[#6E5649] dark:text-[#D6C7B8]"
                   >
                     <RotateCcw className="h-3.5 w-3.5" />
                   </button>
@@ -247,8 +245,8 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
       {/* Talqeen Repeat-Aloud Pause Banner */}
       {talqeenCountdown !== null && (
         <div className="mx-auto max-w-3xl px-3 mb-2">
-          <div className="rounded-xl border border-[#D4AF37]/45 bg-[#FAF6EE]/96 dark:bg-[#11171D]/96 backdrop-blur-md px-3.5 py-2 text-xs shadow-lg flex items-center justify-between gap-2">
-            <span className="font-semibold text-[#B4891B] dark:text-[#D4AF37] tabular-nums">
+          <div className="rounded-2xl border border-amber-500/40 bg-white/95 dark:bg-[#221914]/95 backdrop-blur-md px-3.5 py-2 text-xs shadow-lg flex items-center justify-between gap-2">
+            <span className="font-semibold text-[#B45309] dark:text-[#FBBF24] tabular-nums">
               {t.talqeenPromptPrefix}{' '}
               {lang === 'ar'
                 ? `${toArabicDigits(talqeenCountdown)} ث`
@@ -257,7 +255,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
             <button
               type="button"
               onClick={onSkipTalqeenPause}
-              className="rounded-lg bg-[#D4AF37]/15 border border-[#D4AF37]/30 px-2.5 py-1 text-[11px] font-semibold text-[#B4891B] dark:text-[#D4AF37]"
+              className="rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-[11px] font-semibold text-[#B45309] dark:text-[#FBBF24]"
             >
               {t.talqeenSkipPause}
             </button>
@@ -265,12 +263,12 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
         </div>
       )}
 
-      {/* Main Dock Container */}
-      <div className="bg-[#FAF6EE]/96 dark:bg-[#0B0E11]/96 backdrop-blur-md border-t border-[#B4891B]/16 dark:border-white/10">
-        {/* Top Thin Audio Seek Bar */}
-        <div className="relative h-1 w-full bg-[#B4891B]/16 dark:bg-white/10">
+      {/* Warm Honey & Ivory Floating/Docked Audio Container */}
+      <div className="mx-2.5 md:mx-0 rounded-3xl md:rounded-none border md:border-x-0 md:border-b-0 border-amber-500/20 bg-white/94 dark:bg-[#1E1611]/95 backdrop-blur-md shadow-lg md:shadow-none overflow-hidden">
+        {/* Top Warm Sunset Audio Progress Bar */}
+        <div className="relative h-1 w-full bg-amber-500/15">
           <div
-            className="h-full bg-gradient-to-r from-[#D4AF37] to-[#10B981] transition-all duration-100"
+            className="h-full bg-gradient-to-r from-[#D97706] to-[#F97316] transition-all duration-100"
             style={{width: `${progressPct}%`}}
           />
           <input
@@ -287,14 +285,14 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
 
         {/* Expandable Settings & Reciter Drawer */}
         {expanded && (
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-4 border-b border-[#B4891B]/15 dark:border-white/8 space-y-4 max-h-[60vh] overflow-y-auto">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-4 border-b border-amber-500/12 space-y-4 max-h-[56vh] overflow-y-auto">
             {audioError && (
-              <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+              <p className="text-xs font-medium text-[#B45309] dark:text-[#FBBF24]">
                 {audioError}
               </p>
             )}
 
-            <div className="flex items-center justify-between text-xs text-[#57534E] dark:text-[#9CA3AF] tabular-nums">
+            <div className="flex items-center justify-between text-xs text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
               <span>
                 {t.elapsed}: {formatAudioTime(currentTime)}
               </span>
@@ -303,7 +301,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   type="button"
                   onClick={onPlayPrev}
                   aria-label={t.prevSurah}
-                  className="p-1.5 rounded-lg bg-[#F3ECE0] dark:bg-[#13181E] text-[#1C1917] dark:text-[#F4F1EA]"
+                  className="p-1.5 rounded-full bg-amber-500/12 text-[#B45309] dark:text-[#FBBF24]"
                 >
                   <SkipBack className="h-3.5 w-3.5" />
                 </button>
@@ -311,7 +309,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   type="button"
                   onClick={onPlayNext}
                   aria-label={t.nextSurah}
-                  className="p-1.5 rounded-lg bg-[#F3ECE0] dark:bg-[#13181E] text-[#1C1917] dark:text-[#F4F1EA]"
+                  className="p-1.5 rounded-full bg-amber-500/12 text-[#B45309] dark:text-[#FBBF24]"
                 >
                   <SkipForward className="h-3.5 w-3.5" />
                 </button>
@@ -326,7 +324,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
               <div className="space-y-1">
                 <label
                   htmlFor="dock-reciter-select"
-                  className="block text-[11px] font-semibold text-[#57534E] dark:text-[#9CA3AF]"
+                  className="block text-[11px] font-semibold text-[#6E5649] dark:text-[#D6C7B8]"
                 >
                   {t.reciterLabel} ({RECITERS.length})
                 </label>
@@ -334,7 +332,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   id="dock-reciter-select"
                   value={reciter.id}
                   onChange={(e) => onChangeReciter(e.target.value)}
-                  className="w-full rounded-xl border border-[#B4891B]/25 dark:border-white/14 bg-[#F3ECE0] dark:bg-[#13181E] px-3 py-2 text-xs font-medium text-[#1C1917] dark:text-[#F4F1EA] focus:outline-none focus:ring-2 focus:ring-[#10B981]"
+                  className="w-full rounded-xl border border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] px-3 py-2 text-xs font-medium text-[#2D231E] dark:text-[#FAF5EE] focus:outline-none focus:ring-2 focus:ring-[#D97706]"
                 >
                   <optgroup label={t.warshGroup}>
                     {warshReciters.map((r) => (
@@ -359,8 +357,8 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   onClick={onCycleLoopMode}
                   className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${
                     loopMode !== 'none'
-                      ? 'border-[#10B981] bg-[#10B981]/15 text-[#059669] dark:text-[#10B981]'
-                      : 'border-[#B4891B]/20 dark:border-white/14 bg-[#F3ECE0] dark:bg-[#13181E] text-[#1C1917] dark:text-[#F4F1EA]'
+                      ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
+                      : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] text-[#2D231E] dark:text-[#FAF5EE]'
                   }`}
                 >
                   {loopMode === 'ayah' ? (
@@ -380,7 +378,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                 <button
                   type="button"
                   onClick={nextSpeed}
-                  className="rounded-xl border border-[#B4891B]/20 dark:border-white/14 bg-[#F3ECE0] dark:bg-[#13181E] px-3 py-2 text-xs font-semibold text-[#1C1917] dark:text-[#F4F1EA] tabular-nums"
+                  className="rounded-xl border border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] px-3 py-2 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] tabular-nums"
                 >
                   {playbackSpeed}x
                 </button>
@@ -393,12 +391,12 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                     aria-label={isCurrentSurahOffline ? t.offlineReady : t.downloadSurahOffline}
                     className={`min-h-[34px] min-w-[34px] flex items-center justify-center rounded-xl border transition-colors ${
                       isCurrentSurahOffline
-                        ? 'border-[#10B981]/35 bg-[#10B981]/15 text-[#059669] dark:text-[#10B981]'
-                        : 'border-[#B4891B]/20 dark:border-white/14 bg-[#F3ECE0] dark:bg-[#13181E] text-[#1C1917] dark:text-[#F4F1EA]'
+                        ? 'border-[#D97706]/40 bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
+                        : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] text-[#2D231E] dark:text-[#FAF5EE]'
                     }`}
                   >
                     {isDownloadingCurrent ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-[#10B981]" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-[#D97706]" />
                     ) : isCurrentSurahOffline ? (
                       <Check className="h-3.5 w-3.5" />
                     ) : (
@@ -409,14 +407,14 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
               </div>
 
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-[#B4891B] dark:text-[#D4AF37] shrink-0" />
+                <Clock className="h-4 w-4 text-[#D97706] shrink-0" />
                 <select
                   aria-label={t.sleepTimerOff}
                   value={sleepTimer}
                   onChange={(e) =>
                     onChangeSleepTimer(Number(e.target.value) as SleepTimerOption)
                   }
-                  className="flex-1 rounded-xl border border-[#B4891B]/25 dark:border-white/14 bg-[#F3ECE0] dark:bg-[#13181E] px-3 py-2 text-xs font-medium text-[#1C1917] dark:text-[#F4F1EA] focus:outline-none focus:ring-2 focus:ring-[#10B981]"
+                  className="flex-1 rounded-xl border border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] px-3 py-2 text-xs font-medium text-[#2D231E] dark:text-[#FAF5EE] focus:outline-none focus:ring-2 focus:ring-[#D97706]"
                 >
                   <option value={0}>{t.sleepTimerOff}</option>
                   <option value={15}>15 {t.minutesUnit}</option>
@@ -426,7 +424,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   <option value={-1}>{t.endOfSurah}</option>
                 </select>
                 {sleepSecondsLeft > 0 && (
-                  <span className="text-xs font-semibold text-[#10B981] tabular-nums">
+                  <span className="text-xs font-semibold text-[#D97706] tabular-nums">
                     {formatAudioTime(sleepSecondsLeft)}
                   </span>
                 )}
@@ -434,11 +432,11 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
             </div>
 
             {/* Row 2: Typography & Display Controls */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-[#B4891B]/12 dark:border-white/8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-amber-500/12">
               <div className="space-y-1">
                 <label
                   htmlFor="dock-font-size"
-                  className="flex justify-between text-[11px] font-semibold text-[#57534E] dark:text-[#9CA3AF] tabular-nums"
+                  className="flex justify-between text-[11px] font-semibold text-[#6E5649] dark:text-[#D6C7B8] tabular-nums"
                 >
                   <span>{t.arabicFontSize}</span>
                   <span>{settings.fontSize}px</span>
@@ -451,14 +449,14 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   step={1}
                   value={settings.fontSize}
                   onChange={(e) => onUpdateSettings({fontSize: Number(e.target.value)})}
-                  className="w-full accent-[#10B981]"
+                  className="w-full accent-[#D97706]"
                 />
               </div>
 
               <div className="space-y-1">
                 <label
                   htmlFor="dock-line-height"
-                  className="flex justify-between text-[11px] font-semibold text-[#57534E] dark:text-[#9CA3AF] tabular-nums"
+                  className="flex justify-between text-[11px] font-semibold text-[#6E5649] dark:text-[#D6C7B8] tabular-nums"
                 >
                   <span>{t.lineSpacing}</span>
                   <span>{settings.lineHeight.toFixed(2)}</span>
@@ -471,7 +469,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   step={0.05}
                   value={settings.lineHeight}
                   onChange={(e) => onUpdateSettings({lineHeight: Number(e.target.value)})}
-                  className="w-full accent-[#10B981]"
+                  className="w-full accent-[#D97706]"
                 />
               </div>
 
@@ -481,8 +479,8 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   onClick={() => onUpdateSettings({font: 'amiri'})}
                   className={`py-2 px-2 rounded-xl text-xs font-medium border ${
                     settings.font === 'amiri'
-                      ? 'border-[#10B981] bg-[#10B981]/15 text-[#1C1917] dark:text-[#F4F1EA]'
-                      : 'border-transparent bg-[#F3ECE0] dark:bg-[#13181E] text-[#57534E] dark:text-[#9CA3AF]'
+                      ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
+                      : 'border-amber-500/15 bg-[#FDFBF7] dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
                   }`}
                 >
                   Amiri Quran
@@ -492,8 +490,8 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   onClick={() => onUpdateSettings({font: 'scheherazade'})}
                   className={`py-2 px-2 rounded-xl text-xs font-medium border ${
                     settings.font === 'scheherazade'
-                      ? 'border-[#10B981] bg-[#10B981]/15 text-[#1C1917] dark:text-[#F4F1EA]'
-                      : 'border-transparent bg-[#F3ECE0] dark:bg-[#13181E] text-[#57534E] dark:text-[#9CA3AF]'
+                      ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
+                      : 'border-amber-500/15 bg-[#FDFBF7] dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
                   }`}
                 >
                   Scheherazade
@@ -505,21 +503,21 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                 onClick={() => onUpdateSettings({showTranslation: !settings.showTranslation})}
                 className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-colors ${
                   settings.showTranslation
-                    ? 'border-[#10B981] bg-[#10B981]/15 text-[#059669] dark:text-[#10B981]'
-                    : 'border-[#B4891B]/20 dark:border-white/14 bg-[#F3ECE0] dark:bg-[#13181E] text-[#57534E] dark:text-[#9CA3AF]'
+                    ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
+                    : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
                 }`}
               >
                 {settings.showTranslation ? t.translationVisible : t.translationHidden}
               </button>
             </div>
 
-            {/* Row 2B: Instant Verse Timing Sync Nudge (-0.5s / +0.5s) & Fine Offset (-5.0s to +5.0s) */}
-            <div className="pt-2.5 border-t border-[#B4891B]/12 dark:border-white/8 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-              <div className="flex items-center justify-between sm:min-w-[220px] gap-2 text-[11px] font-semibold text-[#57534E] dark:text-[#9CA3AF] tabular-nums">
+            {/* Row 2B: Verse Timing Sync Fine Offset */}
+            <div className="pt-2.5 border-t border-amber-500/12 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <div className="flex items-center justify-between sm:min-w-[220px] gap-2 text-[11px] font-semibold text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
                 <label htmlFor="dock-sync-offset">{t.audioSyncOffsetLabel}</label>
                 <span
                   data-testid="sync-offset-readout"
-                  className="text-[#B4891B] dark:text-[#D4AF37]"
+                  className="text-[#B45309] dark:text-[#FBBF24]"
                 >
                   {settings.audioSyncOffsetSec > 0 ? '+' : ''}
                   {settings.audioSyncOffsetSec.toFixed(1)}s
@@ -537,7 +535,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                     onUpdateSettings({audioSyncOffsetSec: next});
                   }}
                   aria-label="Sync offset minus 0.5 seconds"
-                  className="rounded-lg border border-[#B4891B]/25 dark:border-white/14 bg-[#F3ECE0] dark:bg-[#13181E] px-2.5 py-1 text-[11px] font-semibold text-[#1C1917] dark:text-[#F4F1EA] hover:border-[#10B981] transition-colors shrink-0 tabular-nums"
+                  className="rounded-lg border border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] px-2.5 py-1 text-[11px] font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] transition-colors shrink-0 tabular-nums"
                 >
                   -0.5s
                 </button>
@@ -554,7 +552,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                     })
                   }
                   aria-label={t.audioSyncOffsetLabel}
-                  className="w-full accent-[#10B981]"
+                  className="w-full accent-[#D97706]"
                 />
                 <button
                   type="button"
@@ -567,7 +565,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                     onUpdateSettings({audioSyncOffsetSec: next});
                   }}
                   aria-label="Sync offset plus 0.5 seconds"
-                  className="rounded-lg border border-[#B4891B]/25 dark:border-white/14 bg-[#F3ECE0] dark:bg-[#13181E] px-2.5 py-1 text-[11px] font-semibold text-[#1C1917] dark:text-[#F4F1EA] hover:border-[#10B981] transition-colors shrink-0 tabular-nums"
+                  className="rounded-lg border border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] px-2.5 py-1 text-[11px] font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] transition-colors shrink-0 tabular-nums"
                 >
                   +0.5s
                 </button>
@@ -576,7 +574,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                     type="button"
                     data-testid="sync-nudge-reset"
                     onClick={() => onUpdateSettings({audioSyncOffsetSec: 0})}
-                    className="rounded-lg border border-[#B4891B]/25 dark:border-white/14 px-2 py-1 text-[11px] font-semibold text-[#57534E] dark:text-[#9CA3AF] hover:text-[#1C1917] dark:hover:text-[#F4F1EA] shrink-0"
+                    className="rounded-lg border border-amber-500/20 px-2 py-1 text-[11px] font-semibold text-[#6E5649] dark:text-[#D6C7B8] hover:text-[#2D231E] shrink-0"
                   >
                     {t.resetOffsetLabel}
                   </button>
@@ -584,14 +582,14 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
               </div>
             </div>
 
-            {/* Row 3: Talqeen Memorization Mode (Listen & Repeat with Pause) */}
-            <div className="pt-3 border-t border-[#B4891B]/12 dark:border-white/8 space-y-2.5">
+            {/* Row 3: Talqeen Memorization Mode */}
+            <div className="pt-3 border-t border-amber-500/12 space-y-2.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <div className="text-xs font-semibold text-[#1C1917] dark:text-[#F4F1EA]">
+                  <div className="text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE]">
                     {t.talqeenTitle}
                   </div>
-                  <p className="text-[11px] text-[#57534E] dark:text-[#9CA3AF]">
+                  <p className="text-[11px] text-[#6E5649] dark:text-[#D6C7B8]">
                     {reciter.mode === 'ayah' ? t.talqeenDesc : t.talqeenSwitchAyahNote}
                   </p>
                 </div>
@@ -605,10 +603,10 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                     }
                     onUpdateTalqeen({enabled: nextEnabled});
                   }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors whitespace-nowrap ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors whitespace-nowrap ${
                     talqeen.enabled
-                      ? 'border-[#D4AF37] bg-[#D4AF37]/20 text-[#B4891B] dark:text-[#FDE68A]'
-                      : 'border-[#B4891B]/22 dark:border-white/14 bg-[#F3ECE0] dark:bg-[#13181E] text-[#57534E] dark:text-[#9CA3AF]'
+                      ? 'border-[#D97706] bg-amber-500/18 text-[#B45309] dark:text-[#FBBF24]'
+                      : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
                   }`}
                 >
                   {talqeen.enabled ? t.talqeenEnabled : t.talqeenOff}
@@ -617,7 +615,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
 
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2 text-xs tabular-nums">
-                  <span className="font-semibold text-[#57534E] dark:text-[#9CA3AF]">
+                  <span className="font-semibold text-[#6E5649] dark:text-[#D6C7B8]">
                     {t.talqeenRangeLabel}:
                   </span>
                   <input
@@ -634,9 +632,9 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                       })
                     }
                     aria-label="Talqeen start ayah"
-                    className="w-16 rounded-lg border border-[#B4891B]/25 dark:border-white/14 bg-[#FAF6EE] dark:bg-[#0B0E11] px-2 py-1 text-xs font-semibold text-[#1C1917] dark:text-[#F4F1EA]"
+                    className="w-16 rounded-lg border border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] px-2 py-1 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE]"
                   />
-                  <span className="text-[#57534E] dark:text-[#9CA3AF]">{t.talqeenToWord}</span>
+                  <span className="text-[#6E5649] dark:text-[#D6C7B8]">{t.talqeenToWord}</span>
                   <input
                     type="number"
                     min={talqeen.startAyah}
@@ -654,12 +652,12 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                       })
                     }
                     aria-label="Talqeen end ayah"
-                    className="w-16 rounded-lg border border-[#B4891B]/25 dark:border-white/14 bg-[#FAF6EE] dark:bg-[#0B0E11] px-2 py-1 text-xs font-semibold text-[#1C1917] dark:text-[#F4F1EA]"
+                    className="w-16 rounded-lg border border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] px-2 py-1 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE]"
                   />
                 </div>
 
                 <div className="flex items-center gap-1.5 text-xs">
-                  <span className="font-semibold text-[#57534E] dark:text-[#9CA3AF]">
+                  <span className="font-semibold text-[#6E5649] dark:text-[#D6C7B8]">
                     {t.talqeenPauseLabel}:
                   </span>
                   {([3, 5, 8] as const).map((sec) => (
@@ -667,10 +665,10 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                       key={sec}
                       type="button"
                       onClick={() => onUpdateTalqeen({pauseSeconds: sec})}
-                      className={`px-2.5 py-1 rounded-lg border text-xs font-semibold tabular-nums transition-colors ${
+                      className={`px-2.5 py-1 rounded-full border text-xs font-semibold tabular-nums transition-colors ${
                         talqeen.pauseSeconds === sec
-                          ? 'border-[#10B981] bg-[#10B981]/15 text-[#059669] dark:text-[#34D399]'
-                          : 'border-[#B4891B]/20 dark:border-white/12 bg-[#F3ECE0] dark:bg-[#13181E] text-[#57534E] dark:text-[#9CA3AF]'
+                          ? 'border-[#D97706] bg-amber-500/18 text-[#B45309] dark:text-[#FBBF24]'
+                          : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
                       }`}
                     >
                       {lang === 'ar' ? `${toArabicDigits(sec)}ث` : `${sec}s`}
@@ -681,12 +679,12 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
             </div>
 
             {!isInstalled && onOpenInstall && (
-              <div className="pt-3 border-t border-[#B4891B]/12 dark:border-white/8 flex items-center justify-between gap-3">
+              <div className="pt-3 border-t border-amber-500/12 flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="text-xs font-semibold text-[#1C1917] dark:text-[#F4F1EA]">
+                  <div className="text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE]">
                     {t.downloadApkTitle}
                   </div>
-                  <p className="text-[11px] text-[#57534E] dark:text-[#9CA3AF] truncate">
+                  <p className="text-[11px] text-[#6E5649] dark:text-[#D6C7B8] truncate">
                     {t.downloadApkDesc}
                   </p>
                 </div>
@@ -697,7 +695,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                     setExpanded(false);
                     onOpenInstall();
                   }}
-                  className="shrink-0 inline-flex items-center gap-1.5 rounded-xl border border-[#10B981]/35 bg-[#10B981]/12 px-3 py-1.5 text-xs font-semibold text-[#059669] dark:text-[#34D399] hover:bg-[#10B981]/20 transition-colors whitespace-nowrap"
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-amber-500/35 bg-amber-500/12 px-3 py-1.5 text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] hover:bg-amber-500/20 transition-colors whitespace-nowrap"
                 >
                   <Smartphone className="h-3.5 w-3.5" />
                   <span>{t.downloadApkBtn}</span>
@@ -707,15 +705,14 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
           </div>
         )}
 
-        {/* Streamlined Tarteel-Style Bottom Dock: Play Reciter | Mic Recite | Hifz Mask | Settings/Reciter */}
-        <div className="mx-auto max-w-5xl px-2.5 sm:px-6 h-[60px] sm:h-[62px] flex items-center justify-between gap-1.5 sm:gap-4">
-          {/* 1. Play Reciter & Active Ayah */}
-          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+        {/* Main Compact Player Bar */}
+        <div className="mx-auto max-w-5xl px-3 sm:px-6 h-[56px] sm:h-[60px] flex items-center justify-between gap-1.5 sm:gap-4">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             <button
               type="button"
               onClick={onTogglePlayPause}
               aria-label={isPlaying ? t.pauseReciter : t.playReciter}
-              className="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-full bg-[#10B981]/15 border border-[#10B981]/35 text-[#059669] dark:text-[#10B981] hover:bg-[#10B981]/25 transition-colors shrink-0"
+              className="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-full bg-[#D97706] text-white shadow-sm hover:bg-[#B45309] transition-colors shrink-0"
             >
               {isBuffering ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -729,10 +726,10 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
             <button
               type="button"
               onClick={onJumpToActiveAyah}
-              className="min-w-0 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10B981] rounded-lg px-0.5 sm:px-1"
+              className="min-w-0 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D97706] rounded-lg px-0.5 sm:px-1"
             >
               <div
-                className={`font-semibold text-[#1C1917] dark:text-[#F4F1EA] truncate tabular-nums ${
+                className={`font-semibold text-[#2D231E] dark:text-[#FAF5EE] truncate tabular-nums ${
                   lang === 'ar'
                     ? 'font-quran-scheherazade text-sm sm:text-base'
                     : 'text-xs sm:text-sm'
@@ -740,29 +737,28 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
               >
                 {surahTitle} · {ayahBadge}
               </div>
-              <div className="hidden sm:block text-[11px] text-[#57534E] dark:text-[#9CA3AF] truncate">
+              <div className="hidden sm:block text-[11px] text-[#6E5649] dark:text-[#D6C7B8] truncate">
                 {lang === 'ar' ? reciter.nameAr : reciter.nameEn}
               </div>
             </button>
           </div>
 
-          {/* 2. Spotlight Center Controls: Mic Recite & Hifz Mask */}
-          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             <button
               type="button"
               onClick={onToggleVoiceRecite}
               aria-pressed={isListening}
               aria-label={isListening ? t.micStop : t.micRecite}
-              className={`relative h-11 w-11 sm:h-12 sm:w-12 -mt-2.5 sm:-mt-3 flex items-center justify-center rounded-full shadow-lg transition-all ${
+              className={`h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-full shadow-sm transition-all ${
                 isListening
-                  ? 'bg-rose-500 text-white ring-4 ring-rose-500/30 scale-105'
-                  : 'bg-[#059669] dark:bg-[#10B981] text-white dark:text-[#0B0E11] hover:scale-105'
+                  ? 'bg-rose-500 text-white ring-4 ring-rose-500/25'
+                  : 'bg-amber-500/15 border border-amber-500/30 text-[#B45309] dark:text-[#FBBF24] hover:bg-amber-500/25'
               }`}
             >
               {isListening ? (
-                <MicOff className="h-5 w-5" />
+                <MicOff className="h-4 w-4" />
               ) : (
-                <Mic className="h-5 w-5" />
+                <Mic className="h-4 w-4" />
               )}
             </button>
 
@@ -771,10 +767,10 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
               onClick={onToggleHifzMode}
               aria-pressed={hifzMode}
               aria-label={t.hifzMode}
-              className={`h-9 px-2.5 sm:px-3.5 inline-flex items-center gap-1.5 rounded-xl border text-xs font-semibold transition-colors whitespace-nowrap ${
+              className={`h-9 px-2.5 sm:px-3.5 inline-flex items-center gap-1.5 rounded-full border text-xs font-semibold transition-colors whitespace-nowrap ${
                 hifzMode
-                  ? 'border-[#D4AF37] bg-[#D4AF37]/18 text-[#B4891B] dark:text-[#FDE68A]'
-                  : 'border-[#B4891B]/22 dark:border-white/14 bg-[#F3ECE0]/70 dark:bg-[#13181E] text-[#1C1917] dark:text-[#F4F1EA] hover:border-[#D4AF37]'
+                  ? 'border-[#D97706] bg-amber-500/18 text-[#B45309] dark:text-[#FBBF24]'
+                  : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#221914] text-[#4E3629] dark:text-[#D6C7B8]'
               }`}
             >
               {hifzMode ? (
@@ -786,13 +782,12 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
             </button>
           </div>
 
-          {/* 3. End: Quick Reciter Select (Desktop) + Settings Toggle */}
           <div className="flex items-center justify-end gap-1.5 sm:gap-2 flex-1 min-w-0">
             <select
               aria-label={t.reciterLabel}
               value={reciter.id}
               onChange={(e) => onChangeReciter(e.target.value)}
-              className="hidden md:block w-40 lg:w-48 rounded-xl border border-[#B4891B]/22 dark:border-white/14 bg-[#F3ECE0] dark:bg-[#13181E] px-2.5 py-1.5 text-xs font-medium text-[#1C1917] dark:text-[#F4F1EA] focus:outline-none focus:ring-2 focus:ring-[#10B981] truncate"
+              className="hidden md:block w-40 lg:w-48 rounded-full border border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] px-3 py-1.5 text-xs font-medium text-[#2D231E] dark:text-[#FAF5EE] focus:outline-none focus:ring-2 focus:ring-[#D97706] truncate"
             >
               <optgroup label={t.warshGroup}>
                 {warshReciters.map((r) => (
@@ -815,10 +810,10 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
               onClick={() => setExpanded((e) => !e)}
               aria-expanded={expanded}
               aria-label={t.settingsBtn}
-              className={`h-9 px-2.5 sm:px-3 inline-flex items-center gap-1.5 rounded-xl border text-xs font-semibold transition-colors shrink-0 ${
+              className={`h-9 px-2.5 sm:px-3 inline-flex items-center gap-1.5 rounded-full border text-xs font-semibold transition-colors shrink-0 ${
                 expanded
-                  ? 'border-[#10B981] bg-[#10B981]/15 text-[#059669] dark:text-[#10B981]'
-                  : 'border-[#B4891B]/20 dark:border-white/14 bg-[#F3ECE0]/70 dark:bg-[#13181E] text-[#57534E] dark:text-[#9CA3AF] hover:text-[#1C1917] dark:hover:text-[#F4F1EA]'
+                  ? 'border-[#D97706] bg-amber-500/18 text-[#B45309] dark:text-[#FBBF24]'
+                  : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#221914] text-[#6E5649] dark:text-[#D6C7B8]'
               }`}
             >
               <SlidersHorizontal className="h-4 w-4" />

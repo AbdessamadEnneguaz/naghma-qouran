@@ -56,6 +56,7 @@ import {Header} from './components/Header';
 import {HomeView} from './components/HomeView';
 import {MushafView} from './components/MushafView';
 import {SurahsPage} from './components/SurahsPage';
+import {QiblaPage} from './components/QiblaPage';
 import {AdhkarPage} from './components/AdhkarPage';
 import {KhatmaPage} from './components/KhatmaPage';
 import {DownloadApkPage} from './components/DownloadApkPage';
@@ -70,7 +71,7 @@ import {HeartGuideModal} from './components/HeartGuideModal';
 import {SplashScreen} from './components/SplashScreen';
 
 const DEFAULT_SETTINGS: ReaderSettings = {
-  theme: 'dark',
+  theme: 'light',
   riwayat: 'hafs',
   font: 'amiri',
   fontSize: 26,
@@ -84,7 +85,10 @@ const DEFAULT_SETTINGS: ReaderSettings = {
 
 function getInitialLang(): AppLang {
   try {
-    const saved = localStorage.getItem('naghma_lang') || localStorage.getItem('noor_lang');
+    const saved =
+      localStorage.getItem('najm_lang') ||
+      localStorage.getItem('naghma_lang') ||
+      localStorage.getItem('noor_lang');
     if (saved === 'ar' || saved === 'en') return saved;
   } catch {
     // ignore storage access issues
@@ -231,6 +235,7 @@ export default function App() {
         const mergedSettings: ReaderSettings = {
           ...DEFAULT_SETTINGS,
           ...savedSettings,
+          theme: savedSettings.theme || 'light',
           audioSyncOffsetSec: loadReciterSyncOffset(reciterId),
           readerMode: 'mushaf',
         };
@@ -290,9 +295,14 @@ export default function App() {
       root.classList.remove('dark');
       root.style.colorScheme = 'light';
     }
+    try {
+      localStorage.setItem('najm_theme', settings.theme);
+    } catch {
+      // ignore storage errors
+    }
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {
-      metaTheme.setAttribute('content', settings.theme === 'dark' ? '#0B0E11' : '#FAF6EE');
+      metaTheme.setAttribute('content', settings.theme === 'dark' ? '#17110D' : '#FDFBF7');
     }
   }, [settings.theme]);
 
@@ -302,7 +312,7 @@ export default function App() {
     root.lang = lang;
     root.dir = lang === 'ar' ? 'rtl' : 'ltr';
     try {
-      localStorage.setItem('naghma_lang', lang);
+      localStorage.setItem('najm_lang', lang);
     } catch {
       // ignore storage errors
     }
@@ -376,7 +386,7 @@ export default function App() {
     t,
   });
 
-  // Sync reader page & highlight when audio advances verse-by-verse (auto-flips to currentPage + 1)
+  // Sync reader page & highlight when audio advances verse-by-verse
   const handleAudioVerseChange = useCallback(
     (verse: QuranVerse) => {
       setHighlightedAyahKey(`${verse.surah}:${verse.ayah}`);
@@ -396,12 +406,10 @@ export default function App() {
     onActiveVerseChange: handleAudioVerseChange,
   });
 
-  // Reset per-page Hifz peeks when switching page
   useEffect(() => {
     setRevealedAyahKeys(new Set());
   }, [activePageKey]);
 
-  // Navigation handlers
   const openPage = useCallback(
     (page: number) => {
       const clamped = clampPage(page);
@@ -517,7 +525,7 @@ export default function App() {
     await refreshVaultStats();
   }, [refreshVaultStats]);
 
-  // Keyboard shortcuts: Cmd/Ctrl+K search, ArrowLeft/Right page turn, Escape exits Focus/Menu
+  // Keyboard shortcuts
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -575,13 +583,13 @@ export default function App() {
     return (
       <>
         <SplashScreen isDataReady={false} />
-        <div className="min-h-screen bg-[#FAF6EE] dark:bg-[#0B0E11] flex flex-col items-center justify-center gap-4 p-6">
-          <Loader2 className="h-8 w-8 animate-spin text-[#10B981]" />
+        <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#17110D] flex flex-col items-center justify-center gap-4 p-6">
+          <Loader2 className="h-8 w-8 animate-spin text-[#D97706]" />
           <div className="text-center space-y-1">
-            <p className="font-quran-scheherazade text-2xl text-[#B4891B] dark:text-[#D4AF37]">
-              نَغمة القرآن · المصحف الشريف
+            <p className="font-quran-scheherazade text-2xl text-[#B45309] dark:text-[#FBBF24]">
+              نَجم القرآن · المصحف الشريف
             </p>
-            <p className="text-xs text-[#57534E] dark:text-[#9CA3AF]">
+            <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8]">
               {lang === 'ar'
                 ? 'جارٍ تهيئة المصحف الشريف للعمل دون اتصال...'
                 : 'Preparing offline Quran vault in IndexedDB...'}
@@ -594,13 +602,13 @@ export default function App() {
 
   if (loadError) {
     return (
-      <div className="min-h-screen bg-[#FAF6EE] dark:bg-[#0B0E11] flex flex-col items-center justify-center gap-3 p-6 text-center">
-        <AlertCircle className="h-8 w-8 text-red-500" />
-        <p className="text-sm font-semibold text-[#1C1917] dark:text-[#F4F1EA]">{loadError}</p>
+      <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#17110D] flex flex-col items-center justify-center gap-3 p-6 text-center">
+        <AlertCircle className="h-8 w-8 text-rose-500" />
+        <p className="text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE]">{loadError}</p>
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="rounded-xl bg-[#059669] dark:bg-[#10B981] px-4 py-2 text-xs font-semibold text-white dark:text-[#0B0E11]"
+          className="rounded-full bg-[#D97706] px-5 py-2 text-xs font-semibold text-white"
         >
           {lang === 'ar' ? 'إعادة المحاولة' : 'Retry'}
         </button>
@@ -613,7 +621,7 @@ export default function App() {
     activeRoute !== 'mushaf' && !player.hasStarted && !player.isPlaying && !voice.isListening;
 
   return (
-    <div className="min-h-screen bg-[#FAF6EE] dark:bg-[#0B0E11] text-[#1C1917] dark:text-[#F4F1EA] transition-colors">
+    <div className="min-h-screen text-[#2D231E] dark:text-[#FAF5EE] transition-colors">
       <SplashScreen isDataReady={!loading} />
       <Header
         activeRoute={activeRoute}
@@ -631,7 +639,7 @@ export default function App() {
         <div
           role="status"
           data-testid="ota-update-banner"
-          className="bg-[#10B981]/14 border-b border-[#10B981]/25 px-4 py-2 text-xs font-semibold text-[#059669] dark:text-[#34D399] flex items-center justify-center gap-3"
+          className="bg-amber-500/14 border-b border-amber-500/25 px-4 py-2 text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] flex items-center justify-center gap-3"
         >
           <span>
             {lang === 'ar' ? 'يتوفر تحديث جديد للتطبيق' : 'A new update is ready'}
@@ -639,7 +647,7 @@ export default function App() {
           <button
             type="button"
             onClick={() => void updater.applyUpdateNow()}
-            className="inline-flex items-center gap-1 rounded-lg bg-[#059669] dark:bg-[#10B981] px-2.5 py-1 text-[11px] font-bold text-white dark:text-[#0B0E11] hover:opacity-90"
+            className="inline-flex items-center gap-1 rounded-full bg-[#D97706] px-3 py-1 text-[11px] font-bold text-white hover:opacity-90"
           >
             <RefreshCw className="h-3 w-3" />
             <span>{lang === 'ar' ? 'تحديث الآن' : 'Update Now'}</span>
@@ -656,7 +664,7 @@ export default function App() {
       )}
 
       {!isOnline && !isMushafFocus && (
-        <div className="bg-[#D4AF37]/15 border-b border-[#D4AF37]/25 px-4 py-1.5 text-center text-xs font-medium text-[#B4891B] dark:text-[#D4AF37] flex items-center justify-center gap-2">
+        <div className="bg-amber-500/12 border-b border-amber-500/20 px-4 py-1.5 text-center text-xs font-medium text-[#B45309] dark:text-[#FBBF24] flex items-center justify-center gap-2">
           <WifiOff className="h-3.5 w-3.5" />
           <span>{t.offlineBanner}</span>
         </div>
@@ -666,16 +674,16 @@ export default function App() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed top-16 end-3 sm:end-6 z-50 w-[calc(100%-1.5rem)] max-w-sm rounded-2xl border border-[#10B981]/40 bg-[#FAF6EE]/96 dark:bg-[#11171D]/96 backdrop-blur-md p-3.5 shadow-2xl flex items-start gap-3"
+          className="fixed top-16 end-3 sm:end-6 z-50 w-[calc(100%-1.5rem)] max-w-sm rounded-3xl border border-amber-500/30 bg-white/95 dark:bg-[#211914]/95 backdrop-blur-md p-3.5 shadow-2xl flex items-start gap-3"
         >
-          <div className="h-8 w-8 rounded-xl bg-[#10B981]/15 text-[#059669] dark:text-[#10B981] flex items-center justify-center shrink-0">
+          <div className="h-8 w-8 rounded-2xl bg-amber-500/15 text-[#D97706] flex items-center justify-center shrink-0">
             <Bell className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1 space-y-0.5">
-            <p className="text-xs font-bold text-[#1C1917] dark:text-[#F4F1EA]">
+            <p className="text-xs font-bold text-[#2D231E] dark:text-[#FAF5EE]">
               {khatma.toastPreview.title}
             </p>
-            <p className="text-xs text-[#57534E] dark:text-[#D6D3C9] leading-relaxed">
+            <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8] leading-relaxed">
               {khatma.toastPreview.body}
             </p>
           </div>
@@ -683,7 +691,7 @@ export default function App() {
             type="button"
             onClick={khatma.dismissToast}
             aria-label={t.closeWord}
-            className="p-1 rounded-lg text-[#57534E] dark:text-[#9CA3AF] hover:text-[#1C1917] dark:hover:text-[#F4F1EA]"
+            className="p-1 rounded-full text-[#6E5649] hover:text-[#2D231E]"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -741,6 +749,8 @@ export default function App() {
             onRemoveBookmark={handleRemoveBookmark}
           />
         )}
+
+        {activeRoute === 'qibla' && <QiblaPage lang={lang} t={t} />}
 
         {activeRoute === 'adhkar' && <AdhkarPage lang={lang} t={t} />}
 

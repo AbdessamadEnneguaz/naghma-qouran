@@ -18,6 +18,12 @@
   body {
     overscroll-behavior-y: contain;
     overflow-x: hidden;
+    background-image: linear-gradient(180deg, #FDFBF7 0%, #FAF5EE 100%);
+    background-attachment: fixed;
+  }
+
+  html.dark body {
+    background-image: linear-gradient(180deg, #17110D 0%, #110C09 100%);
   }
 }
 
@@ -30,23 +36,6 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Tactile 3D Icon Pedestal for Bento & Navigation Tiles */
-.icon-3d-gold {
-  background: linear-gradient(145deg, rgba(247, 217, 118, 0.24) 0%, rgba(180, 137, 27, 0.08) 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 244, 196, 0.42),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.25),
-    0 6px 14px -4px rgba(180, 137, 27, 0.28);
-}
-
-.icon-3d-emerald {
-  background: linear-gradient(145deg, rgba(52, 211, 153, 0.24) 0%, rgba(5, 150, 105, 0.08) 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(167, 243, 208, 0.36),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.25),
-    0 6px 14px -4px rgba(16, 185, 129, 0.28);
-}
-
 /* Enforce 100% connected Arabic glyph shaping and OpenType diacritic positioning */
 .font-quran-amiri,
 .font-quran-scheherazade {
@@ -56,18 +45,18 @@
   word-spacing: normal;
 }
 
-/* Responsive mobile-first Mushaf script proportions (22-24px / 2.25 on mobile, user slider on desktop) */
+/* Responsive mobile-first Mushaf script proportions */
 .mushaf-script-flow {
-  font-size: clamp(18px, calc(var(--q-size, 26px) - 3px), 34px);
-  line-height: clamp(1.85, calc(var(--q-lh, 2.4) - 0.15), 2.55);
+  font-size: clamp(20px, calc(var(--q-size, 26px) - 2px), 36px);
+  line-height: clamp(2.05, calc(var(--q-lh, 2.4) - 0.1), 2.65);
   letter-spacing: 0 !important;
   word-spacing: normal;
 }
 
 @media (min-width: 640px) {
   .mushaf-script-flow {
-    font-size: var(--q-size, 26px);
-    line-height: var(--q-lh, 2.4);
+    font-size: var(--q-size, 28px);
+    line-height: var(--q-lh, 2.45);
   }
 }
 
@@ -83,16 +72,21 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Subtle matte ambient vignette for distraction-free Mushaf reading */
+/* Warm desert-sand ambient halo for distraction-free Mushaf reading */
 .mushaf-frame {
   background-image:
-    radial-gradient(circle at top center, rgba(212, 175, 55, 0.035), transparent 60%),
-    radial-gradient(circle at bottom center, rgba(16, 185, 129, 0.025), transparent 55%);
+    radial-gradient(circle at top center, rgba(217, 119, 6, 0.05), transparent 62%),
+    radial-gradient(circle at bottom center, rgba(249, 115, 22, 0.03), transparent 55%);
 }
 
-/* Geometric Islamic lattice background for Hero Continue Reading card */
-.islamic-lattice-bg {
-  background-image: url("data:image/svg+xml,%3Csvg width='72' height='72' viewBox='0 0 72 72' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23D4AF37' stroke-opacity='0.09' stroke-width='0.8'%3E%3Crect x='18' y='18' width='36' height='36'/%3E%3Crect x='18' y='18' width='36' height='36' transform='rotate(45 36 36)'/%3E%3Ccircle cx='36' cy='36' r='10'/%3E%3C/g%3E%3C/svg%3E");
+/* Subtle warm-sand grain card surface */
+.sand-card {
+  background-color: rgba(255, 255, 255, 0.74);
+  backdrop-filter: blur(12px);
+}
+
+html.dark .sand-card {
+  background-color: rgba(34, 25, 20, 0.84);
 }
 
 /* Subtle custom scrollbar */
@@ -106,18 +100,18 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(156, 175, 166, 0.28);
+  background: rgba(180, 83, 9, 0.22);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(212, 175, 55, 0.45);
+  background: rgba(217, 119, 6, 0.45);
 }
 
 @keyframes naghma-splash-in {
   from {
     opacity: 0;
-    transform: scale(0.94) translateY(6px);
+    transform: scale(0.95) translateY(6px);
   }
   to {
     opacity: 1;
