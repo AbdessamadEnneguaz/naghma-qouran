@@ -2,9 +2,18 @@ export type AppLang = 'en' | 'ar';
 
 export interface Translations {
   appName: string;
+  navHome: string;
   navSurahs: string;
   navMushaf: string;
+  navAdhkar: string;
+  navKhatma: string;
   navVault: string;
+  navMore: string;
+  mobileMenuTitle: string;
+  mobileThemeLabel: string;
+  mobileLangLabel: string;
+  browseAllSurahsBtn: string;
+  allJuzFilter: string;
   langToggleLabel: string;
   themeToLight: string;
   themeToDark: string;
@@ -119,9 +128,20 @@ export interface Translations {
   installNowBtn: string;
   installedStandalone: string;
   downloadApkBtn: string;
+  downloadApkHeroCta: string;
   downloadApkTitle: string;
   downloadApkDesc: string;
   downloadApkCta: string;
+  downloadPageHeading: string;
+  downloadPageSubheading: string;
+  downloadVersionMeta: string;
+  downloadHighlightsTitle: string;
+  downloadHighlight1: string;
+  downloadHighlight2: string;
+  downloadHighlight3: string;
+  downloadHighlight4: string;
+  downloadAndroidStudioTitle: string;
+  downloadAndroidStudioDesc: string;
   apkStep1: string;
   apkStep2: string;
   apkStep3: string;
@@ -215,9 +235,18 @@ export interface Translations {
 export const TRANSLATIONS: Record<AppLang, Translations> = {
   en: {
     appName: 'Naghma Quran',
+    navHome: 'Home',
     navSurahs: 'Surahs',
     navMushaf: 'Mushaf',
+    navAdhkar: 'Adhkar',
+    navKhatma: 'Khatma',
     navVault: 'Vault',
+    navMore: 'More',
+    mobileMenuTitle: 'Naghma Menu',
+    mobileThemeLabel: 'Appearance',
+    mobileLangLabel: 'Language',
+    browseAllSurahsBtn: 'Browse All 114 Surahs',
+    allJuzFilter: "All Juz'",
     langToggleLabel: 'عربي',
     themeToLight: 'Switch to Warm Parchment light mode',
     themeToDark: 'Switch to Deep Emerald dark mode',
@@ -325,12 +354,25 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     installNowBtn: 'Install Web App',
     installedStandalone: 'Naghma Quran is running in standalone installed mode.',
     downloadApkBtn: 'Download APK',
+    downloadApkHeroCta: 'Download Android APK',
     downloadApkTitle: 'Android App (APK)',
     downloadApkDesc: 'Download the native Android WebView APK for 100% offline reading and recitation.',
     downloadApkCta: 'Download naghma-quran.apk',
-    apkStep1: '1. Tap Download naghma-quran.apk to save the installer.',
-    apkStep2: '2. Open the file and allow "Install unknown apps" for your browser if prompted.',
-    apkStep3: '3. Tap Install and launch Naghma Quran from your Android home screen.',
+    downloadPageHeading: 'Naghma Quran for Android',
+    downloadPageSubheading:
+      'Carry the complete 604-page Madani Mushaf, Hafs & Warsh narrations, instant Hifz mask, and Adhkar sanctuary offline on Android.',
+    downloadVersionMeta: 'v1.0.0 · Free · ~18 MB · 100% Offline',
+    downloadHighlightsTitle: 'Built for Distraction-Free Recitation',
+    downloadHighlight1: '604-Page Madani Mushaf with zero-gap Hafs & Warsh audio',
+    downloadHighlight2: 'Instant Arabic & English voice Hifz verification',
+    downloadHighlight3: 'Morning, Evening & Post-Prayer Adhkar with tactile Tasbih',
+    downloadHighlight4: 'Smart Khatma planner with daily reminder alerts',
+    downloadAndroidStudioTitle: 'Ready for Capacitor & Android Studio',
+    downloadAndroidStudioDesc:
+      'Includes preconfigured capacitor.config.json (com.naghmaquran.app) to build a signed APK locally in Android Studio.',
+    apkStep1: '1. Tap Download naghma-quran.apk to save the Android installer package.',
+    apkStep2: '2. Open the downloaded file and allow "Install unknown apps" for your browser if prompted.',
+    apkStep3: '3. Tap Install and launch Naghma Quran directly from your home screen.',
     hifzMode: 'Hifz Mask',
     hifzActiveBanner: 'Hifz Mode · Tap any veiled Ayah to peek or recite aloud',
     hifzHintLabel: 'First-Word Hint',
@@ -413,9 +455,18 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
   },
   ar: {
     appName: 'نَغمة القرآن',
+    navHome: 'الرئيسية',
     navSurahs: 'السور',
     navMushaf: 'المصحف',
+    navAdhkar: 'الأذكار',
+    navKhatma: 'الختمة',
     navVault: 'المحفوظات',
+    navMore: 'المزيد',
+    mobileMenuTitle: 'قائمة نَغمة',
+    mobileThemeLabel: 'المظهر',
+    mobileLangLabel: 'اللغة',
+    browseAllSurahsBtn: 'تصفح جميع السور (١١٤)',
+    allJuzFilter: 'كل الأجزاء',
     langToggleLabel: 'EN',
     themeToLight: 'التبديل إلى وضع المصحف النهاري',
     themeToDark: 'التبديل إلى الوضع الزمردي الليلي',
@@ -523,9 +574,22 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     installNowBtn: 'تثبيت كتطبيق ويب',
     installedStandalone: 'تطبيق نَغمة القرآن يعمل الآن كتطبيق مثبت ومستقل.',
     downloadApkBtn: 'تحميل APK',
+    downloadApkHeroCta: 'تحميل تطبيق الأندرويد APK',
     downloadApkTitle: 'تطبيق أندرويد (APK)',
     downloadApkDesc: 'حمّل ملف APK لتشغيل المصحف والتلاوة كـتطبيق أندرويد مستقل دون إنترنت.',
     downloadApkCta: 'تنزيل naghma-quran.apk',
+    downloadPageHeading: 'نَغمة القرآن لأجهزة أندرويد',
+    downloadPageSubheading:
+      'احمل مصحف المدينة (٦٠٤ صفحة) بروايتي حفص وورش مع وضع الحفظ والأذكار والختمة الذكية بالكامل دون اتصال.',
+    downloadVersionMeta: 'v1.0.0 · مجاني · ~18 MB · يعمل دون إنترنت',
+    downloadHighlightsTitle: 'تجربة خاشعة ومتكاملة دون إنترنت',
+    downloadHighlight1: 'مصحف المدينة المنورة (٦٠٤ صفحة) مع تلاوة متصلة بلا تقطع',
+    downloadHighlight2: 'إخفاء الآيات والتلقين والتسميع الصوتي بالذكاء المحلي',
+    downloadHighlight3: 'أذكار الصباح والمساء وبعد الصلاة مع عدّاد تسبيح تفاعلي',
+    downloadHighlight4: 'مُخطِّط الختمة الذكي مع تنبيهات الورد اليومي',
+    downloadAndroidStudioTitle: 'جاهز للبناء عبر Capacitor و Android Studio',
+    downloadAndroidStudioDesc:
+      'يتضمن المشروع ملف capacitor.config.json الجاهز لبناء ملف APK موقّع داخل Android Studio.',
     apkStep1: '١. اضغط على «تنزيل naghma-quran.apk» لحفظ ملف التثبيت.',
     apkStep2: '٢. افتح الملف واسمح بتثبيت التطبيقات من هذا المتصفح عند الطلب.',
     apkStep3: '٣. اضغط «تثبيت» وافتح نَغمة القرآن مباشرة من شاشتك الرئيسية.',

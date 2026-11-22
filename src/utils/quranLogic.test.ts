@@ -8,6 +8,7 @@ import {
   formatHizbLabel,
   getAyahAudioCandidates,
   getAyahAudioUrl,
+  getGlobalAyahNumber,
   getNextAyah,
   getPrevAyah,
   getUpcomingAyahs,
@@ -68,6 +69,13 @@ test('getAyahAudioUrl and getAyahAudioCandidates handle Hafs, Warsh, and Muhamma
     getAyahAudioUrl(alafasy, 2, 255),
     'https://everyayah.com/data/Alafasy_128kbps/002255.mp3'
   );
+  assert.deepEqual(getAyahAudioCandidates(alafasy, 2, 255), [
+    'https://everyayah.com/data/Alafasy_128kbps/002255.mp3',
+    'https://cdn.islamic.network/quran/audio/128/ar.alafasy/262.mp3',
+  ]);
+  assert.equal(getGlobalAyahNumber(1, 1), 1);
+  assert.equal(getGlobalAyahNumber(2, 255), 262);
+  assert.equal(getGlobalAyahNumber(114, 6), 6236);
   assert.equal(
     getAyahAudioUrl(qazabri, 18, 1),
     'https://cdn.mp3quran.net/audio/omar-kazabri/r1/018.mp3'

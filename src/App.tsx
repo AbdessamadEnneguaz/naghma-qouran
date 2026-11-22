@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import {AlertCircle, Bell, Loader2, WifiOff, X} from 'lucide-react';
 import type {
   BookmarkEntry,
@@ -20,9 +20,11 @@ import {
   getStorageEstimate,
   loadBookmarks,
   loadLastRead,
+  loadReciterSyncOffset,
   loadSettings,
   saveBookmarks,
   saveLastRead,
+  saveReciterSyncOffset,
   saveSettings,
 } from './services/indexedDbVault';
 import {
@@ -39,21 +41,30 @@ import {
   tokenizeVerseWords,
   type PageWordTarget,
 } from './utils/quranLogic';
+import {
+  parseRouteFromLocation,
+  routeToPath,
+  type AppRoute,
+} from './utils/routing';
 import {useAudioPlayer} from './hooks/useAudioPlayer';
 import {useKhatmaReminders} from './hooks/useKhatmaReminders';
 import {useOnlineStatus, usePWAInstall} from './hooks/usePWAInstall';
 import {useVoiceRecitation} from './hooks/useVoiceRecitation';
 import {TRANSLATIONS, type AppLang} from './i18n/translations';
-import {Header, type ActiveTab} from './components/Header';
+import {Header} from './components/Header';
 import {HomeView} from './components/HomeView';
 import {MushafView} from './components/MushafView';
+import {SurahsPage} from './components/SurahsPage';
+import {AdhkarPage} from './components/AdhkarPage';
+import {KhatmaPage} from './components/KhatmaPage';
+import {DownloadApkPage} from './components/DownloadApkPage';
 import {VaultView} from './components/VaultView';
 import {AudioPlayerBar} from './components/AudioPlayerBar';
+import {MobileBottomNav} from './components/MobileBottomNav';
+import {MobileMenuDrawer} from './components/MobileMenuDrawer';
 import {TafsirDrawer} from './components/TafsirDrawer';
 import {SearchModal} from './components/SearchModal';
 import {InstallModal} from './components/InstallModal';
-import {KhatmaModal} from './components/KhatmaModal';
-import {AdhkarModal} from './components/AdhkarModal';
 import {HeartGuideModal} from './components/HeartGuideModal';
 import {SplashScreen} from './components/SplashScreen';
 
@@ -80,6 +91,11 @@ function getInitialLang(): AppLang {
   return 'en';
 }
 
+function getInitialRoute(): AppRoute {
+  if (typeof window === 'undefined') return 'home';
+  return parseRouteFromLocation(window.location.pathname, window.location.hash);
+}
+
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -91,7 +107,7 @@ export default function App() {
 
   const [lang, setLang] = useState<AppLang>(getInitialLang);
   const [settings, setSettings] = useState<ReaderSettings>(DEFAULT_SETTINGS);
-  const [activeTab, setActiveTab] = useState<ActiveTab>('home');
+  const [activeRoute, setActiveRoute] = useState<AppRoute>(getInitialRoute);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [currentSurahId, setCurrentSurahId] = useState<number>(1);
   const [lastRead, setLastRead] = useState<LastReadState | null>(null);
@@ -107,9 +123,8 @@ export default function App() {
 
   const [showSearch, setShowSearch] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
-  const [showKhatmaModal, setShowKhatmaModal] = useState(false);
-  const [showAdhkarModal, setShowAdhkarModal] = useState(false);
   const [showHeartModal, setShowHeartModal] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [audioExpandSignal, setAudioExpandSignal] = useState(0);
   const [audioCollapseSignal, setAudioCollapseSignal] = useState(0);
 
@@ -139,6 +154,61 @@ export default function App() {
     setStorageEstimate(est);
   }, []);
 
+  const navigateToRoute = useCallback(
+    (route: AppRoute, options?: {replace?: boolean}) => {
+      setFocusMode(false);
+      setShowMobileMenu(false);
+      if (route !== 'mushaf') {
+        setAudioCollapseSignal((n) => n + 1);
+      }
+      if (route === 'vault') {
+        void refreshVaultStats();
+      }
+      setActiveRoute(route);
+
+      if (typeof window !== 'undefined') {
+        const targetPath = routeToPath(route);
+        if (window.location.protocol === 'file:') {
+          const nextHash = `#${targetPath}`;
+          if (window.location.hash !== nextHash) {
+            window.location.hash = nextHash;
+          }
+        } else {
+          const current = window.location.pathname;
+          if (current !== targetPath) {
+            try {
+              if (options?.replace) {
+                window.history.replaceState({route}, '', targetPath);
+              } else {
+                window.history.pushState({route}, '', targetPath);
+              }
+            } catch {
+              window.location.hash = `#${targetPath}`;
+            }
+          }
+        }
+        window.scrollTo({top: 0, behavior: 'smooth'});
+      }
+    },
+    [refreshVaultStats]
+  );
+
+  // Listen for browser Back/Forward navigation
+  useEffect(() => {
+    const syncFromBrowserUrl = () => {
+      const next = parseRouteFromLocation(window.location.pathname, window.location.hash);
+      setFocusMode(false);
+      setShowMobileMenu(false);
+      setActiveRoute(next);
+    };
+    window.addEventListener('popstate', syncFromBrowserUrl);
+    window.addEventListener('hashchange', syncFromBrowserUrl);
+    return () => {
+      window.removeEventListener('popstate', syncFromBrowserUrl);
+      window.removeEventListener('hashchange', syncFromBrowserUrl);
+    };
+  }, []);
+
   // Load saved preferences + core Quran bundle on startup
   useEffect(() => {
     let cancelled = false;
@@ -154,9 +224,11 @@ export default function App() {
 
         if (cancelled) return;
 
+        const reciterId = savedSettings.reciterId || DEFAULT_SETTINGS.reciterId;
         const mergedSettings: ReaderSettings = {
           ...DEFAULT_SETTINGS,
           ...savedSettings,
+          audioSyncOffsetSec: loadReciterSyncOffset(reciterId),
           readerMode: 'mushaf',
         };
         setSettings(mergedSettings);
@@ -233,7 +305,23 @@ export default function App() {
 
   const updateSettings = useCallback((patch: Partial<ReaderSettings>) => {
     setSettings((prev) => {
-      const next = {...prev, ...patch};
+      const targetReciterId = patch.reciterId ?? prev.reciterId;
+      const nextSyncOffset =
+        patch.audioSyncOffsetSec !== undefined
+          ? patch.audioSyncOffsetSec
+          : patch.reciterId && patch.reciterId !== prev.reciterId
+            ? loadReciterSyncOffset(patch.reciterId)
+            : prev.audioSyncOffsetSec;
+
+      if (patch.audioSyncOffsetSec !== undefined) {
+        saveReciterSyncOffset(targetReciterId, patch.audioSyncOffsetSec);
+      }
+
+      const next: ReaderSettings = {
+        ...prev,
+        ...patch,
+        audioSyncOffsetSec: nextSyncOffset,
+      };
       void saveSettings(next);
       return next;
     });
@@ -319,10 +407,9 @@ export default function App() {
         persistLastRead(firstOnPage.surah, firstOnPage.ayah, clamped, 'mushaf');
       }
       updateSettings({readerMode: 'mushaf'});
-      setActiveTab('reader');
-      window.scrollTo({top: 0, behavior: 'smooth'});
+      navigateToRoute('mushaf');
     },
-    [verses, persistLastRead, updateSettings]
+    [verses, persistLastRead, updateSettings, navigateToRoute]
   );
 
   const openSurah = useCallback(
@@ -339,10 +426,9 @@ export default function App() {
         persistLastRead(target.surah, target.ayah, targetPage, 'mushaf');
       }
       updateSettings({readerMode: 'mushaf'});
-      setActiveTab('reader');
-      window.scrollTo({top: 0, behavior: 'smooth'});
+      navigateToRoute('mushaf');
     },
-    [verses, surahs, persistLastRead, updateSettings]
+    [verses, surahs, persistLastRead, updateSettings, navigateToRoute]
   );
 
   const handleSearchResult = useCallback(
@@ -353,10 +439,9 @@ export default function App() {
       setHighlightedAyahKey(`${res.surah}:${res.ayah}`);
       persistLastRead(res.surah, res.ayah, clamped, 'mushaf');
       updateSettings({readerMode: 'mushaf'});
-      setActiveTab('reader');
-      window.scrollTo({top: 0, behavior: 'smooth'});
+      navigateToRoute('mushaf');
     },
-    [persistLastRead, updateSettings]
+    [persistLastRead, updateSettings, navigateToRoute]
   );
 
   const handleToggleBookmark = useCallback(
@@ -401,13 +486,9 @@ export default function App() {
     async (surahMeta: SurahMeta) => {
       if (downloadProgress) return;
       try {
-        await downloadSurahOffline(
-          activeReciter,
-          surahMeta,
-          (completed, total) => {
-            setDownloadProgress({surah: surahMeta.id, completed, total});
-          }
-        );
+        await downloadSurahOffline(activeReciter, surahMeta, (completed, total) => {
+          setDownloadProgress({surah: surahMeta.id, completed, total});
+        });
         await refreshVaultStats();
       } catch {
         // Handled cleanly by resetting progress
@@ -431,7 +512,7 @@ export default function App() {
     await refreshVaultStats();
   }, [refreshVaultStats]);
 
-  // Keyboard shortcuts: Cmd/Ctrl+K search, ArrowLeft/Right page turn, Escape exits Focus mode
+  // Keyboard shortcuts: Cmd/Ctrl+K search, ArrowLeft/Right page turn, Escape exits Focus/Menu
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -439,12 +520,18 @@ export default function App() {
         setShowSearch(true);
         return;
       }
-      if (e.key === 'Escape' && focusMode) {
-        setFocusMode(false);
-        return;
+      if (e.key === 'Escape') {
+        if (showMobileMenu) {
+          setShowMobileMenu(false);
+          return;
+        }
+        if (focusMode) {
+          setFocusMode(false);
+          return;
+        }
       }
       if (
-        activeTab === 'reader' &&
+        activeRoute === 'mushaf' &&
         !showSearch &&
         !showInstallModal &&
         !selectedVerse &&
@@ -461,10 +548,10 @@ export default function App() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [
-    activeTab,
-    settings.readerMode,
+    activeRoute,
     currentPage,
     focusMode,
+    showMobileMenu,
     showSearch,
     showInstallModal,
     selectedVerse,
@@ -504,9 +591,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-[#FAF6EE] dark:bg-[#0B0E11] flex flex-col items-center justify-center gap-3 p-6 text-center">
         <AlertCircle className="h-8 w-8 text-red-500" />
-        <p className="text-sm font-semibold text-[#1C1917] dark:text-[#F4F1EA]">
-          {loadError}
-        </p>
+        <p className="text-sm font-semibold text-[#1C1917] dark:text-[#F4F1EA]">{loadError}</p>
         <button
           type="button"
           onClick={() => window.location.reload()}
@@ -518,32 +603,26 @@ export default function App() {
     );
   }
 
+  const isMushafFocus = activeRoute === 'mushaf' && focusMode;
+  const hideAudioBarOnMobileIdle =
+    activeRoute !== 'mushaf' && !player.hasStarted && !player.isPlaying && !voice.isListening;
+
   return (
     <div className="min-h-screen bg-[#FAF6EE] dark:bg-[#0B0E11] text-[#1C1917] dark:text-[#F4F1EA] transition-colors">
       <SplashScreen isDataReady={!loading} />
       <Header
-        activeTab={activeTab}
+        activeRoute={activeRoute}
         lang={lang}
         t={t}
         theme={settings.theme}
-        hidden={activeTab === 'reader' && focusMode}
+        hidden={isMushafFocus}
         isInstalled={isInstalled}
-        onNavigate={(tab) => {
-          setFocusMode(false);
-          if (tab !== 'reader') {
-            setAudioCollapseSignal((n) => n + 1);
-          }
-          if (tab === 'vault') void refreshVaultStats();
-          setActiveTab(tab);
-        }}
+        onNavigate={navigateToRoute}
         onToggleLang={() => setLang((prev) => (prev === 'en' ? 'ar' : 'en'))}
-        onToggleTheme={() =>
-          updateSettings({theme: settings.theme === 'dark' ? 'light' : 'dark'})
-        }
-        onOpenInstall={() => void handleInstallClick()}
+        onToggleTheme={() => updateSettings({theme: settings.theme === 'dark' ? 'light' : 'dark'})}
       />
 
-      {!isOnline && !focusMode && (
+      {!isOnline && !isMushafFocus && (
         <div className="bg-[#D4AF37]/15 border-b border-[#D4AF37]/25 px-4 py-1.5 text-center text-xs font-medium text-[#B4891B] dark:text-[#D4AF37] flex items-center justify-center gap-2">
           <WifiOff className="h-3.5 w-3.5" />
           <span>{t.offlineBanner}</span>
@@ -579,7 +658,7 @@ export default function App() {
       )}
 
       <main>
-        {activeTab === 'home' ? (
+        {activeRoute === 'home' && (
           <HomeView
             lang={lang}
             t={t}
@@ -590,16 +669,16 @@ export default function App() {
             riwayat={settings.riwayat}
             khatmaSchedule={khatma.schedule}
             talqeenPauseSeconds={player.talqeen.pauseSeconds}
+            isInstalled={isInstalled}
             onChangeRiwayat={(riwayat) => updateSettings({riwayat})}
             onOpenSurah={openSurah}
             onOpenPage={openPage}
             onOpenSearch={() => setShowSearch(true)}
-            onOpenVault={() => {
-              void refreshVaultStats();
-              setActiveTab('vault');
-            }}
-            onOpenKhatma={() => setShowKhatmaModal(true)}
-            onOpenAdhkar={() => setShowAdhkarModal(true)}
+            onOpenAllSurahs={() => navigateToRoute('surahs')}
+            onOpenVault={() => navigateToRoute('vault')}
+            onOpenKhatma={() => navigateToRoute('khatma')}
+            onOpenAdhkar={() => navigateToRoute('adhkar')}
+            onOpenDownloadApk={() => navigateToRoute('download')}
             onLaunchTalqeen={() => {
               const targetSurah = lastRead?.surah || currentSurahId || 1;
               const targetMeta = surahs.find((s) => s.id === targetSurah);
@@ -615,7 +694,52 @@ export default function App() {
             onOpenHeartGuide={() => setShowHeartModal(true)}
             onRemoveBookmark={handleRemoveBookmark}
           />
-        ) : activeTab === 'vault' ? (
+        )}
+
+        {activeRoute === 'surahs' && (
+          <SurahsPage
+            lang={lang}
+            t={t}
+            surahs={surahs}
+            bookmarks={bookmarks}
+            offlineRecords={offlineRecords}
+            onOpenSurah={openSurah}
+            onOpenPage={openPage}
+            onRemoveBookmark={handleRemoveBookmark}
+          />
+        )}
+
+        {activeRoute === 'adhkar' && <AdhkarPage lang={lang} t={t} />}
+
+        {activeRoute === 'khatma' && (
+          <KhatmaPage
+            lang={lang}
+            t={t}
+            plan={khatma.plan}
+            schedule={khatma.schedule}
+            permission={khatma.permission}
+            onChangeGoalDays={khatma.setGoalDays}
+            onLogPages={khatma.logPagesRead}
+            onMarkTodayComplete={khatma.markTodayComplete}
+            onResetPlan={khatma.resetPlan}
+            onToggleReminder={khatma.toggleReminder}
+            onChangeReminderTime={khatma.setReminderTime}
+            onSendTestReminder={khatma.sendReminderNow}
+            onOpenMushafPage={openPage}
+          />
+        )}
+
+        {activeRoute === 'download' && (
+          <DownloadApkPage
+            lang={lang}
+            t={t}
+            isInstallable={isInstallable}
+            isInstalled={isInstalled}
+            onTriggerNativeInstall={triggerNativeInstall}
+          />
+        )}
+
+        {activeRoute === 'vault' && (
           <VaultView
             lang={lang}
             t={t}
@@ -635,7 +759,9 @@ export default function App() {
             onClearAudioCache={() => void handleClearAudioCache()}
             onOpenInstall={() => void handleInstallClick()}
           />
-        ) : (
+        )}
+
+        {activeRoute === 'mushaf' && (
           <MushafView
             lang={lang}
             t={t}
@@ -710,7 +836,7 @@ export default function App() {
         settings={settings}
         offlineRecords={offlineRecords}
         downloadProgress={downloadProgress}
-        focusMode={activeTab === 'reader' && focusMode}
+        focusMode={isMushafFocus}
         hifzMode={hifzMode}
         isListening={voice.isListening}
         voiceError={voice.voiceError}
@@ -720,15 +846,15 @@ export default function App() {
         onToggleHifzMode={() => {
           setHifzMode((prev) => {
             const next = !prev;
-            if (next && activeTab !== 'reader') {
-              setActiveTab('reader');
+            if (next && activeRoute !== 'mushaf') {
+              navigateToRoute('mushaf');
             }
             if (!next) setRevealedAyahKeys(new Set());
             return next;
           });
         }}
         onToggleVoiceRecite={() => {
-          if (activeTab !== 'reader') setActiveTab('reader');
+          if (activeRoute !== 'mushaf') navigateToRoute('mushaf');
           voice.toggleListening();
         }}
         onResetVoiceProgress={voice.resetProgress}
@@ -749,9 +875,36 @@ export default function App() {
         forceExpandSignal={audioExpandSignal}
         collapseSignal={audioCollapseSignal}
         isInstalled={isInstalled}
+        hideOnMobileIdle={hideAudioBarOnMobileIdle}
         onUpdateTalqeen={player.updateTalqeen}
         onSkipTalqeenPause={player.skipTalqeenPause}
-        onOpenInstall={() => void handleInstallClick()}
+        onOpenInstall={() => navigateToRoute('download')}
+      />
+
+      <MobileBottomNav
+        activeRoute={activeRoute}
+        t={t}
+        hidden={isMushafFocus}
+        isDrawerOpen={showMobileMenu}
+        onNavigate={navigateToRoute}
+        onOpenMenu={() => setShowMobileMenu(true)}
+      />
+
+      <MobileMenuDrawer
+        isOpen={showMobileMenu}
+        lang={lang}
+        t={t}
+        theme={settings.theme}
+        isInstalled={isInstalled}
+        khatmaPercent={khatma.schedule.percentComplete}
+        cachedSurahCount={offlineRecords.length}
+        onClose={() => setShowMobileMenu(false)}
+        onNavigate={navigateToRoute}
+        onOpenHeartGuide={() => setShowHeartModal(true)}
+        onToggleTheme={() =>
+          updateSettings({theme: settings.theme === 'dark' ? 'light' : 'dark'})
+        }
+        onToggleLang={() => setLang((prev) => (prev === 'en' ? 'ar' : 'en'))}
       />
 
       <TafsirDrawer
@@ -792,31 +945,6 @@ export default function App() {
         isIOS={isIOS}
         onClose={() => setShowInstallModal(false)}
         onTriggerNativeInstall={triggerNativeInstall}
-      />
-
-      <KhatmaModal
-        isOpen={showKhatmaModal}
-        lang={lang}
-        t={t}
-        plan={khatma.plan}
-        schedule={khatma.schedule}
-        permission={khatma.permission}
-        onClose={() => setShowKhatmaModal(false)}
-        onChangeGoalDays={khatma.setGoalDays}
-        onLogPages={khatma.logPagesRead}
-        onMarkTodayComplete={khatma.markTodayComplete}
-        onResetPlan={khatma.resetPlan}
-        onToggleReminder={khatma.toggleReminder}
-        onChangeReminderTime={khatma.setReminderTime}
-        onSendTestReminder={khatma.sendReminderNow}
-        onOpenMushafPage={openPage}
-      />
-
-      <AdhkarModal
-        isOpen={showAdhkarModal}
-        lang={lang}
-        t={t}
-        onClose={() => setShowAdhkarModal(false)}
       />
 
       <HeartGuideModal

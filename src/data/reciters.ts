@@ -95,6 +95,8 @@ export const RECITERS: Reciter[] = [
     style: 'Hafs · Ayah-by-Ayah Sync',
     mode: 'ayah',
     baseUrl: 'https://everyayah.com/data/Alafasy_128kbps',
+    fallbackUrls: ['https://cdn.islamic.network/quran/audio/128/ar.alafasy/{globalAyah}.mp3'],
+    quranComReciterId: 7,
     bitrateLabel: '128 kbps',
   },
   {
@@ -109,7 +111,8 @@ export const RECITERS: Reciter[] = [
       'https://server8.mp3quran.net/lhdan',
       'https://cdn.islamic.network/quran/audio-surah/128/ar.muhammadalluhaidan/{surah}.mp3',
     ],
-    mp3quranReadId: 107,
+    mp3quranReadId: 236,
+    quranComReciterId: 174,
     bitrateLabel: '128 kbps',
   },
   {
@@ -120,6 +123,8 @@ export const RECITERS: Reciter[] = [
     style: 'Hafs · Ayah-by-Ayah Sync',
     mode: 'ayah',
     baseUrl: 'https://everyayah.com/data/Husary_128kbps',
+    fallbackUrls: ['https://cdn.islamic.network/quran/audio/128/ar.husary/{globalAyah}.mp3'],
+    quranComReciterId: 6,
     bitrateLabel: '128 kbps',
   },
   {
@@ -130,6 +135,10 @@ export const RECITERS: Reciter[] = [
     style: 'Hafs · Ayah-by-Ayah Sync',
     mode: 'ayah',
     baseUrl: 'https://everyayah.com/data/Abdul_Basit_Murattal_192kbps',
+    fallbackUrls: [
+      'https://cdn.islamic.network/quran/audio/128/ar.abdulbasitmurattal/{globalAyah}.mp3',
+    ],
+    quranComReciterId: 2,
     bitrateLabel: '192 kbps',
   },
   {
@@ -140,6 +149,10 @@ export const RECITERS: Reciter[] = [
     style: 'Hafs · Mujawwad Sync',
     mode: 'ayah',
     baseUrl: 'https://everyayah.com/data/Abdul_Basit_Mujawwad_128kbps',
+    fallbackUrls: [
+      'https://cdn.islamic.network/quran/audio/128/ar.abdulsamad/{globalAyah}.mp3',
+    ],
+    quranComReciterId: 1,
     bitrateLabel: '128 kbps',
   },
   {
@@ -150,6 +163,7 @@ export const RECITERS: Reciter[] = [
     style: 'Hafs · Ayah-by-Ayah Sync',
     mode: 'ayah',
     baseUrl: 'https://everyayah.com/data/MaherAlMuaiqly128kbps',
+    fallbackUrls: ['https://cdn.islamic.network/quran/audio/128/ar.mahermuaiqly/{globalAyah}.mp3'],
     bitrateLabel: '128 kbps',
   },
   {
@@ -170,6 +184,8 @@ export const RECITERS: Reciter[] = [
     style: 'Hafs · Ayah-by-Ayah Sync',
     mode: 'ayah',
     baseUrl: 'https://everyayah.com/data/Saood_ash-Shuraym_128kbps',
+    fallbackUrls: ['https://cdn.islamic.network/quran/audio/128/ar.saoodshuraym/{globalAyah}.mp3'],
+    quranComReciterId: 10,
     bitrateLabel: '128 kbps',
   },
   {
@@ -180,6 +196,10 @@ export const RECITERS: Reciter[] = [
     style: 'Hafs · Ayah-by-Ayah Sync',
     mode: 'ayah',
     baseUrl: 'https://everyayah.com/data/Abdurrahmaan_As-Sudais_192kbps',
+    fallbackUrls: [
+      'https://cdn.islamic.network/quran/audio/128/ar.abdurrahmaansudais/{globalAyah}.mp3',
+    ],
+    quranComReciterId: 3,
     bitrateLabel: '192 kbps',
   },
   {
@@ -210,6 +230,8 @@ export const RECITERS: Reciter[] = [
     style: 'Hafs · Ayah-by-Ayah Sync',
     mode: 'ayah',
     baseUrl: 'https://everyayah.com/data/Minshawy_Murattal_128kbps',
+    fallbackUrls: ['https://cdn.islamic.network/quran/audio/128/ar.minshawi/{globalAyah}.mp3'],
+    quranComReciterId: 9,
     bitrateLabel: '128 kbps',
   },
   {
@@ -220,6 +242,7 @@ export const RECITERS: Reciter[] = [
     style: 'Hafs · Mujawwad Sync',
     mode: 'ayah',
     baseUrl: 'https://everyayah.com/data/Minshawy_Mujawwad_192kbps',
+    quranComReciterId: 8,
     bitrateLabel: '192 kbps',
   },
   {
@@ -230,6 +253,7 @@ export const RECITERS: Reciter[] = [
     style: 'Hafs · Ayah-by-Ayah Sync',
     mode: 'ayah',
     baseUrl: 'https://everyayah.com/data/Ahmed_ibn_Ali_al-Ajamy_128kbps_ketaballah.net',
+    fallbackUrls: ['https://cdn.islamic.network/quran/audio/128/ar.ahmedajamy/{globalAyah}.mp3'],
     bitrateLabel: '128 kbps',
   },
   {
@@ -240,6 +264,8 @@ export const RECITERS: Reciter[] = [
     style: 'Hafs · Ayah-by-Ayah Sync',
     mode: 'ayah',
     baseUrl: 'https://everyayah.com/data/Hani_Rifai_192kbps',
+    fallbackUrls: ['https://cdn.islamic.network/quran/audio/128/ar.hanirifai/{globalAyah}.mp3'],
+    quranComReciterId: 5,
     bitrateLabel: '192 kbps',
   },
   {
@@ -250,6 +276,7 @@ export const RECITERS: Reciter[] = [
     style: 'Hafs · Ayah-by-Ayah Sync',
     mode: 'ayah',
     baseUrl: 'https://everyayah.com/data/Hudhaify_128kbps',
+    fallbackUrls: ['https://cdn.islamic.network/quran/audio/128/ar.hudhaify/{globalAyah}.mp3'],
     bitrateLabel: '128 kbps',
   },
   {
@@ -260,6 +287,9 @@ export const RECITERS: Reciter[] = [
     style: 'Hafs · Ayah-by-Ayah Sync',
     mode: 'ayah',
     baseUrl: 'https://everyayah.com/data/Muhammad_Jibreel_128kbps',
+    fallbackUrls: [
+      'https://cdn.islamic.network/quran/audio/128/ar.muhammadjibreel/{globalAyah}.mp3',
+    ],
     bitrateLabel: '128 kbps',
   },
   {
@@ -270,6 +300,9 @@ export const RECITERS: Reciter[] = [
     style: 'Hafs · Ayah-by-Ayah Sync',
     mode: 'ayah',
     baseUrl: 'https://everyayah.com/data/Muhammad_Ayyoub_128kbps',
+    fallbackUrls: [
+      'https://cdn.islamic.network/quran/audio/128/ar.muhammadayyoub/{globalAyah}.mp3',
+    ],
     bitrateLabel: '128 kbps',
   },
   {
@@ -280,6 +313,8 @@ export const RECITERS: Reciter[] = [
     style: 'Hafs · Ayah-by-Ayah Sync',
     mode: 'ayah',
     baseUrl: 'https://everyayah.com/data/Abu_Bakr_Ash-Shaatree_128kbps',
+    fallbackUrls: ['https://cdn.islamic.network/quran/audio/128/ar.shaatree/{globalAyah}.mp3'],
+    quranComReciterId: 4,
     bitrateLabel: '128 kbps',
   },
   {

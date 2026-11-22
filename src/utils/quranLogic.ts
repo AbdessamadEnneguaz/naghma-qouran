@@ -18,24 +18,47 @@ export function pad3(num: number): string {
   return String(num).padStart(3, '0');
 }
 
+const SURAH_AYAH_COUNTS = [
+  7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, 111, 110, 98,
+  135, 112, 78, 118, 64, 77, 227, 93, 88, 69, 60, 34, 30, 73, 54, 45, 83, 182, 88, 75, 85,
+  54, 53, 89, 59, 37, 35, 38, 29, 18, 45, 60, 49, 62, 55, 78, 96, 29, 22, 24, 13, 14, 11,
+  11, 18, 12, 12, 30, 52, 52, 44, 28, 28, 20, 56, 40, 31, 50, 40, 46, 42, 29, 19, 36, 25,
+  22, 17, 19, 26, 30, 20, 15, 21, 11, 8, 8, 19, 5, 8, 8, 11, 11, 8, 3, 9, 5, 4, 7, 3, 6, 3,
+  5, 4, 5, 6,
+];
+
+export function getGlobalAyahNumber(surah: number, ayah: number): number {
+  const safeSurah = Math.max(1, Math.min(114, Math.floor(surah)));
+  const safeAyah = Math.max(1, Math.floor(ayah));
+  let offset = 0;
+  for (let i = 0; i < safeSurah - 1; i++) {
+    offset += SURAH_AYAH_COUNTS[i];
+  }
+  return offset + Math.min(safeAyah, SURAH_AYAH_COUNTS[safeSurah - 1]);
+}
+
 function buildAudioUrlFromBase(
   baseOrTemplate: string,
   mode: Reciter['mode'],
   surah: number,
-  ayah: number
+  ayah: number,
+  globalAyah?: number
 ): string {
   const clean = baseOrTemplate.replace(/\/+$/, '');
+  const resolvedGlobal = globalAyah ?? getGlobalAyahNumber(surah, ayah);
   if (
     clean.includes('{surah}') ||
     clean.includes('{padSurah}') ||
     clean.includes('{ayah}') ||
-    clean.includes('{padAyah}')
+    clean.includes('{padAyah}') ||
+    clean.includes('{globalAyah}')
   ) {
     return clean
       .replace(/\{padSurah\}/g, pad3(surah))
       .replace(/\{surah\}/g, String(surah))
       .replace(/\{padAyah\}/g, pad3(ayah))
-      .replace(/\{ayah\}/g, String(ayah));
+      .replace(/\{ayah\}/g, String(ayah))
+      .replace(/\{globalAyah\}/g, String(resolvedGlobal));
   }
   if (mode === 'surah') {
     return `${clean}/${pad3(surah)}.mp3`;
@@ -43,20 +66,26 @@ function buildAudioUrlFromBase(
   return `${clean}/${pad3(surah)}${pad3(ayah)}.mp3`;
 }
 
-export function getAyahAudioUrl(reciter: Reciter, surah: number, ayah: number): string {
-  return buildAudioUrlFromBase(reciter.baseUrl, reciter.mode, surah, ayah);
+export function getAyahAudioUrl(
+  reciter: Reciter,
+  surah: number,
+  ayah: number,
+  globalAyah?: number
+): string {
+  return buildAudioUrlFromBase(reciter.baseUrl, reciter.mode, surah, ayah, globalAyah);
 }
 
 export function getAyahAudioCandidates(
   reciter: Reciter,
   surah: number,
-  ayah: number
+  ayah: number,
+  globalAyah?: number
 ): string[] {
   const seen = new Set<string>();
   const urls: string[] = [];
   const bases = [reciter.baseUrl, ...(reciter.fallbackUrls || [])];
   for (const base of bases) {
-    const url = buildAudioUrlFromBase(base, reciter.mode, surah, ayah);
+    const url = buildAudioUrlFromBase(base, reciter.mode, surah, ayah, globalAyah);
     if (!seen.has(url)) {
       seen.add(url);
       urls.push(url);

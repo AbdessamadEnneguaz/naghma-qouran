@@ -40,6 +40,7 @@ export interface Reciter {
   baseUrl: string;
   fallbackUrls?: string[];
   mp3quranReadId?: number;
+  quranComReciterId?: number;
   bitrateLabel: string;
 }
 

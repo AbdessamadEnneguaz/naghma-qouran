@@ -1,9 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  buildWeightedSurahTimings,
+  alignVersesToAcousticValleys,
+  extractAcousticPauseValleys,
   findAyahAtTimeMs,
   parseMp3QuranAyatTiming,
+  parseQuranComChapterTimestamps,
 } from './surahTimingLogic';
 import type {QuranVerse} from '../types/quran';
 
@@ -21,6 +23,25 @@ test('parseMp3QuranAyatTiming normalizes MP3Quran millisecond rows and fills bou
     {ayah: 3, startMs: 21440, endMs: 25440},
   ]);
   assert.deepEqual(parseMp3QuranAyatTiming([]), []);
+});
+
+test('parseQuranComChapterTimestamps parses Quran.com v4 timestamp_from/timestamp_to payloads', () => {
+  const payload = {
+    audio_file: {
+      chapter_id: 1,
+      timestamps: [
+        {verse_key: '1:1', timestamp_from: 0, timestamp_to: 6090},
+        {verse_key: '1:2', timestamp_from: 6090, timestamp_to: 11680},
+        {verse_key: '1:3', timestamp_from: 11680, timestamp_to: 16300},
+      ],
+    },
+  };
+  assert.deepEqual(parseQuranComChapterTimestamps(payload), [
+    {ayah: 1, startMs: 0, endMs: 6090},
+    {ayah: 2, startMs: 6090, endMs: 11680},
+    {ayah: 3, startMs: 11680, endMs: 16300},
+  ]);
+  assert.deepEqual(parseQuranComChapterTimestamps({audio_file: {timestamps: []}}), []);
 });
 
 test('findAyahAtTimeMs locks playback position to exact millisecond interval and respects sync offset', () => {
@@ -43,26 +64,36 @@ test('findAyahAtTimeMs locks playback position to exact millisecond interval and
   assert.equal(findAyahAtTimeMs(segments, 17500, -1.0), 1);
 });
 
-test('buildWeightedSurahTimings allocates shorter time to short Ayahs (الم) and longer time to dense Ayahs', () => {
+test('extractAcousticPauseValleys & alignVersesToAcousticValleys snap strictly to real silence valleys and never guess proportionally', () => {
   const verses: QuranVerse[] = [
-    {index: 7, surah: 2, ayah: 1, page: 2, juz: 1, hizbQuarter: 1, sajda: false, text: 'الٓمٓ'},
-    {
-      index: 8,
-      surah: 2,
-      ayah: 2,
-      page: 2,
-      juz: 1,
-      hizbQuarter: 1,
-      sajda: false,
-      text: 'ذَٰلِكَ ٱلْكِتَٰبُ لَا رَيْبَ ۛ فِيهِ ۛ هُدًى لِّلْمُتَّقِينَ',
-    },
+    {index: 0, surah: 103, ayah: 1, page: 601, juz: 30, hizbQuarter: 240, sajda: false, text: 'وَٱلْعَصْرِ'},
+    {index: 1, surah: 103, ayah: 2, page: 601, juz: 30, hizbQuarter: 240, sajda: false, text: 'إِنَّ ٱلْإِنسَٰنَ لَفِى خُسْرٍ'},
+    {index: 2, surah: 103, ayah: 3, page: 601, juz: 30, hizbQuarter: 240, sajda: false, text: 'إِلَّا ٱلَّذِينَ ءَامَنُوا۟ وَعَمِلُوا۟ ٱلصَّٰلِحَٰتِ وَتَوَاصَوْا۟ بِٱلْحَقِّ وَتَوَاصَوْا۟ بِٱلصَّبْرِ'},
   ];
 
-  const segments = buildWeightedSurahTimings(verses, 40000, 2);
-  assert.equal(segments.length, 2);
-  const dur1 = segments[0].endMs - segments[0].startMs;
-  const dur2 = segments[1].endMs - segments[1].startMs;
-  assert.ok(dur2 > dur1 * 2, `Expected long verse (${dur2}ms) > 2x short verse (${dur1}ms)`);
+  // No valleys -> must return [] rather than proportional estimation
+  assert.deepEqual(alignVersesToAcousticValleys(verses, 22000, 103, []), []);
+
+  // Synthetic PCM audio at 1000 Hz: Basmala [0..3.6s], pause at 3.8s, Ayah1 [4..6s], pause at 6.2s, Ayah2 [6.4..10s], pause at 10.2s, Ayah3 [10.4..20s]
+  const sr = 1000;
+  const totalSamples = 20 * sr;
+  const pcm = new Float32Array(totalSamples);
+  for (let i = 0; i < totalSamples; i++) {
+    const tMs = i;
+    const inPause =
+      (tMs >= 3600 && tMs <= 4000) ||
+      (tMs >= 6000 && tMs <= 6400) ||
+      (tMs >= 10000 && tMs <= 10400);
+    pcm[i] = inPause ? 0.002 : 0.4 * Math.sin(i * 0.25);
+  }
+
+  const valleys = extractAcousticPauseValleys(pcm, sr, 40);
+  assert.ok(valleys.length >= 3, `Expected >= 3 detected silence valleys, got ${valleys.length}`);
+
+  const segments = alignVersesToAcousticValleys(verses, 20000, 103, valleys);
+  assert.equal(segments.length, 3);
   assert.equal(segments[0].startMs, 0);
-  assert.equal(segments[1].endMs, 40000);
+  assert.ok(segments[1].startMs >= 5600 && segments[1].startMs <= 6600, `Ayah 2 should snap near 6.2s pause, got ${segments[1].startMs}`);
+  assert.ok(segments[2].startMs >= 9700 && segments[2].startMs <= 10700, `Ayah 3 should snap near 10.2s pause, got ${segments[2].startMs}`);
+  assert.equal(segments[2].endMs, 20000);
 });

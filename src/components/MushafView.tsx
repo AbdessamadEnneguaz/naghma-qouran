@@ -185,14 +185,21 @@ export const MushafView: React.FC<MushafViewProps> = ({
   const fontClass =
     settings.font === 'amiri' ? 'font-quran-amiri' : 'font-quran-scheherazade';
 
-  // Smooth auto-scroll to active playing verse
+  const lastScrolledPlayingRef = useRef<string | null>(null);
+
+  // Smooth auto-scroll only when the active playing verse actually changes
   useEffect(() => {
-    if (!isPlaying || !containerRef.current) return;
-    const key = `${playingSurah}:${playingAyah}`;
+    if (!isPlaying || !containerRef.current) {
+      if (!isPlaying) lastScrolledPlayingRef.current = null;
+      return;
+    }
+    const key = `${playingSurah}:${playingAyah}@${currentPage}`;
+    if (lastScrolledPlayingRef.current === key) return;
     const el = containerRef.current.querySelector<HTMLElement>(
-      `[data-ayah-key="${key}"]`
+      `[data-ayah-key="${playingSurah}:${playingAyah}"]`
     );
     if (el) {
+      lastScrolledPlayingRef.current = key;
       el.scrollIntoView({behavior: 'smooth', block: 'center'});
     }
   }, [isPlaying, playingSurah, playingAyah, currentPage]);
@@ -277,7 +284,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       className={`min-h-[calc(100vh-52px)] mushaf-frame transition-all duration-300 ${
-        focusMode ? 'pt-5 pb-16' : 'pt-2 sm:pt-3 pb-32'
+        focusMode ? 'pt-5 pb-16' : 'pt-2 sm:pt-3 pb-44 md:pb-32'
       }`}
     >
       {/* Minimal Mushaf Navigation Strip (Smoothly fades out in Focus Mode) */}
@@ -847,7 +854,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
         <div
           role="region"
           aria-label={`Actions for Ayah ${actionMenuVerse.surah}:${actionMenuVerse.ayah}`}
-          className="fixed bottom-[76px] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-xl rounded-2xl border border-[#B4891B]/40 dark:border-white/16 bg-[#FAF6EE]/96 dark:bg-[#13181E]/96 backdrop-blur-md px-3 py-2 shadow-2xl flex items-center justify-between gap-2"
+          className="fixed bottom-[126px] md:bottom-[76px] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-xl rounded-2xl border border-[#B4891B]/40 dark:border-white/16 bg-[#FAF6EE]/96 dark:bg-[#13181E]/96 backdrop-blur-md px-3 py-2 shadow-2xl flex items-center justify-between gap-2"
         >
           <span className="text-xs font-bold text-[#B4891B] dark:text-[#D4AF37] tabular-nums px-1 whitespace-nowrap">
             {actionMenuVerse.surah}:{actionMenuVerse.ayah}

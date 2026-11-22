@@ -1,0 +1,13 @@
+{
+  "appId": "com.naghmaquran.app",
+  "appName": "Naghma Quran",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#0B0E11",
+    "allowMixedContent": false
+  }
+}

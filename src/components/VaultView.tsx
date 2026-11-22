@@ -62,7 +62,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
   const totalAudioBytes = offlineRecords.reduce((acc, r) => acc + r.bytes, 0);
 
   return (
-    <div className="mx-auto max-w-5xl px-3 sm:px-6 md:px-8 pt-6 pb-28 space-y-8">
+    <div className="mx-auto max-w-5xl px-3 sm:px-6 md:px-8 pt-6 pb-36 md:pb-28 space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#B4891B]/18 dark:border-[#D4AF37]/15 pb-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-[#1C1917] dark:text-[#F4F1EA]">

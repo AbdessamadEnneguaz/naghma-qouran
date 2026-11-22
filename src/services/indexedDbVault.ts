@@ -7,7 +7,7 @@ import type {
   Reciter,
   SurahMeta,
 } from '../types/quran';
-import {getAyahAudioCandidates} from '../utils/quranLogic';
+import {getAyahAudioCandidates, getGlobalAyahNumber} from '../utils/quranLogic';
 
 const DB_NAME = 'naghma_quran_db';
 const DB_VERSION = 1;
@@ -190,6 +190,29 @@ export async function saveSettings(settings: ReaderSettings): Promise<void> {
   await idbSet(STORE_USER, 'settings', settings);
 }
 
+const SYNC_OFFSET_LS_PREFIX = 'naghma_sync_offset:';
+
+export function loadReciterSyncOffset(reciterId: string): number {
+  try {
+    const raw = localStorage.getItem(`${SYNC_OFFSET_LS_PREFIX}${reciterId}`);
+    if (raw === null) return 0;
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) return 0;
+    return Math.max(-5, Math.min(5, Math.round(parsed * 10) / 10));
+  } catch {
+    return 0;
+  }
+}
+
+export function saveReciterSyncOffset(reciterId: string, offsetSec: number): void {
+  const clamped = Math.max(-5, Math.min(5, Math.round(offsetSec * 10) / 10));
+  try {
+    localStorage.setItem(`${SYNC_OFFSET_LS_PREFIX}${reciterId}`, String(clamped));
+  } catch {
+    // ignore
+  }
+}
+
 export async function loadKhatmaPlan(): Promise<KhatmaPlan | null> {
   try {
     const ls =
@@ -275,7 +298,12 @@ export async function downloadSurahOffline(
     for (let ayah = 1; ayah <= surahMeta.totalAyahs; ayah++) {
       tasks.push({
         key: getAudioBlobKey(reciter, surahMeta.id, ayah),
-        urls: getAyahAudioCandidates(reciter, surahMeta.id, ayah),
+        urls: getAyahAudioCandidates(
+          reciter,
+          surahMeta.id,
+          ayah,
+          getGlobalAyahNumber(surahMeta.id, ayah)
+        ),
       });
     }
   }

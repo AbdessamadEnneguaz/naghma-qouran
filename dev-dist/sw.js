@@ -78,14 +78,14 @@ define(['./workbox-afac4cd2'], (function (workbox) { 'use strict';
    */
   workbox.precacheAndRoute([{
     "url": "index.html",
-    "revision": "0.g3f8he3t7kg"
+    "revision": "0.m66qfb4gi9"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
     allowlist: [/^\/$/]
   }));
   workbox.registerRoute(/\/data\/.*\.json$/i, new workbox.CacheFirst({
-    "cacheName": "noor-quran-json-cache",
+    "cacheName": "naghma-quran-json-cache",
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 20,
       maxAgeSeconds: 31536000

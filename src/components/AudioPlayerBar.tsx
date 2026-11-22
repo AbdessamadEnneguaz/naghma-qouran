@@ -80,6 +80,7 @@ interface AudioPlayerBarProps {
   forceExpandSignal: number;
   collapseSignal: number;
   isInstalled?: boolean;
+  hideOnMobileIdle?: boolean;
   onUpdateTalqeen: (patch: Partial<TalqeenConfig>) => void;
   onSkipTalqeenPause: () => void;
   onOpenInstall?: () => void;
@@ -133,6 +134,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
   forceExpandSignal,
   collapseSignal,
   isInstalled = false,
+  hideOnMobileIdle = false,
   onUpdateTalqeen,
   onSkipTalqeenPause,
   onOpenInstall,
@@ -183,7 +185,9 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
 
   return (
     <div
-      className={`fixed bottom-0 left-0 right-0 z-40 transition-all duration-300 ${
+      className={`fixed bottom-14 md:bottom-0 left-0 right-0 z-40 transition-all duration-300 ${
+        hideOnMobileIdle ? 'hidden md:block' : ''
+      } ${
         focusMode
           ? 'translate-y-full opacity-0 pointer-events-none'
           : 'translate-y-0 opacity-100'
@@ -273,6 +277,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
             type="range"
             min={0}
             max={duration > 0 ? duration : 100}
+            step="any"
             value={duration > 0 ? currentTime : 0}
             onChange={(e) => onSeek(Number(e.target.value))}
             aria-label="Seek recitation progress"
@@ -508,32 +513,68 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
               </button>
             </div>
 
-            {/* Row 2B: Exact Verse Timing Sync Offset (-2.0s to +2.0s) */}
+            {/* Row 2B: Instant Verse Timing Sync Nudge (-0.5s / +0.5s) & Fine Offset (-5.0s to +5.0s) */}
             <div className="pt-2.5 border-t border-[#B4891B]/12 dark:border-white/8 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-              <div className="flex items-center justify-between sm:min-w-[210px] gap-2 text-[11px] font-semibold text-[#57534E] dark:text-[#9CA3AF] tabular-nums">
+              <div className="flex items-center justify-between sm:min-w-[220px] gap-2 text-[11px] font-semibold text-[#57534E] dark:text-[#9CA3AF] tabular-nums">
                 <label htmlFor="dock-sync-offset">{t.audioSyncOffsetLabel}</label>
-                <span className="text-[#B4891B] dark:text-[#D4AF37]">
+                <span
+                  data-testid="sync-offset-readout"
+                  className="text-[#B4891B] dark:text-[#D4AF37]"
+                >
                   {settings.audioSyncOffsetSec > 0 ? '+' : ''}
                   {settings.audioSyncOffsetSec.toFixed(1)}s
                 </span>
               </div>
               <div className="flex items-center gap-2 flex-1">
+                <button
+                  type="button"
+                  data-testid="sync-nudge-minus"
+                  onClick={() => {
+                    const next = Math.max(
+                      -5,
+                      Math.round((settings.audioSyncOffsetSec - 0.5) * 10) / 10
+                    );
+                    onUpdateSettings({audioSyncOffsetSec: next});
+                  }}
+                  aria-label="Sync offset minus 0.5 seconds"
+                  className="rounded-lg border border-[#B4891B]/25 dark:border-white/14 bg-[#F3ECE0] dark:bg-[#13181E] px-2.5 py-1 text-[11px] font-semibold text-[#1C1917] dark:text-[#F4F1EA] hover:border-[#10B981] transition-colors shrink-0 tabular-nums"
+                >
+                  -0.5s
+                </button>
                 <input
                   id="dock-sync-offset"
                   type="range"
-                  min={-2}
-                  max={2}
+                  min={-5}
+                  max={5}
                   step={0.1}
                   value={settings.audioSyncOffsetSec}
                   onChange={(e) =>
-                    onUpdateSettings({audioSyncOffsetSec: Number(e.target.value)})
+                    onUpdateSettings({
+                      audioSyncOffsetSec: Math.round(Number(e.target.value) * 10) / 10,
+                    })
                   }
                   aria-label={t.audioSyncOffsetLabel}
                   className="w-full accent-[#10B981]"
                 />
+                <button
+                  type="button"
+                  data-testid="sync-nudge-plus"
+                  onClick={() => {
+                    const next = Math.min(
+                      5,
+                      Math.round((settings.audioSyncOffsetSec + 0.5) * 10) / 10
+                    );
+                    onUpdateSettings({audioSyncOffsetSec: next});
+                  }}
+                  aria-label="Sync offset plus 0.5 seconds"
+                  className="rounded-lg border border-[#B4891B]/25 dark:border-white/14 bg-[#F3ECE0] dark:bg-[#13181E] px-2.5 py-1 text-[11px] font-semibold text-[#1C1917] dark:text-[#F4F1EA] hover:border-[#10B981] transition-colors shrink-0 tabular-nums"
+                >
+                  +0.5s
+                </button>
                 {settings.audioSyncOffsetSec !== 0 && (
                   <button
                     type="button"
+                    data-testid="sync-nudge-reset"
                     onClick={() => onUpdateSettings({audioSyncOffsetSec: 0})}
                     className="rounded-lg border border-[#B4891B]/25 dark:border-white/14 px-2 py-1 text-[11px] font-semibold text-[#57534E] dark:text-[#9CA3AF] hover:text-[#1C1917] dark:hover:text-[#F4F1EA] shrink-0"
                   >
