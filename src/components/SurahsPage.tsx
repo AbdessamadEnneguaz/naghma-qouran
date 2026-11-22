@@ -1,8 +1,7 @@
 import React, {useMemo, useState} from 'react';
-import {Bookmark, Search, Sparkles, Trash2} from 'lucide-react';
+import {Search, Trash2} from 'lucide-react';
 import type {BookmarkEntry, OfflineSurahRecord, SurahMeta} from '../types/quran';
 import {stripTashkeel, toArabicDigits} from '../utils/quranLogic';
-import {RubElHizbBadge} from './OrnamentalSvg';
 import type {AppLang, Translations} from '../i18n/translations';
 
 interface SurahsPageProps {
@@ -190,7 +189,9 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
                   className="group text-start rounded-xl border border-[#B4891B]/18 dark:border-[#D4AF37]/16 bg-[#F4EFE4] dark:bg-[#11171D] p-3.5 sm:p-4 hover:border-[#B4891B]/60 dark:hover:border-[#D4AF37]/55 transition-colors flex items-center justify-between gap-3.5"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <RubElHizbBadge number={surah.id} lang={lang} />
+                    <span className="h-9 w-9 rounded-xl border border-[#B4891B]/20 dark:border-white/10 bg-[#FAF6EE] dark:bg-[#0B0E11] flex items-center justify-center text-xs font-bold text-[#B4891B] dark:text-[#D4AF37] tabular-nums shrink-0">
+                      {numFmt(surah.id)}
+                    </span>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-sm text-[#1C1917] dark:text-[#F7F4EB] truncate group-hover:text-[#059669] dark:group-hover:text-[#10B981] transition-colors">
@@ -268,7 +269,6 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
         <div className="space-y-3">
           {bookmarks.length === 0 ? (
             <div className="rounded-2xl border border-[#B4891B]/16 dark:border-[#D4AF37]/14 bg-[#F4EFE4]/60 dark:bg-[#11171D]/60 p-10 text-center space-y-2">
-              <Bookmark className="h-7 w-7 mx-auto text-[#B4891B] dark:text-[#D4AF37]" />
               <p className="text-sm font-medium text-[#1C1917] dark:text-[#F7F4EB]">
                 {t.noBookmarksTitle}
               </p>
@@ -288,12 +288,9 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
                     onClick={() => onOpenSurah(bm.surah, bm.ayah)}
                     className="text-start flex-1 min-w-0 space-y-1.5"
                   >
-                    <div className="flex items-center gap-2 text-xs font-semibold text-[#B4891B] dark:text-[#D4AF37] tabular-nums">
-                      <Sparkles className="h-3.5 w-3.5 shrink-0" />
-                      <span>
-                        {lang === 'ar' ? bm.surahNameAr : bm.surahNameEn} · {bm.surah}:{bm.ayah} ·{' '}
-                        {t.pageWord} {bm.page}
-                      </span>
+                    <div className="text-xs font-semibold text-[#B4891B] dark:text-[#D4AF37] tabular-nums">
+                      {lang === 'ar' ? bm.surahNameAr : bm.surahNameEn} · {bm.surah}:{bm.ayah} ·{' '}
+                      {t.pageWord} {bm.page}
                     </div>
                     <p
                       dir="rtl"

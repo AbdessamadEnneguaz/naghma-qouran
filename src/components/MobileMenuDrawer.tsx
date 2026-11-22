@@ -1,19 +1,11 @@
 import React from 'react';
-import {
-  CalendarCheck2,
-  Globe,
-  HardDrive,
-  HeartHandshake,
-  Moon,
-  Smartphone,
-  Sun,
-  X,
-} from 'lucide-react';
+import {RefreshCw, X} from 'lucide-react';
 import type {AppRoute} from '../utils/routing';
 import type {ThemeMode} from '../types/quran';
 import type {AppLang, Translations} from '../i18n/translations';
+import type {UpdateCheckStatus} from '../hooks/useAppUpdater';
 import {toArabicDigits} from '../utils/quranLogic';
-import {NaghmaEmblemSvg} from './OrnamentalSvg';
+import {NaghmaAppIconImg} from './OrnamentalSvg';
 
 interface MobileMenuDrawerProps {
   isOpen: boolean;
@@ -23,11 +15,16 @@ interface MobileMenuDrawerProps {
   isInstalled: boolean;
   khatmaPercent: number;
   cachedSurahCount: number;
+  currentVersion: string;
+  updateAvailable: boolean;
+  updateStatus: UpdateCheckStatus;
   onClose: () => void;
   onNavigate: (route: AppRoute) => void;
   onOpenHeartGuide: () => void;
   onToggleTheme: () => void;
   onToggleLang: () => void;
+  onCheckUpdates: () => void;
+  onApplyUpdate: () => void;
 }
 
 export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
@@ -38,11 +35,16 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
   isInstalled,
   khatmaPercent,
   cachedSurahCount,
+  currentVersion,
+  updateAvailable,
+  updateStatus,
   onClose,
   onNavigate,
   onOpenHeartGuide,
   onToggleTheme,
   onToggleLang,
+  onCheckUpdates,
+  onApplyUpdate,
 }) => {
   if (!isOpen) return null;
 
@@ -54,24 +56,24 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
       aria-modal="true"
       aria-label={t.mobileMenuTitle}
       data-testid="mobile-menu-drawer"
-      className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex justify-end bg-black/55 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="w-[84%] max-w-xs h-full border-s border-[#B4891B]/30 dark:border-[#D4AF37]/25 bg-[#FAF6EE] dark:bg-[#0E1318] shadow-2xl flex flex-col justify-between overflow-y-auto"
+        className="w-[82%] max-w-xs h-full pt-safe-top pb-safe-bottom border-s border-[#B4891B]/20 dark:border-white/10 bg-[#FAF6EE] dark:bg-[#0E1318] shadow-2xl flex flex-col justify-between overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="space-y-4">
-          {/* Ornamental Drawer Header */}
-          <div className="p-5 border-b border-[#B4891B]/18 dark:border-white/10 islamic-lattice-bg flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <NaghmaEmblemSvg className="h-7 w-7 shrink-0" />
+          {/* Minimal Drawer Header */}
+          <div className="p-5 border-b border-[#B4891B]/12 dark:border-white/8 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <NaghmaAppIconImg alt={t.appName} className="h-9 w-9 rounded-xl shrink-0" />
               <div>
                 <div className="font-bold text-sm text-[#1C1917] dark:text-[#F4F1EA]">
                   {t.appName}
                 </div>
-                <div className="text-[11px] text-[#B4891B] dark:text-[#D4AF37]">
-                  {t.mobileMenuTitle}
+                <div className="text-[11px] text-[#57534E] dark:text-[#9CA3AF] tabular-nums">
+                  v{currentVersion}
                 </div>
               </div>
             </div>
@@ -79,27 +81,37 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
               type="button"
               onClick={onClose}
               aria-label={t.closeWord}
-              className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-xl border border-[#B4891B]/20 dark:border-white/12 text-[#57534E] dark:text-[#9CA3AF] hover:text-[#1C1917] dark:hover:text-[#F4F1EA]"
+              className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-xl text-[#57534E] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/8"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          {/* Primary Menu Destinations */}
-          <div className="px-3.5 space-y-2">
+          {/* Clean Text-First Destinations (Zero Icon Clutter) */}
+          <div className="px-3.5 space-y-1.5">
+            <button
+              type="button"
+              data-testid="drawer-adhkar-btn"
+              onClick={() => {
+                onClose();
+                onNavigate('adhkar');
+              }}
+              className="w-full flex items-center justify-between rounded-xl px-3.5 py-3 text-start text-sm font-semibold text-[#1C1917] dark:text-[#F4F1EA] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            >
+              <span>{t.bentoAdhkarTitle}</span>
+              <span className="text-xs text-[#57534E] dark:text-[#9CA3AF]">›</span>
+            </button>
+
             <button
               type="button"
               onClick={() => {
                 onClose();
                 onNavigate('khatma');
               }}
-              className="w-full flex items-center justify-between gap-3 rounded-xl border border-[#B4891B]/20 dark:border-white/10 bg-[#F4EFE4] dark:bg-[#11171D] px-3.5 py-3 text-start hover:border-[#10B981] transition-colors"
+              className="w-full flex items-center justify-between rounded-xl px-3.5 py-3 text-start text-sm font-semibold text-[#1C1917] dark:text-[#F4F1EA] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
             >
-              <span className="flex items-center gap-3 text-sm font-semibold text-[#1C1917] dark:text-[#F4F1EA]">
-                <CalendarCheck2 className="h-4.5 w-4.5 text-[#10B981]" />
-                <span>{t.bentoKhatmaTitle}</span>
-              </span>
-              <span className="text-xs font-bold text-[#059669] dark:text-[#34D399] tabular-nums">
+              <span>{t.bentoKhatmaTitle}</span>
+              <span className="text-xs font-semibold text-[#059669] dark:text-[#34D399] tabular-nums">
                 {numFmt(khatmaPercent)}%
               </span>
             </button>
@@ -110,12 +122,10 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                 onClose();
                 onOpenHeartGuide();
               }}
-              className="w-full flex items-center justify-between gap-3 rounded-xl border border-[#B4891B]/20 dark:border-white/10 bg-[#F4EFE4] dark:bg-[#11171D] px-3.5 py-3 text-start hover:border-[#D4AF37] transition-colors"
+              className="w-full flex items-center justify-between rounded-xl px-3.5 py-3 text-start text-sm font-semibold text-[#1C1917] dark:text-[#F4F1EA] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
             >
-              <span className="flex items-center gap-3 text-sm font-semibold text-[#1C1917] dark:text-[#F4F1EA]">
-                <HeartHandshake className="h-4.5 w-4.5 text-[#B4891B] dark:text-[#D4AF37]" />
-                <span>{t.bentoHeartTitle}</span>
-              </span>
+              <span>{t.bentoHeartTitle}</span>
+              <span className="text-xs text-[#57534E] dark:text-[#9CA3AF]">›</span>
             </button>
 
             <button
@@ -124,13 +134,10 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                 onClose();
                 onNavigate('vault');
               }}
-              className="w-full flex items-center justify-between gap-3 rounded-xl border border-[#B4891B]/20 dark:border-white/10 bg-[#F4EFE4] dark:bg-[#11171D] px-3.5 py-3 text-start hover:border-[#10B981] transition-colors"
+              className="w-full flex items-center justify-between rounded-xl px-3.5 py-3 text-start text-sm font-semibold text-[#1C1917] dark:text-[#F4F1EA] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
             >
-              <span className="flex items-center gap-3 text-sm font-semibold text-[#1C1917] dark:text-[#F4F1EA]">
-                <HardDrive className="h-4.5 w-4.5 text-[#059669] dark:text-[#10B981]" />
-                <span>{t.navVault}</span>
-              </span>
-              <span className="text-xs text-[#57534E] dark:text-[#9CAFA6] tabular-nums">
+              <span>{t.navVault}</span>
+              <span className="text-xs text-[#57534E] dark:text-[#9CA3AF] tabular-nums">
                 {numFmt(cachedSurahCount)}
               </span>
             </button>
@@ -143,39 +150,72 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                   onClose();
                   onNavigate('download');
                 }}
-                className="w-full flex items-center justify-between gap-3 rounded-xl border border-[#D4AF37]/45 bg-gradient-to-r from-[#D4AF37]/18 to-[#10B981]/12 px-3.5 py-3 text-start hover:border-[#D4AF37] transition-colors"
+                className="w-full flex items-center justify-between rounded-xl border border-[#D4AF37]/35 bg-[#D4AF37]/12 px-3.5 py-3 text-start text-sm font-bold text-[#9A6E10] dark:text-[#FDE68A]"
               >
-                <span className="flex items-center gap-3 text-sm font-bold text-[#B4891B] dark:text-[#FDE68A]">
-                  <Smartphone className="h-4.5 w-4.5 shrink-0" />
-                  <span>{t.downloadApkHeroCta}</span>
-                </span>
+                <span>{t.downloadApkHeroCta}</span>
+                <span className="text-xs">APK ›</span>
               </button>
             )}
+
+            {/* Live OTA Update Check */}
+            <div className="pt-2">
+              {updateAvailable ? (
+                <button
+                  type="button"
+                  data-testid="drawer-apply-update-btn"
+                  onClick={onApplyUpdate}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#10B981] px-3.5 py-2.5 text-xs font-bold text-[#0A0D10]"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  <span>
+                    {lang === 'ar' ? 'تحديث جديد متاح — اضغط للتحديث' : 'Update Ready — Tap to Refresh'}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  data-testid="drawer-check-update-btn"
+                  onClick={onCheckUpdates}
+                  className="w-full flex items-center justify-between rounded-xl border border-[#B4891B]/18 dark:border-white/10 px-3.5 py-2.5 text-xs font-medium text-[#57534E] dark:text-[#9CA3AF] hover:text-[#1C1917] dark:hover:text-[#F4F1EA]"
+                >
+                  <span>{lang === 'ar' ? 'التحقق من التحديثات' : 'Check for Updates'}</span>
+                  <span className="text-[11px]">
+                    {updateStatus === 'checking'
+                      ? lang === 'ar'
+                        ? 'جارٍ الفحص...'
+                        : 'Checking...'
+                      : updateStatus === 'uptodate'
+                        ? lang === 'ar'
+                          ? 'مُحدّث'
+                          : 'Up to date'
+                        : updateStatus === 'offline'
+                          ? lang === 'ar'
+                            ? 'دون اتصال'
+                            : 'Offline'
+                          : `v${currentVersion}`}
+                  </span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Footer Controls: Theme Toggle + Language Switch */}
-        <div className="p-4 border-t border-[#B4891B]/16 dark:border-white/10 grid grid-cols-2 gap-2.5">
+        {/* Footer Controls */}
+        <div className="p-4 border-t border-[#B4891B]/12 dark:border-white/8 grid grid-cols-2 gap-2.5">
           <button
             type="button"
             onClick={onToggleTheme}
-            className="flex items-center justify-center gap-2 rounded-xl border border-[#B4891B]/22 dark:border-white/12 bg-[#F4EFE4] dark:bg-[#11171D] py-2.5 px-3 text-xs font-semibold text-[#1C1917] dark:text-[#F4F1EA]"
+            className="rounded-xl border border-[#B4891B]/20 dark:border-white/12 bg-[#F4EFE4] dark:bg-[#11171D] py-2.5 px-3 text-xs font-semibold text-[#1C1917] dark:text-[#F4F1EA]"
           >
-            {theme === 'dark' ? (
-              <Sun className="h-4 w-4 text-[#D4AF37]" />
-            ) : (
-              <Moon className="h-4 w-4 text-[#B4891B]" />
-            )}
-            <span>{theme === 'dark' ? (lang === 'ar' ? 'نهاري' : 'Light') : (lang === 'ar' ? 'ليلي' : 'Dark')}</span>
+            {theme === 'dark' ? (lang === 'ar' ? 'الوضع النهاري' : 'Light Mode') : (lang === 'ar' ? 'الوضع الليلي' : 'Dark Mode')}
           </button>
 
           <button
             type="button"
             onClick={onToggleLang}
-            className="flex items-center justify-center gap-2 rounded-xl border border-[#B4891B]/22 dark:border-white/12 bg-[#F4EFE4] dark:bg-[#11171D] py-2.5 px-3 text-xs font-semibold text-[#1C1917] dark:text-[#F4F1EA]"
+            className="rounded-xl border border-[#B4891B]/20 dark:border-white/12 bg-[#F4EFE4] dark:bg-[#11171D] py-2.5 px-3 text-xs font-semibold text-[#1C1917] dark:text-[#F4F1EA]"
           >
-            <Globe className="h-4 w-4 text-[#10B981]" />
-            <span>{t.langToggleLabel}</span>
+            {t.langToggleLabel}
           </button>
         </div>
       </div>

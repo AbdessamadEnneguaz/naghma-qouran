@@ -185,7 +185,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
 
   return (
     <div
-      className={`fixed bottom-14 md:bottom-0 left-0 right-0 z-40 transition-all duration-300 ${
+      className={`fixed bottom-[calc(3.625rem+env(safe-area-inset-bottom,0px))] md:bottom-0 left-0 right-0 z-40 transition-all duration-300 ${
         hideOnMobileIdle ? 'hidden md:block' : ''
       } ${
         focusMode
@@ -708,9 +708,9 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
         )}
 
         {/* Streamlined Tarteel-Style Bottom Dock: Play Reciter | Mic Recite | Hifz Mask | Settings/Reciter */}
-        <div className="mx-auto max-w-5xl px-3 sm:px-6 h-[62px] flex items-center justify-between gap-2 sm:gap-4">
+        <div className="mx-auto max-w-5xl px-2.5 sm:px-6 h-[60px] sm:h-[62px] flex items-center justify-between gap-1.5 sm:gap-4">
           {/* 1. Play Reciter & Active Ayah */}
-          <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
             <button
               type="button"
               onClick={onTogglePlayPause}
@@ -729,7 +729,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
             <button
               type="button"
               onClick={onJumpToActiveAyah}
-              className="min-w-0 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10B981] rounded-lg px-1"
+              className="min-w-0 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10B981] rounded-lg px-0.5 sm:px-1"
             >
               <div
                 className={`font-semibold text-[#1C1917] dark:text-[#F4F1EA] truncate tabular-nums ${
@@ -747,13 +747,13 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
           </div>
 
           {/* 2. Spotlight Center Controls: Mic Recite & Hifz Mask */}
-          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <button
               type="button"
               onClick={onToggleVoiceRecite}
               aria-pressed={isListening}
               aria-label={isListening ? t.micStop : t.micRecite}
-              className={`relative h-12 w-12 -mt-3 flex items-center justify-center rounded-full shadow-lg transition-all ${
+              className={`relative h-11 w-11 sm:h-12 sm:w-12 -mt-2.5 sm:-mt-3 flex items-center justify-center rounded-full shadow-lg transition-all ${
                 isListening
                   ? 'bg-rose-500 text-white ring-4 ring-rose-500/30 scale-105'
                   : 'bg-[#059669] dark:bg-[#10B981] text-white dark:text-[#0B0E11] hover:scale-105'
@@ -782,7 +782,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
               ) : (
                 <EyeOff className="h-4 w-4" />
               )}
-              <span className="hidden xs:inline sm:inline">{t.hifzMode}</span>
+              <span className="hidden sm:inline">{t.hifzMode}</span>
             </button>
           </div>
 

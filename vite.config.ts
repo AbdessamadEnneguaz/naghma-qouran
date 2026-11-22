@@ -14,6 +14,7 @@ export default defineConfig(() => {
         registerType: 'autoUpdate',
         includeAssets: [
           'icon.svg',
+          'naghma-app-icon.png',
           'apple-touch-icon.png',
           'pwa-192x192.png',
           'pwa-512x512.png',
@@ -55,7 +56,9 @@ export default defineConfig(() => {
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-          navigateFallbackDenylist: [/\.apk$/i],
+          skipWaiting: true,
+          clientsClaim: true,
+          navigateFallbackDenylist: [/\.apk$/i, /\/version\.json$/i],
           runtimeCaching: [
             {
               urlPattern: /\/data\/.*\.json$/i,
@@ -107,9 +110,22 @@ export default defineConfig(() => {
         },
       }),
       {
-        name: 'serve-android-apk-headers',
+        name: 'serve-android-apk-and-version',
         configureServer(server) {
+          const devBuildId = `dev-${Date.now()}`;
           server.middlewares.use((req, res, next) => {
+            if (req.url && /^\/version\.json(\?.*)?$/i.test(req.url)) {
+              res.setHeader('Content-Type', 'application/json');
+              res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+              res.end(
+                JSON.stringify({
+                  version: '2.0.0',
+                  buildId: devBuildId,
+                  apkUrl: '/naghma-quran.apk',
+                })
+              );
+              return;
+            }
             if (req.url && /\.apk(\?.*)?$/i.test(req.url)) {
               res.setHeader('Content-Type', 'application/vnd.android.package-archive');
               res.setHeader('Content-Disposition', 'attachment; filename="naghma-quran.apk"');
@@ -120,6 +136,9 @@ export default defineConfig(() => {
         },
         configurePreviewServer(server) {
           server.middlewares.use((req, res, next) => {
+            if (req.url && /^\/version\.json(\?.*)?$/i.test(req.url)) {
+              res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+            }
             if (req.url && /\.apk(\?.*)?$/i.test(req.url)) {
               res.setHeader('Content-Type', 'application/vnd.android.package-archive');
               res.setHeader('Content-Disposition', 'attachment; filename="naghma-quran.apk"');
@@ -130,7 +149,7 @@ export default defineConfig(() => {
         },
       },
       {
-        name: 'copy-unbundled-src-assets',
+        name: 'copy-unbundled-src-assets-and-version',
         apply: 'build',
         closeBundle(error?: Error): void {
           if (error) {
@@ -141,6 +160,17 @@ export default defineConfig(() => {
           const distAssets = path.resolve(distDir, 'src/assets');
           if (fs.existsSync(distDir) && fs.existsSync(srcAssets)) {
             fs.cpSync(srcAssets, distAssets, {recursive: true, force: true});
+          }
+          if (fs.existsSync(distDir)) {
+            fs.writeFileSync(
+              path.join(distDir, 'version.json'),
+              JSON.stringify({
+                version: '2.0.0',
+                buildId: `prod-${Date.now()}`,
+                apkUrl: '/naghma-quran.apk',
+              }),
+              'utf-8'
+            );
           }
         },
       },

@@ -29,7 +29,7 @@ import {
   tokenizeVerseWords,
 } from '../utils/quranLogic';
 import {getVerseTextByRiwayat} from '../services/quranLoader';
-import {MushafCornerOrnament, SurahCartoucheBanner} from './OrnamentalSvg';
+import {SurahCartoucheBanner} from './OrnamentalSvg';
 import type {AppLang, Translations} from '../i18n/translations';
 
 interface MushafViewProps {
@@ -489,19 +489,9 @@ export const MushafView: React.FC<MushafViewProps> = ({
         <article
           data-testid="mushaf-page-frame"
           dir={lang === 'ar' ? 'rtl' : 'ltr'}
-          className="relative mx-3 my-2 sm:mx-auto max-w-3xl rounded-2xl border border-amber-500/40 bg-[#FDFBF7] dark:bg-[#0E1318] p-4 sm:p-8 shadow-lg ring-1 ring-inset ring-amber-500/20 overflow-hidden"
+          className="relative mx-2.5 my-2 sm:mx-auto max-w-3xl rounded-2xl border border-[#B4891B]/30 dark:border-white/12 bg-[#FDFBF7] dark:bg-[#0E1318] p-4 sm:p-8 shadow-sm overflow-hidden"
         >
-          {/* Subtle inner hairline Mushaf border */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-1.5 sm:inset-2.5 rounded-xl border border-amber-500/20 dark:border-amber-400/18"
-          />
-          <MushafCornerOrnament position="top-left" />
-          <MushafCornerOrnament position="top-right" />
-          <MushafCornerOrnament position="bottom-left" />
-          <MushafCornerOrnament position="bottom-right" />
-
-          <div className="relative z-10 px-1 sm:px-3 py-0.5 sm:py-1">
+          <div className="relative z-10 px-0.5 sm:px-2 py-0.5 sm:py-1">
             {/* Subtle Mushaf Page Header Metadata */}
             <div
               dir="ltr"
@@ -807,7 +797,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
               type="button"
               onClick={() => onChangePage(Math.min(604, currentPage + 1))}
               disabled={currentPage >= 604}
-              className="inline-flex items-center gap-1 sm:gap-1.5 rounded-xl border border-[#B4891B]/25 dark:border-white/12 px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-[#1C1917] dark:text-[#F4F1EA] disabled:opacity-35 hover:border-[#10B981] transition-colors whitespace-nowrap"
+              className="min-h-[40px] inline-flex items-center gap-1 sm:gap-1.5 rounded-xl border border-[#B4891B]/25 dark:border-white/12 px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-[#1C1917] dark:text-[#F4F1EA] disabled:opacity-35 hover:border-[#10B981] transition-colors whitespace-nowrap"
             >
               <ChevronLeft className="h-4 w-4" />
               <span>{t.nextPage}</span>
@@ -816,7 +806,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
             <button
               type="button"
               onClick={() => setShowPageJumper((v) => !v)}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full border border-[#B4891B]/25 dark:border-[#D4AF37]/25 bg-[#F3ECE0]/80 dark:bg-[#13181E] text-[#B4891B] dark:text-[#D4AF37] tabular-nums hover:border-[#10B981] transition-colors whitespace-nowrap"
+              className="min-h-[38px] inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full border border-[#B4891B]/25 dark:border-[#D4AF37]/25 bg-[#F3ECE0]/80 dark:bg-[#13181E] text-[#B4891B] dark:text-[#D4AF37] tabular-nums hover:border-[#10B981] transition-colors whitespace-nowrap"
             >
               <span className="font-quran-scheherazade text-base sm:text-lg leading-none">
                 {toArabicDigits(currentPage)} / ٦٠٤
@@ -827,7 +817,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
               type="button"
               onClick={() => onChangePage(Math.max(1, currentPage - 1))}
               disabled={currentPage <= 1}
-              className="inline-flex items-center gap-1 sm:gap-1.5 rounded-xl border border-[#B4891B]/25 dark:border-white/12 px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-[#1C1917] dark:text-[#F4F1EA] disabled:opacity-35 hover:border-[#10B981] transition-colors whitespace-nowrap"
+              className="min-h-[40px] inline-flex items-center gap-1 sm:gap-1.5 rounded-xl border border-[#B4891B]/25 dark:border-white/12 px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-[#1C1917] dark:text-[#F4F1EA] disabled:opacity-35 hover:border-[#10B981] transition-colors whitespace-nowrap"
             >
               <span>{t.prevPage}</span>
               <ChevronRight className="h-4 w-4" />
@@ -854,7 +844,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
         <div
           role="region"
           aria-label={`Actions for Ayah ${actionMenuVerse.surah}:${actionMenuVerse.ayah}`}
-          className="fixed bottom-[126px] md:bottom-[76px] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-xl rounded-2xl border border-[#B4891B]/40 dark:border-white/16 bg-[#FAF6EE]/96 dark:bg-[#13181E]/96 backdrop-blur-md px-3 py-2 shadow-2xl flex items-center justify-between gap-2"
+          className="fixed bottom-[calc(8.1rem+env(safe-area-inset-bottom,0px))] md:bottom-[76px] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-xl rounded-2xl border border-[#B4891B]/40 dark:border-white/16 bg-[#FAF6EE]/96 dark:bg-[#13181E]/96 backdrop-blur-md px-3 py-2 shadow-2xl flex items-center justify-between gap-2"
         >
           <span className="text-xs font-bold text-[#B4891B] dark:text-[#D4AF37] tabular-nums px-1 whitespace-nowrap">
             {actionMenuVerse.surah}:{actionMenuVerse.ayah}

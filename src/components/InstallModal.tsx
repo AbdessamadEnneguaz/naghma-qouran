@@ -2,7 +2,7 @@ import React from 'react';
 import {CheckCircle2, Download, Share, Smartphone, X} from 'lucide-react';
 import type {AppLang, Translations} from '../i18n/translations';
 import {getApkDownloadUrl} from '../hooks/usePWAInstall';
-import {NaghmaEmblemSvg} from './OrnamentalSvg';
+import {NaghmaAppIconImg} from './OrnamentalSvg';
 
 interface InstallModalProps {
   lang: AppLang;
@@ -43,9 +43,10 @@ export const InstallModal: React.FC<InstallModalProps> = ({
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-xl bg-[#059669]/12 dark:bg-[#10B981]/12 border border-[#D4AF37]/30 flex items-center justify-center shrink-0">
-              <NaghmaEmblemSvg className="h-7 w-7" />
-            </div>
+            <NaghmaAppIconImg
+              alt="Naghma Quran"
+              className="h-11 w-11 rounded-xl shrink-0"
+            />
             <div>
               <h3 className="text-base font-bold text-[#1C1917] dark:text-[#F7F4EB]">
                 {t.installAppTitle}

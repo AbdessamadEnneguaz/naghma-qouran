@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  BookOpen,
-  Compass,
-  Home,
-  LayoutGrid,
-  Menu,
-} from 'lucide-react';
+import {BookOpen, Home, LayoutGrid, Menu} from 'lucide-react';
 import type {AppRoute} from '../utils/routing';
 import type {Translations} from '../i18n/translations';
 
@@ -36,16 +30,22 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
     {id: 'home', label: t.navHome, icon: Home},
     {id: 'mushaf', label: t.navMushaf, icon: BookOpen},
     {id: 'surahs', label: t.navSurahs, icon: LayoutGrid},
-    {id: 'adhkar', label: t.navAdhkar, icon: Compass},
   ];
+
+  const isMoreActive =
+    isDrawerOpen ||
+    activeRoute === 'adhkar' ||
+    activeRoute === 'khatma' ||
+    activeRoute === 'download' ||
+    activeRoute === 'vault';
 
   return (
     <nav
       aria-label="Mobile navigation"
       data-testid="mobile-bottom-nav"
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 h-14 border-t border-[#B4891B]/20 dark:border-white/10 bg-[#FAF6EE]/92 dark:bg-[#0B0E11]/92 backdrop-blur-lg shadow-[0_-6px_24px_rgba(0,0,0,0.18)]"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 pb-safe-bottom border-t border-[#B4891B]/14 dark:border-white/8 bg-[#FAF6EE]/96 dark:bg-[#0A0D10]/96 backdrop-blur-md"
     >
-      <div className="grid grid-cols-5 h-full max-w-lg mx-auto px-1">
+      <div className="grid grid-cols-4 h-14 max-w-md mx-auto px-2 items-center">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeRoute === item.id;
@@ -59,11 +59,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
               className={`min-h-[44px] flex flex-col items-center justify-center gap-0.5 rounded-xl transition-colors ${
                 isActive
                   ? 'text-[#059669] dark:text-[#10B981]'
-                  : 'text-[#57534E] dark:text-[#9CA3AF] hover:text-[#1C1917] dark:hover:text-[#F4F1EA]'
+                  : 'text-[#57534E] dark:text-[#9CA3AF]'
               }`}
             >
               <Icon className="h-[19px] w-[19px]" />
-              <span className="text-[10px] font-semibold leading-tight whitespace-nowrap">
+              <span className="text-[11px] font-medium leading-tight whitespace-nowrap">
                 {item.label}
               </span>
             </button>
@@ -77,13 +77,13 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           aria-expanded={isDrawerOpen}
           aria-label={t.navMore}
           className={`min-h-[44px] flex flex-col items-center justify-center gap-0.5 rounded-xl transition-colors ${
-            isDrawerOpen || activeRoute === 'khatma' || activeRoute === 'download' || activeRoute === 'vault'
+            isMoreActive
               ? 'text-[#B4891B] dark:text-[#D4AF37]'
-              : 'text-[#57534E] dark:text-[#9CA3AF] hover:text-[#1C1917] dark:hover:text-[#F4F1EA]'
+              : 'text-[#57534E] dark:text-[#9CA3AF]'
           }`}
         >
           <Menu className="h-[19px] w-[19px]" />
-          <span className="text-[10px] font-semibold leading-tight whitespace-nowrap">
+          <span className="text-[11px] font-medium leading-tight whitespace-nowrap">
             {t.navMore}
           </span>
         </button>

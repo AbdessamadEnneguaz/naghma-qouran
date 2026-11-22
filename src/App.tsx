@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
-import {AlertCircle, Bell, Loader2, WifiOff, X} from 'lucide-react';
+import {AlertCircle, Bell, Loader2, RefreshCw, WifiOff, X} from 'lucide-react';
 import type {
   BookmarkEntry,
   LastReadState,
@@ -47,6 +47,7 @@ import {
   type AppRoute,
 } from './utils/routing';
 import {useAudioPlayer} from './hooks/useAudioPlayer';
+import {useAppUpdater} from './hooks/useAppUpdater';
 import {useKhatmaReminders} from './hooks/useKhatmaReminders';
 import {useOnlineStatus, usePWAInstall} from './hooks/usePWAInstall';
 import {useVoiceRecitation} from './hooks/useVoiceRecitation';
@@ -139,6 +140,8 @@ export default function App() {
 
   const isOnline = useOnlineStatus();
   const {isInstallable, isInstalled, isIOS, triggerNativeInstall} = usePWAInstall();
+  const updater = useAppUpdater();
+  const [dismissedUpdateBanner, setDismissedUpdateBanner] = useState(false);
   const activeReciter = useMemo(() => getReciterById(settings.reciterId), [settings.reciterId]);
   const t = TRANSLATIONS[lang];
   const khatma = useKhatmaReminders(lang);
@@ -277,13 +280,15 @@ export default function App() {
     };
   }, [refreshVaultStats]);
 
-  // Apply Dark / Light theme class to <html>
+  // Apply Dark / Light theme class and native colorScheme to <html>
   useEffect(() => {
     const root = document.documentElement;
     if (settings.theme === 'dark') {
       root.classList.add('dark');
+      root.style.colorScheme = 'dark';
     } else {
       root.classList.remove('dark');
+      root.style.colorScheme = 'light';
     }
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {
@@ -622,6 +627,34 @@ export default function App() {
         onToggleTheme={() => updateSettings({theme: settings.theme === 'dark' ? 'light' : 'dark'})}
       />
 
+      {updater.updateAvailable && !dismissedUpdateBanner && !isMushafFocus && (
+        <div
+          role="status"
+          data-testid="ota-update-banner"
+          className="bg-[#10B981]/14 border-b border-[#10B981]/25 px-4 py-2 text-xs font-semibold text-[#059669] dark:text-[#34D399] flex items-center justify-center gap-3"
+        >
+          <span>
+            {lang === 'ar' ? 'يتوفر تحديث جديد للتطبيق' : 'A new update is ready'}
+          </span>
+          <button
+            type="button"
+            onClick={() => void updater.applyUpdateNow()}
+            className="inline-flex items-center gap-1 rounded-lg bg-[#059669] dark:bg-[#10B981] px-2.5 py-1 text-[11px] font-bold text-white dark:text-[#0B0E11] hover:opacity-90"
+          >
+            <RefreshCw className="h-3 w-3" />
+            <span>{lang === 'ar' ? 'تحديث الآن' : 'Update Now'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setDismissedUpdateBanner(true)}
+            aria-label={t.closeWord}
+            className="p-0.5 rounded opacity-75 hover:opacity-100"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
       {!isOnline && !isMushafFocus && (
         <div className="bg-[#D4AF37]/15 border-b border-[#D4AF37]/25 px-4 py-1.5 text-center text-xs font-medium text-[#B4891B] dark:text-[#D4AF37] flex items-center justify-center gap-2">
           <WifiOff className="h-3.5 w-3.5" />
@@ -735,6 +768,7 @@ export default function App() {
             t={t}
             isInstallable={isInstallable}
             isInstalled={isInstalled}
+            currentVersion={updater.currentVersion}
             onTriggerNativeInstall={triggerNativeInstall}
           />
         )}
@@ -898,6 +932,9 @@ export default function App() {
         isInstalled={isInstalled}
         khatmaPercent={khatma.schedule.percentComplete}
         cachedSurahCount={offlineRecords.length}
+        currentVersion={updater.currentVersion}
+        updateAvailable={updater.updateAvailable}
+        updateStatus={updater.status}
         onClose={() => setShowMobileMenu(false)}
         onNavigate={navigateToRoute}
         onOpenHeartGuide={() => setShowHeartModal(true)}
@@ -905,6 +942,8 @@ export default function App() {
           updateSettings({theme: settings.theme === 'dark' ? 'light' : 'dark'})
         }
         onToggleLang={() => setLang((prev) => (prev === 'en' ? 'ar' : 'en'))}
+        onCheckUpdates={() => void updater.checkForUpdates(true)}
+        onApplyUpdate={() => void updater.applyUpdateNow()}
       />
 
       <TafsirDrawer

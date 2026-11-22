@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {NaghmaEmblemSvg} from './OrnamentalSvg';
+import {NaghmaAppIconImg} from './OrnamentalSvg';
 
 interface SplashScreenProps {
   isDataReady: boolean;
@@ -51,14 +51,15 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({isDataReady}) => {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(circle at 50% 44%, rgba(16, 185, 129, 0.12) 0%, rgba(212, 175, 55, 0.08) 28%, rgba(11, 14, 17, 0) 65%)',
+            'radial-gradient(circle at 50% 44%, rgba(16, 185, 129, 0.14) 0%, rgba(212, 175, 55, 0.1) 28%, rgba(11, 14, 17, 0) 65%)',
         }}
       />
 
       <div className="relative z-10 flex flex-col items-center text-center gap-4 animate-[naghma-splash-in_550ms_cubic-bezier(0.22,1,0.36,1)_both]">
-        <div className="relative flex items-center justify-center h-24 w-24 rounded-3xl border border-[#D4AF37]/30 bg-[#11171D]/90 shadow-2xl shadow-[#D4AF37]/10">
-          <NaghmaEmblemSvg className="h-16 w-16" />
-        </div>
+        <NaghmaAppIconImg
+          alt="Naghma Quran"
+          className="h-24 w-24 rounded-[26px] shadow-2xl shadow-[#D4AF37]/18"
+        />
 
         <div className="space-y-1">
           <p
