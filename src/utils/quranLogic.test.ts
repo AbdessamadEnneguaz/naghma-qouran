@@ -15,6 +15,7 @@ import {
   getUpcomingSurahs,
   normalizeSpeechWord,
   parseSearchQuery,
+  resolveActiveContextTarget,
   searchQuran,
   stripLeadingBismillah,
   stripTashkeel,
@@ -217,3 +218,66 @@ test('getUpcomingAyahs and getUpcomingSurahs return next 2 items across boundari
   assert.deepEqual(getUpcomingSurahs(113, 2), [114]);
   assert.deepEqual(getUpcomingSurahs(114, 2), []);
 });
+
+test('resolveActiveContextTarget resolves viewed Surah, Mushaf page first verse, or highlighted Ayah accurately', () => {
+  const sampleVerses: QuranVerse[] = [
+    {index: 0, surah: 1, ayah: 1, page: 1, juz: 1, hizbQuarter: 1, sajda: false, text: 'a'},
+    {index: 1, surah: 13, ayah: 43, page: 255, juz: 13, hizbQuarter: 102, sajda: false, text: 'b'},
+    {index: 2, surah: 14, ayah: 1, page: 255, juz: 13, hizbQuarter: 102, sajda: false, text: 'c'},
+    {index: 3, surah: 18, ayah: 1, page: 293, juz: 15, hizbQuarter: 117, sajda: false, text: 'd'},
+    {index: 4, surah: 18, ayah: 10, page: 294, juz: 15, hizbQuarter: 117, sajda: false, text: 'e'},
+  ];
+
+  // Viewing Surah 18 (Al-Kahf) on Mushaf p. 293 without highlight -> resolves 18:1, never 1:1
+  assert.deepEqual(
+    resolveActiveContextTarget({
+      activeRoute: 'mushaf',
+      verses: sampleVerses,
+      currentPage: 293,
+      currentSurahId: 18,
+      highlightedAyahKey: null,
+      lastRead: null,
+    }),
+    {surah: 18, ayah: 1}
+  );
+
+  // Viewing Page 255 with stale highlight from Surah 1 -> ignores stale highlight and resolves first verse on Page 255 (13:43)
+  assert.deepEqual(
+    resolveActiveContextTarget({
+      activeRoute: 'mushaf',
+      verses: sampleVerses,
+      currentPage: 255,
+      currentSurahId: 13,
+      highlightedAyahKey: '1:1',
+      lastRead: {surah: 1, ayah: 1, page: 1},
+    }),
+    {surah: 13, ayah: 43}
+  );
+
+  // Tapping 14:1 on Page 255 -> resolves highlighted verse 14:1
+  assert.deepEqual(
+    resolveActiveContextTarget({
+      activeRoute: 'mushaf',
+      verses: sampleVerses,
+      currentPage: 255,
+      currentSurahId: 13,
+      highlightedAyahKey: '14:1',
+      lastRead: {surah: 13, ayah: 43, page: 255},
+    }),
+    {surah: 14, ayah: 1}
+  );
+
+  // Off mushaf route uses lastRead
+  assert.deepEqual(
+    resolveActiveContextTarget({
+      activeRoute: 'surahs',
+      verses: sampleVerses,
+      currentPage: 294,
+      currentSurahId: 18,
+      highlightedAyahKey: null,
+      lastRead: {surah: 18, ayah: 10, page: 294},
+    }),
+    {surah: 18, ayah: 10}
+  );
+});
+

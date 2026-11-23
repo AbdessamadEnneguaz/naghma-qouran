@@ -120,7 +120,7 @@ export const AdhkarPage: React.FC<AdhkarPageProps> = ({lang, t}) => {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 pt-6 sm:pt-8 pb-36 md:pb-28 space-y-6">
+    <div className="mx-auto max-w-6xl px-4 sm:px-6 pt-6 sm:pt-8 pb-8 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-500/15 pb-4">
         <div className="flex items-center gap-3">
           <div className="h-11 w-11 rounded-2xl border border-amber-500/20 bg-white/80 dark:bg-[#211914] flex items-center justify-center shrink-0 shadow-sm">

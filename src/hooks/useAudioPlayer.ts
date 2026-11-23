@@ -21,9 +21,26 @@ import {
   buildMediaSessionMetadataPayload,
   computeSafePositionState,
 } from '../utils/mediaSessionLogic';
+import {
+  disposeAudioKeepAlive,
+  startAudioKeepAlive,
+  stopAudioKeepAlive,
+} from '../utils/backgroundAudioKeepAlive';
 import type {AppLang} from '../i18n/translations';
 
 export type SleepTimerOption = 0 | 15 | 30 | 45 | 60 | -1; // -1 = end of surah
+
+function getPlaybackErrorMessage(curLang: AppLang): string {
+  const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+  if (isOffline) {
+    return curLang === 'ar'
+      ? 'أنت غير متصل بالإنترنت. نص المصحف متاح كاملاً للقراءة، وللاستماع دون اتصال احفظ السورة من المحفوظات.'
+      : 'You are offline. All 604 Mushaf pages remain readable, and any Surah downloaded in the Vault plays offline.';
+  }
+  return curLang === 'ar'
+    ? 'تعذر تشغيل الصوت حالياً. تحقق من الاتصال أو استخدم التلاوات المحفوظة.'
+    : 'Unable to stream audio. Check connection or use a downloaded Surah.';
+}
 
 interface UseAudioPlayerArgs {
   verses: QuranVerse[];
@@ -32,6 +49,8 @@ interface UseAudioPlayerArgs {
   playbackSpeed: number;
   audioSyncOffsetSec?: number;
   lang?: AppLang;
+  viewSurah?: number;
+  viewAyah?: number;
   onActiveVerseChange?: (verse: QuranVerse) => void;
 }
 
@@ -65,6 +84,8 @@ export function useAudioPlayer({
   playbackSpeed,
   audioSyncOffsetSec = 0,
   lang = 'en',
+  viewSurah = 1,
+  viewAyah = 1,
   onActiveVerseChange,
 }: UseAudioPlayerArgs) {
   const decksRef = useRef<[HTMLAudioElement, HTMLAudioElement] | null>(null);
@@ -75,6 +96,7 @@ export function useAudioPlayer({
 
   const exactTimingCacheRef = useRef<Map<string, AyahTimingSegment[] | null>>(new Map());
   const pendingSurahSeekAyahRef = useRef<{surah: number; ayah: number} | null>(null);
+  const loadedTrackRef = useRef<{surah: number; ayah: number; reciterId: string} | null>(null);
 
   const playEpochRef = useRef<number>(0);
   const preloadEpochRef = useRef<number>(0);
@@ -82,8 +104,8 @@ export function useAudioPlayer({
   const talqeenTimerRef = useRef<number | null>(null);
   const lastPositionSyncMsRef = useRef<number>(0);
 
-  const [activeSurah, setActiveSurah] = useState<number>(1);
-  const [activeAyah, setActiveAyah] = useState<number>(1);
+  const [activeSurah, setActiveSurah] = useState<number>(viewSurah);
+  const [activeAyah, setActiveAyah] = useState<number>(viewAyah);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isBuffering, setIsBuffering] = useState<boolean>(false);
   const [audioError, setAudioError] = useState<string | null>(null);
@@ -215,7 +237,7 @@ export function useAudioPlayer({
         }
       }
 
-      // Immediately sync active highlight to verified timestamp
+  // Immediately sync active highlight to verified timestamp
       if (!activeAudio.paused) {
         const matchedAyah = findAyahAtTimeMs(
           segments,
@@ -224,6 +246,11 @@ export function useAudioPlayer({
         );
         if (matchedAyah !== null && matchedAyah !== stateRef.current.activeAyah) {
           stateRef.current.activeAyah = matchedAyah;
+          loadedTrackRef.current = {
+            surah,
+            ayah: matchedAyah,
+            reciterId: targetReciter.id,
+          };
           setActiveAyah(matchedAyah);
           const v = stateRef.current.verses.find(
             (item) => item.surah === surah && item.ayah === matchedAyah
@@ -234,6 +261,27 @@ export function useAudioPlayer({
     },
     [onActiveVerseChange]
   );
+
+  // Sync displayed Surah/Ayah immediately when navigating Surahs/Mushaf pages while idle/paused
+  useEffect(() => {
+    if (isPlaying || talqeenCountdown !== null) return;
+    if (viewSurah < 1 || viewSurah > 114 || viewAyah < 1) return;
+
+    setActiveSurah(viewSurah);
+    setActiveAyah(viewAyah);
+    stateRef.current.activeSurah = viewSurah;
+    stateRef.current.activeAyah = viewAyah;
+
+    const loaded = loadedTrackRef.current;
+    if (loaded && (loaded.surah !== viewSurah || loaded.ayah !== viewAyah)) {
+      setCurrentTime(0);
+      setDuration(0);
+    }
+
+    if (reciter.mode === 'surah') {
+      void ensureSurahTiming(reciter, viewSurah);
+    }
+  }, [viewSurah, viewAyah, isPlaying, talqeenCountdown, reciter, ensureSurahTiming]);
 
   // Keep Talqeen ayah bounds synced with active Surah total ayahs
   useEffect(() => {
@@ -456,6 +504,10 @@ export function useAudioPlayer({
         onActiveVerseChange(foundVerse);
       }
 
+      if (autoplay) {
+        startAudioKeepAlive();
+      }
+
       // Check if Standby Deck already holds this exact verse pre-buffered!
       const curIdx = activeDeckIdxRef.current;
       const standbyIdx: 0 | 1 = curIdx === 0 ? 1 : 0;
@@ -479,8 +531,10 @@ export function useAudioPlayer({
           if (autoplay) {
             await standbyDeck.play();
             if (playEpochRef.current !== epoch) return;
+            loadedTrackRef.current = {surah, ayah, reciterId: curReciter.id};
             setIsPlaying(true);
           } else {
+            loadedTrackRef.current = {surah, ayah, reciterId: curReciter.id};
             setIsPlaying(false);
           }
           setIsBuffering(false);
@@ -524,8 +578,10 @@ export function useAudioPlayer({
         if (autoplay) {
           await activeDeck.play();
           if (playEpochRef.current !== epoch) return;
+          loadedTrackRef.current = {surah, ayah, reciterId: curReciter.id};
           setIsPlaying(true);
         } else {
+          loadedTrackRef.current = {surah, ayah, reciterId: curReciter.id};
           setIsPlaying(false);
         }
         setIsBuffering(false);
@@ -534,13 +590,19 @@ export function useAudioPlayer({
         if (playEpochRef.current !== epoch) return;
         setIsBuffering(false);
         setIsPlaying(false);
+        stopAudioKeepAlive();
         if (err instanceof DOMException && err.name === 'AbortError') return;
-        setAudioError(
-          'Audio unavailable offline for this verse. Download Surah for offline playback.'
-        );
+        setAudioError(getPlaybackErrorMessage(stateRef.current.lang));
       }
     },
-    [clearTalqeenTimer, onActiveVerseChange, preloadUpcoming, releaseSlot, resolveAudioSource]
+    [
+      clearTalqeenTimer,
+      ensureSurahTiming,
+      onActiveVerseChange,
+      preloadUpcoming,
+      releaseSlot,
+      resolveAudioSource,
+    ]
   );
 
   // Initialize Dual-Deck HTML5 Audio Elements + 2-Verse Lookahead Buffer once
@@ -598,6 +660,11 @@ export function useAudioPlayer({
             const matchedAyah = findAyahAtTimeMs(segments, curSec * 1000, offsetSec);
             if (matchedAyah !== null && matchedAyah !== stateRef.current.activeAyah) {
               stateRef.current.activeAyah = matchedAyah;
+              loadedTrackRef.current = {
+                surah: s,
+                ayah: matchedAyah,
+                reciterId: r.id,
+              };
               setActiveAyah(matchedAyah);
               const v = allVerses.find(
                 (item) => item.surah === s && item.ayah === matchedAyah
@@ -754,6 +821,11 @@ export function useAudioPlayer({
 
           stateRef.current.activeSurah = nextTarget.surah;
           stateRef.current.activeAyah = nextTarget.ayah;
+          loadedTrackRef.current = {
+            surah: nextTarget.surah,
+            ayah: nextTarget.ayah,
+            reciterId: r.id,
+          };
           setActiveSurah(nextTarget.surah);
           setActiveAyah(nextTarget.ayah);
           setCurrentTime(0);
@@ -761,6 +833,7 @@ export function useAudioPlayer({
             Number.isFinite(standbyAudio.duration) ? standbyAudio.duration : 0
           );
           setIsPlaying(true);
+          startAudioKeepAlive();
           setIsBuffering(standbyAudio.readyState < 3);
 
           if (nextTarget.verse && onActiveVerseChange) {
@@ -782,6 +855,7 @@ export function useAudioPlayer({
 
       const handlePlay = () => {
         if (deckIdx !== activeDeckIdxRef.current) return;
+        startAudioKeepAlive();
         setIsPlaying(true);
       };
 
@@ -789,6 +863,7 @@ export function useAudioPlayer({
         if (deckIdx !== activeDeckIdxRef.current) return;
         // Ignore transient pause fired by ended event right before deck swap
         if (audio.ended) return;
+        stopAudioKeepAlive();
         setIsPlaying(false);
       };
 
@@ -824,11 +899,10 @@ export function useAudioPlayer({
         }
 
         if (deckIdx !== activeDeckIdxRef.current) return;
+        stopAudioKeepAlive();
         setIsBuffering(false);
         setIsPlaying(false);
-        setAudioError(
-          'Unable to stream audio. Check connection or use a downloaded Surah.'
-        );
+        setAudioError(getPlaybackErrorMessage(stateRef.current.lang));
       };
 
       audio.addEventListener('timeupdate', handleTimeUpdate);
@@ -871,6 +945,7 @@ export function useAudioPlayer({
 
     return () => {
       clearTalqeenTimer();
+      disposeAudioKeepAlive();
       detach0();
       detach1();
       lookahead2.removeEventListener('error', handleLookahead2Error);
@@ -934,6 +1009,11 @@ export function useAudioPlayer({
             const matchedAyah = findAyahAtTimeMs(segments, curSec * 1000, offsetSec);
             if (matchedAyah !== null && matchedAyah !== stateRef.current.activeAyah) {
               stateRef.current.activeAyah = matchedAyah;
+              loadedTrackRef.current = {
+                surah: s,
+                ayah: matchedAyah,
+                reciterId: r.id,
+              };
               setActiveAyah(matchedAyah);
               const v = allVerses.find(
                 (item) => item.surah === s && item.ayah === matchedAyah
@@ -1001,6 +1081,7 @@ export function useAudioPlayer({
         if (prev <= 1) {
           const decks = decksRef.current;
           decks?.[activeDeckIdxRef.current]?.pause();
+          stopAudioKeepAlive();
           autoplayIntendedRef.current = false;
           setIsPlaying(false);
           setSleepTimer(0);
@@ -1019,32 +1100,44 @@ export function useAudioPlayer({
 
     if (talqeenCountdown !== null) {
       clearTalqeenTimer();
+      stopAudioKeepAlive();
       autoplayIntendedRef.current = false;
       setIsPlaying(false);
       return;
     }
-    if (!hasStarted || !activeDeck.src) {
-      const start = stateRef.current.talqeen.enabled
-        ? stateRef.current.talqeen.startAyah
-        : activeAyah;
-      await loadAndPlay(activeSurah, start, true);
+
+    const targetSurah = stateRef.current.activeSurah;
+    const targetAyah = stateRef.current.talqeen.enabled
+      ? stateRef.current.talqeen.startAyah
+      : stateRef.current.activeAyah;
+    const loaded = loadedTrackRef.current;
+    const matchesCurrentContext =
+      loaded !== null &&
+      loaded.surah === targetSurah &&
+      loaded.ayah === targetAyah &&
+      loaded.reciterId === stateRef.current.reciter.id &&
+      Boolean(activeDeck.src);
+
+    if (!hasStarted || !activeDeck.src || (activeDeck.paused && !matchesCurrentContext)) {
+      await loadAndPlay(targetSurah, targetAyah, true);
       return;
     }
+
     if (activeDeck.paused) {
+      startAudioKeepAlive();
       autoplayIntendedRef.current = true;
       try {
         await activeDeck.play();
-        void preloadUpcoming(activeSurah, activeAyah);
+        void preloadUpcoming(targetSurah, targetAyah);
       } catch {
-        await loadAndPlay(activeSurah, activeAyah, true);
+        await loadAndPlay(targetSurah, targetAyah, true);
       }
     } else {
       autoplayIntendedRef.current = false;
+      stopAudioKeepAlive();
       activeDeck.pause();
     }
   }, [
-    activeSurah,
-    activeAyah,
     hasStarted,
     loadAndPlay,
     preloadUpcoming,
@@ -1240,11 +1333,25 @@ export function useAudioPlayer({
     safeSetHandler('play', () => {
       const decks = decksRef.current;
       const activeDeck = decks?.[activeDeckIdxRef.current];
-      const {activeSurah: s, activeAyah: a, hasStarted: started} = stateRef.current;
-      if (!activeDeck || !started || !activeDeck.src) {
+      const {
+        activeSurah: s,
+        activeAyah: a,
+        hasStarted: started,
+        reciter: r,
+      } = stateRef.current;
+      const loaded = loadedTrackRef.current;
+      const matchesContext =
+        loaded !== null &&
+        loaded.surah === s &&
+        loaded.ayah === a &&
+        loaded.reciterId === r.id &&
+        Boolean(activeDeck?.src);
+
+      if (!activeDeck || !started || !activeDeck.src || !matchesContext) {
         void loadAndPlay(s, a, true);
         return;
       }
+      startAudioKeepAlive();
       autoplayIntendedRef.current = true;
       void activeDeck
         .play()
@@ -1259,6 +1366,7 @@ export function useAudioPlayer({
 
     safeSetHandler('pause', () => {
       clearTalqeenTimer();
+      stopAudioKeepAlive();
       autoplayIntendedRef.current = false;
       const activeDeck = decksRef.current?.[activeDeckIdxRef.current];
       activeDeck?.pause();
@@ -1281,6 +1389,7 @@ export function useAudioPlayer({
 
     safeSetHandler('stop', () => {
       clearTalqeenTimer();
+      stopAudioKeepAlive();
       autoplayIntendedRef.current = false;
       const activeDeck = decksRef.current?.[activeDeckIdxRef.current];
       if (activeDeck) {

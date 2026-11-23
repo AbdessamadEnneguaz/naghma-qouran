@@ -472,3 +472,58 @@ export function evaluateSpokenWords(
   };
 }
 
+export interface ContextTargetInput {
+  activeRoute: string;
+  verses: QuranVerse[];
+  currentPage: number;
+  currentSurahId: number;
+  highlightedAyahKey: string | null;
+  lastRead: {surah: number; ayah: number; page: number} | null;
+}
+
+export function resolveActiveContextTarget(input: ContextTargetInput): {
+  surah: number;
+  ayah: number;
+} {
+  const {
+    activeRoute,
+    verses,
+    currentPage,
+    currentSurahId,
+    highlightedAyahKey,
+    lastRead,
+  } = input;
+
+  const fallbackSurah = Math.max(1, Math.min(114, Math.floor(currentSurahId || 1)));
+
+  if (activeRoute === 'mushaf') {
+    if (highlightedAyahKey) {
+      const [sStr, aStr] = highlightedAyahKey.split(':');
+      const s = Number(sStr);
+      const a = Number(aStr);
+      if (Number.isInteger(s) && Number.isInteger(a) && s >= 1 && a >= 1) {
+        const matchOnPage = verses.find(
+          (v) => v.page === currentPage && v.surah === s && v.ayah === a
+        );
+        if (matchOnPage) {
+          return {surah: matchOnPage.surah, ayah: matchOnPage.ayah};
+        }
+      }
+    }
+
+    const firstOnPage = verses.find((v) => v.page === currentPage);
+    if (firstOnPage) {
+      return {surah: firstOnPage.surah, ayah: firstOnPage.ayah};
+    }
+
+    return {surah: fallbackSurah, ayah: 1};
+  }
+
+  if (lastRead && lastRead.surah >= 1 && lastRead.surah <= 114 && lastRead.ayah >= 1) {
+    return {surah: lastRead.surah, ayah: lastRead.ayah};
+  }
+
+  return {surah: fallbackSurah, ayah: 1};
+}
+
+

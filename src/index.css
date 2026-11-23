@@ -114,14 +114,71 @@ html.dark .sand-card {
   background: rgba(217, 119, 6, 0.45);
 }
 
-@keyframes naghma-splash-in {
+@keyframes najm-splash-emblem-in {
   from {
     opacity: 0;
-    transform: scale(0.95) translateY(6px);
+    transform: scale(0.88) translateY(8px);
   }
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes najm-stroke-draw {
+  from {
+    stroke-dashoffset: 180;
+    opacity: 0.2;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes najm-crescent-fill {
+  0% {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes najm-aura-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes najm-title-stagger {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes najm-mote-float {
+  0%,
+  100% {
+    opacity: 0.18;
+    transform: translate3d(0, 6px, 0) scale(0.85);
+  }
+  50% {
+    opacity: 0.65;
+    transform: translate3d(0, -10px, 0) scale(1.1);
   }
 }
 
@@ -133,3 +190,4 @@ html.dark .sand-card {
     scroll-behavior: auto !important;
   }
 }
+

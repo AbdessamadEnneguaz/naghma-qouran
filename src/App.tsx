@@ -37,6 +37,7 @@ import {
 import {
   clampPage,
   normalizeSpeechWord,
+  resolveActiveContextTarget,
   stripLeadingBismillah,
   tokenizeVerseWords,
   type PageWordTarget,
@@ -62,6 +63,8 @@ import {AdhkarPage} from './components/AdhkarPage';
 import {KhatmaPage} from './components/KhatmaPage';
 import {DownloadApkPage} from './components/DownloadApkPage';
 import {VaultView} from './components/VaultView';
+import {PrivacyPage} from './components/PrivacyPage';
+import {AppFooter} from './components/AppFooter';
 import {AudioPlayerBar} from './components/AudioPlayerBar';
 import {MobileBottomNav} from './components/MobileBottomNav';
 import {MobileMenuDrawer} from './components/MobileMenuDrawer';
@@ -399,6 +402,19 @@ export default function App() {
     [persistLastRead]
   );
 
+  const activeContextTarget = useMemo(
+    () =>
+      resolveActiveContextTarget({
+        activeRoute,
+        verses,
+        currentPage,
+        currentSurahId,
+        highlightedAyahKey,
+        lastRead,
+      }),
+    [activeRoute, verses, currentPage, currentSurahId, highlightedAyahKey, lastRead]
+  );
+
   const player = useAudioPlayer({
     verses,
     surahs,
@@ -406,6 +422,8 @@ export default function App() {
     playbackSpeed: settings.playbackSpeed,
     audioSyncOffsetSec: settings.audioSyncOffsetSec ?? 0,
     lang,
+    viewSurah: activeContextTarget.surah,
+    viewAyah: activeContextTarget.ayah,
     onActiveVerseChange: handleAudioVerseChange,
   });
 
@@ -418,6 +436,14 @@ export default function App() {
       const clamped = clampPage(page);
       const firstOnPage = verses.find((v) => v.page === clamped);
       setCurrentPage(clamped);
+      setHighlightedAyahKey((prev) => {
+        if (!prev) return null;
+        const [sStr, aStr] = prev.split(':');
+        const stillOnPage = verses.some(
+          (v) => v.page === clamped && v.surah === Number(sStr) && v.ayah === Number(aStr)
+        );
+        return stillOnPage ? prev : null;
+      });
       if (firstOnPage) {
         setCurrentSurahId(firstOnPage.surah);
         persistLastRead(firstOnPage.surah, firstOnPage.ayah, clamped, 'mushaf');
@@ -748,6 +774,10 @@ export default function App() {
             bookmarks={bookmarks}
             offlineRecords={offlineRecords}
             onOpenSurah={openSurah}
+            onPlaySurah={(surahId) => {
+              openSurah(surahId, 1);
+              void player.playVerse(surahId, 1);
+            }}
             onOpenPage={openPage}
             onRemoveBookmark={handleRemoveBookmark}
           />
@@ -862,7 +892,23 @@ export default function App() {
             onDownloadSurah={(meta) => void handleDownloadSurah(meta)}
           />
         )}
+
+        {activeRoute === 'privacy' && (
+          <PrivacyPage
+            lang={lang}
+            t={t}
+            onBackHome={() => navigateToRoute('home')}
+          />
+        )}
       </main>
+
+      <AppFooter
+        lang={lang}
+        t={t}
+        hidden={isMushafFocus}
+        isInstalled={isInstalled}
+        onNavigate={navigateToRoute}
+      />
 
       <AudioPlayerBar
         lang={lang}

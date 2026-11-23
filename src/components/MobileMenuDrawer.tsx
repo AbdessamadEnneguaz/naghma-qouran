@@ -166,6 +166,19 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
               </span>
             </button>
 
+            <button
+              type="button"
+              data-testid="drawer-privacy-btn"
+              onClick={() => {
+                onClose();
+                onNavigate('privacy');
+              }}
+              className="w-full flex items-center justify-between rounded-2xl px-3.5 py-3 text-start text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:bg-amber-500/10 transition-colors"
+            >
+              <span>{t.navPrivacy}</span>
+              <span className="text-xs text-[#6E5649] dark:text-[#D6C7B8]">›</span>
+            </button>
+
             {!isInstalled && (
               <button
                 type="button"

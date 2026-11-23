@@ -128,7 +128,7 @@ export const QiblaPage: React.FC<QiblaPageProps> = ({lang, t}) => {
   const numFmt = (n: number) => (lang === 'ar' ? toArabicDigits(n) : String(n));
 
   return (
-    <div className="mx-auto max-w-3xl px-4 sm:px-6 pt-5 sm:pt-8 pb-36 md:pb-24 space-y-4 sm:space-y-5">
+    <div className="mx-auto max-w-3xl px-4 sm:px-6 pt-5 sm:pt-8 pb-8 space-y-4 sm:space-y-5">
       {/* Page Title & Location Bar */}
       <div className="text-center space-y-1">
         <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#2D231E] dark:text-[#FAF5EE] uppercase">

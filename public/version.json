@@ -1,6 +1,6 @@
 {
-  "version": "2.4.0",
-  "buildId": "2026-11-23-najm-ota",
+  "version": "2.5.0",
+  "buildId": "2026-11-23-najm-250",
   "otaUrl": "https://najmqouran.vercel.app",
   "apkUrl": "/najm-quran.apk"
 }

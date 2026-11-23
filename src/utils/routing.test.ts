@@ -11,6 +11,7 @@ test('routeToPath maps every dedicated page to clean URL paths', () => {
   assert.equal(routeToPath('khatma'), '/khatma');
   assert.equal(routeToPath('download'), '/download');
   assert.equal(routeToPath('vault'), '/vault');
+  assert.equal(routeToPath('privacy'), '/privacy');
 });
 
 test('parseRouteFromLocation resolves pathnames, trailing slashes, and hash fallbacks', () => {
@@ -23,8 +24,11 @@ test('parseRouteFromLocation resolves pathnames, trailing slashes, and hash fall
   assert.equal(parseRouteFromLocation('/khatma'), 'khatma');
   assert.equal(parseRouteFromLocation('/download'), 'download');
   assert.equal(parseRouteFromLocation('/vault'), 'vault');
+  assert.equal(parseRouteFromLocation('/privacy'), 'privacy');
+  assert.equal(parseRouteFromLocation('/privacy-policy'), 'privacy');
   assert.equal(parseRouteFromLocation('/reader'), 'mushaf');
   assert.equal(parseRouteFromLocation('/unknown-path'), 'home');
   assert.equal(parseRouteFromLocation('/index.html', '#/download'), 'download');
   assert.equal(parseRouteFromLocation('/', '#/qibla'), 'qibla');
+  assert.equal(parseRouteFromLocation('/', '#/privacy'), 'privacy');
 });

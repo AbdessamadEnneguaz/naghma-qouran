@@ -144,7 +144,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const adhkarPeriodLabel = defaultPeriod === 'sabah' ? t.adhkarSabah : t.adhkarMasaa;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 sm:px-6 pt-5 sm:pt-8 pb-32 md:pb-24 space-y-6">
+    <div className="mx-auto max-w-5xl px-4 sm:px-6 pt-5 sm:pt-8 pb-8 space-y-6">
       {/* 1. Luxury Warm Sand & Honey Gold Hero "Last Read" Card */}
       <section className="relative overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-r from-amber-500/22 via-amber-400/12 to-orange-400/12 dark:from-amber-500/18 dark:via-[#261B13] dark:to-orange-500/10 p-5 sm:p-8 shadow-sm shadow-amber-500/10 space-y-5">
         {/* Minimalist Golden Mosque Skyline Silhouette */}

@@ -70,7 +70,7 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
           : t.paceOnTrack;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 sm:px-6 pt-6 sm:pt-8 pb-36 md:pb-28 space-y-6">
+    <div className="mx-auto max-w-5xl px-4 sm:px-6 pt-6 sm:pt-8 pb-8 space-y-6">
       <div className="border-b border-amber-500/15 pb-4 space-y-1">
         <h1 className="text-xl sm:text-2xl font-bold text-[#2D231E] dark:text-[#FAF5EE]">
           {t.khatmaTitle}

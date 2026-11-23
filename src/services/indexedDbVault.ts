@@ -9,7 +9,7 @@ import type {
 } from '../types/quran';
 import {getAyahAudioCandidates, getGlobalAyahNumber} from '../utils/quranLogic';
 
-const DB_NAME = 'naghma_quran_db';
+const DB_NAME = 'najm_quran_db';
 const DB_VERSION = 1;
 
 const STORE_QURAN = 'quran_data';
@@ -132,7 +132,9 @@ export async function getQuranVaultKeys(): Promise<string[]> {
 export async function loadBookmarks(): Promise<BookmarkEntry[]> {
   try {
     const ls =
-      localStorage.getItem('naghma_bookmarks') || localStorage.getItem('noor_bookmarks');
+      localStorage.getItem('najm_bookmarks') ||
+      localStorage.getItem('naghma_bookmarks') ||
+      localStorage.getItem('noor_bookmarks');
     if (ls) return JSON.parse(ls) as BookmarkEntry[];
   } catch {
     // ignore
@@ -142,7 +144,7 @@ export async function loadBookmarks(): Promise<BookmarkEntry[]> {
 
 export async function saveBookmarks(bookmarks: BookmarkEntry[]): Promise<void> {
   try {
-    localStorage.setItem('naghma_bookmarks', JSON.stringify(bookmarks));
+    localStorage.setItem('najm_bookmarks', JSON.stringify(bookmarks));
   } catch {
     // ignore
   }
@@ -152,7 +154,9 @@ export async function saveBookmarks(bookmarks: BookmarkEntry[]): Promise<void> {
 export async function loadLastRead(): Promise<LastReadState | null> {
   try {
     const ls =
-      localStorage.getItem('naghma_last_read') || localStorage.getItem('noor_last_read');
+      localStorage.getItem('najm_last_read') ||
+      localStorage.getItem('naghma_last_read') ||
+      localStorage.getItem('noor_last_read');
     if (ls) return JSON.parse(ls) as LastReadState;
   } catch {
     // ignore
@@ -162,7 +166,7 @@ export async function loadLastRead(): Promise<LastReadState | null> {
 
 export async function saveLastRead(state: LastReadState): Promise<void> {
   try {
-    localStorage.setItem('naghma_last_read', JSON.stringify(state));
+    localStorage.setItem('najm_last_read', JSON.stringify(state));
   } catch {
     // ignore
   }
@@ -172,7 +176,9 @@ export async function saveLastRead(state: LastReadState): Promise<void> {
 export async function loadSettings(): Promise<Partial<ReaderSettings>> {
   try {
     const ls =
-      localStorage.getItem('naghma_settings') || localStorage.getItem('noor_settings');
+      localStorage.getItem('najm_settings') ||
+      localStorage.getItem('naghma_settings') ||
+      localStorage.getItem('noor_settings');
     if (ls) return JSON.parse(ls) as Partial<ReaderSettings>;
   } catch {
     // ignore
@@ -182,19 +188,22 @@ export async function loadSettings(): Promise<Partial<ReaderSettings>> {
 
 export async function saveSettings(settings: ReaderSettings): Promise<void> {
   try {
-    localStorage.setItem('naghma_settings', JSON.stringify(settings));
-    localStorage.setItem('naghma_theme', settings.theme);
+    localStorage.setItem('najm_settings', JSON.stringify(settings));
+    localStorage.setItem('najm_theme', settings.theme);
   } catch {
     // ignore
   }
   await idbSet(STORE_USER, 'settings', settings);
 }
 
-const SYNC_OFFSET_LS_PREFIX = 'naghma_sync_offset:';
+const SYNC_OFFSET_LS_PREFIX = 'najm_sync_offset:';
+const LEGACY_SYNC_OFFSET_LS_PREFIX = 'naghma_sync_offset:';
 
 export function loadReciterSyncOffset(reciterId: string): number {
   try {
-    const raw = localStorage.getItem(`${SYNC_OFFSET_LS_PREFIX}${reciterId}`);
+    const raw =
+      localStorage.getItem(`${SYNC_OFFSET_LS_PREFIX}${reciterId}`) ??
+      localStorage.getItem(`${LEGACY_SYNC_OFFSET_LS_PREFIX}${reciterId}`);
     if (raw === null) return 0;
     const parsed = Number(raw);
     if (!Number.isFinite(parsed)) return 0;
@@ -216,7 +225,9 @@ export function saveReciterSyncOffset(reciterId: string, offsetSec: number): voi
 export async function loadKhatmaPlan(): Promise<KhatmaPlan | null> {
   try {
     const ls =
-      localStorage.getItem('naghma_khatma_plan') || localStorage.getItem('noor_khatma_plan');
+      localStorage.getItem('najm_khatma_plan') ||
+      localStorage.getItem('naghma_khatma_plan') ||
+      localStorage.getItem('noor_khatma_plan');
     if (ls) return JSON.parse(ls) as KhatmaPlan;
   } catch {
     // ignore
@@ -226,7 +237,7 @@ export async function loadKhatmaPlan(): Promise<KhatmaPlan | null> {
 
 export async function saveKhatmaPlan(plan: KhatmaPlan): Promise<void> {
   try {
-    localStorage.setItem('naghma_khatma_plan', JSON.stringify(plan));
+    localStorage.setItem('najm_khatma_plan', JSON.stringify(plan));
   } catch {
     // ignore
   }
@@ -239,7 +250,9 @@ export async function loadAdhkarProgress(
   const key = `adhkar_${dateISO}`;
   try {
     const ls =
-      localStorage.getItem(`naghma_${key}`) || localStorage.getItem(`noor_${key}`);
+      localStorage.getItem(`najm_${key}`) ||
+      localStorage.getItem(`naghma_${key}`) ||
+      localStorage.getItem(`noor_${key}`);
     if (ls) return JSON.parse(ls) as Record<string, number>;
   } catch {
     // ignore
@@ -253,7 +266,7 @@ export async function saveAdhkarProgress(
 ): Promise<void> {
   const key = `adhkar_${dateISO}`;
   try {
-    localStorage.setItem(`naghma_${key}`, JSON.stringify(counts));
+    localStorage.setItem(`najm_${key}`, JSON.stringify(counts));
   } catch {
     // ignore
   }

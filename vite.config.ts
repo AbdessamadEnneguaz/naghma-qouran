@@ -54,17 +54,19 @@ export default defineConfig(() => {
           ],
         },
         workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}', 'data/*.json'],
+          globIgnores: ['**/version.json', '**/*.apk'],
+          maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
           skipWaiting: true,
           clientsClaim: true,
+          navigateFallback: '/index.html',
           navigateFallbackDenylist: [/\.apk$/i, /\/version\.json$/i],
           runtimeCaching: [
             {
               urlPattern: /\/data\/.*\.json$/i,
               handler: 'CacheFirst',
               options: {
-                cacheName: 'naghma-quran-json-cache',
+                cacheName: 'najm-quran-json-cache',
                 expiration: {
                   maxEntries: 20,
                   maxAgeSeconds: 60 * 60 * 24 * 365,
@@ -119,7 +121,7 @@ export default defineConfig(() => {
               res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
               res.end(
                 JSON.stringify({
-                  version: '2.4.0',
+                  version: '2.5.0',
                   buildId: devBuildId,
                   otaUrl: 'https://najmqouran.vercel.app',
                   apkUrl: '/najm-quran.apk',
@@ -172,7 +174,7 @@ export default defineConfig(() => {
             fs.writeFileSync(
               path.join(distDir, 'version.json'),
               JSON.stringify({
-                version: '2.4.0',
+                version: '2.5.0',
                 buildId: `prod-${Date.now()}`,
                 otaUrl: 'https://najmqouran.vercel.app',
                 apkUrl: '/najm-quran.apk',

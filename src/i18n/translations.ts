@@ -9,7 +9,10 @@ export interface Translations {
   navAdhkar: string;
   navKhatma: string;
   navVault: string;
+  navPrivacy: string;
   navMore: string;
+  footerCraftedBy: string;
+  footerCopyright: string;
   mobileMenuTitle: string;
   mobileThemeLabel: string;
   mobileLangLabel: string;
@@ -267,7 +270,10 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     navAdhkar: 'Tasbih',
     navKhatma: 'Khatma',
     navVault: 'Vault',
+    navPrivacy: 'Privacy Policy',
     navMore: 'More',
+    footerCraftedBy: 'Crafted & Developed by Abdessamad Enneguaz · تطوير وتصميم: عبد الصمد',
+    footerCopyright: '© 2026 Najm Quran (نَجم القرآن). All Rights Reserved.',
     mobileMenuTitle: 'Najm Menu',
     mobileThemeLabel: 'Appearance',
     mobileLangLabel: 'Language',
@@ -409,7 +415,7 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     downloadPageHeading: 'Najm Quran for Android',
     downloadPageSubheading:
       'Carry the complete 604-page Madani Mushaf, Hafs & Warsh narrations, Prayer Times, Qibla compass, and Adhkar offline on Android.',
-    downloadVersionMeta: 'v2.4.0 · Free · 5.9 MB · Live OTA Updates',
+    downloadVersionMeta: 'v2.5.0 · Free · 6.0 MB · Live OTA Updates',
     downloadHighlightsTitle: 'Built for Serene Daily Recitation',
     downloadHighlight1: '604-Page Madani Mushaf with zero-gap Hafs & Warsh audio',
     downloadHighlight2: 'Accurate Qibla Compass & astronomical Prayer Times',
@@ -510,7 +516,10 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     navAdhkar: 'التسبيح',
     navKhatma: 'الختمة',
     navVault: 'المحفوظات',
+    navPrivacy: 'سياسة الخصوصية',
     navMore: 'المزيد',
+    footerCraftedBy: 'تطوير وتصميم: عبد الصمد النكاز · Crafted by Abdessamad Enneguaz',
+    footerCopyright: '© 2026 نَجم القرآن (Najm Quran). جميع الحقوق محفوظة.',
     mobileMenuTitle: 'قائمة نَجم القرآن',
     mobileThemeLabel: 'المظهر',
     mobileLangLabel: 'اللغة',
@@ -652,7 +661,7 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     downloadPageHeading: 'نَجم القرآن لأجهزة أندرويد',
     downloadPageSubheading:
       'احمل مصحف المدينة (٦٠٤ صفحة) بروايتي حفص وورش ومواقيت الصلاة وبوصلة القبلة والأذكار دون اتصال.',
-    downloadVersionMeta: 'v2.4.0 · مجاني · 5.9 MB · تحديث تلقائي مباشر',
+    downloadVersionMeta: 'v2.5.0 · مجاني · 6.0 MB · تحديث تلقائي مباشر',
     downloadHighlightsTitle: 'تجربة خاشعة ومتكاملة دون إنترنت',
     downloadHighlight1: 'مصحف المدينة المنورة (٦٠٤ صفحة) مع تلاوة متصلة بلا تقطع',
     downloadHighlight2: 'بوصلة القبلة الدقيقة ومواقيت الصلاة الفلكية',

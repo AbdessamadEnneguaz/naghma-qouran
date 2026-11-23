@@ -10,10 +10,10 @@ import {
 } from './apkHelpers';
 
 test('formatApkSizeMb formats exact byte size cleanly', () => {
-  assert.equal(formatApkSizeMb(DEFAULT_APK_SIZE_BYTES), '5.9 MB');
+  assert.equal(formatApkSizeMb(DEFAULT_APK_SIZE_BYTES), '6.0 MB');
   assert.equal(formatApkSizeMb(10 * 1024 * 1024), '10.0 MB');
-  assert.equal(formatApkSizeMb(0), '5.9 MB');
-  assert.equal(formatApkSizeMb(-100), '5.9 MB');
+  assert.equal(formatApkSizeMb(0), '6.0 MB');
+  assert.equal(formatApkSizeMb(-100), '6.0 MB');
 });
 
 test('isLocalApkPath distinguishes local bundled APK paths from external URLs', () => {

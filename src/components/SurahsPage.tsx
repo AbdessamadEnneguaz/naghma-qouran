@@ -1,5 +1,5 @@
 import React, {useMemo, useState} from 'react';
-import {Search, Trash2} from 'lucide-react';
+import {Play, Search, Trash2} from 'lucide-react';
 import type {BookmarkEntry, OfflineSurahRecord, SurahMeta} from '../types/quran';
 import {stripTashkeel, toArabicDigits} from '../utils/quranLogic';
 import type {AppLang, Translations} from '../i18n/translations';
@@ -11,6 +11,7 @@ interface SurahsPageProps {
   bookmarks: BookmarkEntry[];
   offlineRecords: OfflineSurahRecord[];
   onOpenSurah: (surahId: number, ayah?: number) => void;
+  onPlaySurah?: (surahId: number) => void;
   onOpenPage: (page: number) => void;
   onRemoveBookmark: (id: string) => void;
 }
@@ -34,6 +35,7 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
   bookmarks,
   offlineRecords,
   onOpenSurah,
+  onPlaySurah,
   onOpenPage,
   onRemoveBookmark,
 }) => {
@@ -72,7 +74,7 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
   const numFmt = (n: number) => (lang === 'ar' ? toArabicDigits(n) : String(n));
 
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 pt-6 sm:pt-8 pb-36 md:pb-28 space-y-6">
+    <div className="mx-auto max-w-6xl px-4 sm:px-6 pt-6 sm:pt-8 pb-8 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-amber-500/15 pb-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#2D231E] dark:text-[#FAF5EE]">
@@ -180,11 +182,19 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
               const isCached = offlineSurahIds.has(surah.id);
               const revLabel = surah.revelationType === 'Meccan' ? t.meccan : t.medinan;
               return (
-                <button
+                <div
                   key={surah.id}
-                  type="button"
                   onClick={() => onOpenSurah(surah.id)}
-                  className="group text-start rounded-3xl border border-amber-500/12 bg-white/80 dark:bg-[#211914]/85 p-4 hover:border-amber-500/45 shadow-sm shadow-amber-500/5 transition-colors flex items-center justify-between gap-3.5"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onOpenSurah(surah.id);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  data-testid={`surah-card-${surah.id}`}
+                  className="group text-start rounded-3xl border border-amber-500/12 bg-white/80 dark:bg-[#211914]/85 p-4 hover:border-amber-500/45 shadow-sm shadow-amber-500/5 transition-colors flex items-center justify-between gap-3 cursor-pointer"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="h-9 w-9 rounded-full bg-amber-500/12 flex items-center justify-center text-xs font-bold text-[#B45309] dark:text-[#FBBF24] tabular-nums shrink-0">
@@ -209,18 +219,35 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
                     </div>
                   </div>
 
-                  <div className="text-end shrink-0">
-                    <div
-                      dir="rtl"
-                      className="font-quran-scheherazade text-2xl font-semibold text-[#B45309] dark:text-[#FBBF24] leading-none"
-                    >
-                      {surah.nameAr.replace('سُورَةُ ', '')}
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <div className="text-end">
+                      <div
+                        dir="rtl"
+                        className="font-quran-scheherazade text-2xl font-semibold text-[#B45309] dark:text-[#FBBF24] leading-none"
+                      >
+                        {surah.nameAr.replace('سُورَةُ ', '')}
+                      </div>
+                      <div className="text-[11px] text-[#6E5649] dark:text-[#D6C7B8] tabular-nums mt-1">
+                        {t.pageShort} {numFmt(surah.startPage)}
+                      </div>
                     </div>
-                    <div className="text-[11px] text-[#6E5649] dark:text-[#D6C7B8] tabular-nums mt-1">
-                      {t.pageShort} {numFmt(surah.startPage)}
-                    </div>
+
+                    {onPlaySurah && (
+                      <button
+                        type="button"
+                        data-testid={`surah-inline-play-${surah.id}`}
+                        aria-label={`${t.playSurah} ${lang === 'ar' ? surah.nameAr : surah.nameEn}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onPlaySurah(surah.id);
+                        }}
+                        className="h-8 w-8 rounded-full border border-amber-500/25 bg-amber-500/10 text-[#B45309] dark:text-[#FBBF24] hover:bg-[#D97706] hover:text-white flex items-center justify-center transition-colors shrink-0"
+                      >
+                        <Play className="h-3.5 w-3.5 fill-current ms-0.5" />
+                      </button>
+                    )}
                   </div>
-                </button>
+                </div>
               );
             })}
             {filteredSurahs.length === 0 && (
