@@ -55,12 +55,12 @@ export default defineConfig(() => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}', 'data/*.json'],
-          globIgnores: ['**/version.json', '**/*.apk', '**/ads.txt'],
+          globIgnores: ['**/version.json', '**/*.apk', '**/ads.txt', '**/google*.html'],
           maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
           skipWaiting: true,
           clientsClaim: true,
           navigateFallback: '/index.html',
-          navigateFallbackDenylist: [/\.apk$/i, /\/version\.json$/i, /\/ads\.txt$/i],
+          navigateFallbackDenylist: [/\.apk$/i, /\/version\.json$/i, /\/ads\.txt$/i, /\/google[a-z0-9]+\.html$/i],
           runtimeCaching: [
             {
               urlPattern: /\/data\/.*\.json$/i,
