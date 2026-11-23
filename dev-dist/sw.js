@@ -78,12 +78,12 @@ define(['./workbox-afac4cd2'], (function (workbox) { 'use strict';
    */
   workbox.precacheAndRoute([{
     "url": "/index.html",
-    "revision": "0.krnci8shjgo"
+    "revision": "0.djkn3tsob68"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("/index.html"), {
     allowlist: [/^\/$/],
-    denylist: [/\.apk$/i, /\/version\.json$/i]
+    denylist: [/\.apk$/i, /\/version\.json$/i, /\/ads\.txt$/i]
   }));
   workbox.registerRoute(/\/data\/.*\.json$/i, new workbox.CacheFirst({
     "cacheName": "najm-quran-json-cache",
