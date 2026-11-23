@@ -1,0 +1,28 @@
+{
+  "rewrites": [
+    {
+      "source": "/naghma-quran.apk",
+      "destination": "/najm-quran.apk"
+    },
+    {
+      "source": "/((?!assets/|data/|version\\.json$|.*\\.apk$|.*\\.png$|.*\\.svg$|.*\\.webmanifest$|sw\\.js$|workbox-.*\\.js$).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/version.json",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/(.*)\\.apk",
+      "headers": [
+        { "key": "Content-Type", "value": "application/vnd.android.package-archive" },
+        { "key": "Content-Disposition", "value": "attachment; filename=\"najm-quran.apk\"" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
+      ]
+    }
+  ]
+}

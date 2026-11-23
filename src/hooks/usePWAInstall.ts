@@ -7,7 +7,7 @@ interface BeforeInstallPromptEvent extends Event {
 
 export function getApkDownloadUrl(): string {
   const configured = (import.meta.env?.VITE_APK_URL as string | undefined)?.trim();
-  return configured && configured.length > 0 ? configured : '/naghma-quran.apk';
+  return configured && configured.length > 0 ? configured : '/najm-quran.apk';
 }
 
 export function usePWAInstall() {

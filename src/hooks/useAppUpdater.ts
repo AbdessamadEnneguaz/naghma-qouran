@@ -1,5 +1,10 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {APP_VERSION, hasNewerBuildVersion} from '../utils/apkHelpers';
+import {
+  APP_VERSION,
+  DEFAULT_OTA_SERVER_URL,
+  hasNewerBuildVersion,
+  resolveVersionJsonUrl,
+} from '../utils/apkHelpers';
 
 const BUILD_STORAGE_KEY = 'naghma_active_build_id';
 
@@ -27,13 +32,20 @@ export function useAppUpdater() {
         }
       }
 
-      const res = await fetch(`/version.json?t=${Date.now()}`, {cache: 'no-store'});
+      const otaOverride = import.meta.env.VITE_OTA_SERVER_URL || DEFAULT_OTA_SERVER_URL;
+      const protocol = typeof window !== 'undefined' ? window.location.protocol : 'https:';
+      const versionUrl = resolveVersionJsonUrl(protocol, otaOverride);
+      const res = await fetch(`${versionUrl}?t=${Date.now()}`, {cache: 'no-store'});
       if (!res.ok) {
         if (manual) setStatus('uptodate');
         return 'uptodate';
       }
 
-      const payload = (await res.json()) as {version?: string; buildId?: string};
+      const payload = (await res.json()) as {
+        version?: string;
+        buildId?: string;
+        otaUrl?: string;
+      };
       if (payload.version) {
         setCurrentVersion(payload.version);
       }
@@ -118,11 +130,16 @@ export function useAppUpdater() {
         void checkForUpdates(false);
       }
     };
+    const onOnline = () => {
+      void checkForUpdates(false);
+    };
     document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('online', onOnline);
 
     return () => {
       window.removeEventListener('naghma:sw-update-available', onSwUpdate);
       document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('online', onOnline);
     };
   }, [checkForUpdates]);
 

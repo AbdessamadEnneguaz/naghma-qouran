@@ -17,6 +17,11 @@ import {
 import {findAyahAtTimeMs, type AyahTimingSegment} from '../utils/surahTimingLogic';
 import {getCachedSurahTimingSync, getSurahAyatTiming} from '../services/surahTimingService';
 import {getCachedAudioBlob} from '../services/indexedDbVault';
+import {
+  buildMediaSessionMetadataPayload,
+  computeSafePositionState,
+} from '../utils/mediaSessionLogic';
+import type {AppLang} from '../i18n/translations';
 
 export type SleepTimerOption = 0 | 15 | 30 | 45 | 60 | -1; // -1 = end of surah
 
@@ -26,6 +31,7 @@ interface UseAudioPlayerArgs {
   reciter: Reciter;
   playbackSpeed: number;
   audioSyncOffsetSec?: number;
+  lang?: AppLang;
   onActiveVerseChange?: (verse: QuranVerse) => void;
 }
 
@@ -58,6 +64,7 @@ export function useAudioPlayer({
   reciter,
   playbackSpeed,
   audioSyncOffsetSec = 0,
+  lang = 'en',
   onActiveVerseChange,
 }: UseAudioPlayerArgs) {
   const decksRef = useRef<[HTMLAudioElement, HTMLAudioElement] | null>(null);
@@ -73,6 +80,7 @@ export function useAudioPlayer({
   const preloadEpochRef = useRef<number>(0);
   const autoplayIntendedRef = useRef<boolean>(false);
   const talqeenTimerRef = useRef<number | null>(null);
+  const lastPositionSyncMsRef = useRef<number>(0);
 
   const [activeSurah, setActiveSurah] = useState<number>(1);
   const [activeAyah, setActiveAyah] = useState<number>(1);
@@ -106,6 +114,8 @@ export function useAudioPlayer({
   const stateRef = useRef({
     activeSurah,
     activeAyah,
+    hasStarted,
+    isPlaying,
     loopMode,
     sleepTimer,
     reciter,
@@ -113,11 +123,14 @@ export function useAudioPlayer({
     surahs,
     playbackSpeed,
     audioSyncOffsetSec,
+    lang,
     talqeen,
   });
   stateRef.current = {
     activeSurah,
     activeAyah,
+    hasStarted,
+    isPlaying,
     loopMode,
     sleepTimer,
     reciter,
@@ -125,8 +138,32 @@ export function useAudioPlayer({
     surahs,
     playbackSpeed,
     audioSyncOffsetSec,
+    lang,
     talqeen,
   };
+
+  const syncMediaSessionPosition = useCallback(
+    (audioDuration: number, audioCurrentTime: number, speed: number, force = false) => {
+      if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
+      const ms = navigator.mediaSession as MediaSession & {
+        setPositionState?: (state?: MediaPositionState) => void;
+      };
+      if (typeof ms.setPositionState !== 'function') return;
+
+      const now = Date.now();
+      if (!force && now - lastPositionSyncMsRef.current < 900) return;
+
+      const posState = computeSafePositionState(audioDuration, audioCurrentTime, speed);
+      if (!posState) return;
+      lastPositionSyncMsRef.current = now;
+      try {
+        ms.setPositionState(posState);
+      } catch {
+        // Some WebViews throw on partial metadata duration
+      }
+    },
+    []
+  );
 
   const getVerifiedTimingSegments = useCallback(
     (targetReciter: Reciter, surah: number): AyahTimingSegment[] => {
@@ -522,16 +559,27 @@ export function useAudioPlayer({
     const attachDeckListeners = (deckIdx: 0 | 1, audio: HTMLAudioElement) => {
       const handleTimeUpdate = () => {
         if (deckIdx !== activeDeckIdxRef.current) return;
-        // High-frequency verse sync runs in the 60fps requestAnimationFrame loop while playing;
-        // timeupdate handles initial deferred seek & paused scrub updates cleanly.
-        if (audio.paused) {
-          setCurrentTime(audio.currentTime || 0);
+        const curSec = audio.currentTime || 0;
+        const isBackground =
+          typeof document !== 'undefined' && document.visibilityState === 'hidden';
+        // While visible & playing, the 60fps requestAnimationFrame loop drives currentTime;
+        // while paused or backgrounded (rAF throttled when screen is off), timeupdate keeps UI & lock-screen state synced.
+        if (audio.paused || isBackground) {
+          setCurrentTime(curSec);
         }
         if (Number.isFinite(audio.duration) && audio.duration > 0) {
           setDuration(audio.duration);
+          if (!audio.paused) {
+            syncMediaSessionPosition(audio.duration, curSec, stateRef.current.playbackSpeed);
+          }
         }
         const pending = pendingSurahSeekAyahRef.current;
-        const {reciter: r, activeSurah: s} = stateRef.current;
+        const {
+          reciter: r,
+          activeSurah: s,
+          verses: allVerses,
+          audioSyncOffsetSec: offsetSec,
+        } = stateRef.current;
         if (pending && r.mode === 'surah' && pending.surah === s && audio.duration > 0) {
           const seekSegs = getVerifiedTimingSegments(r, s);
           if (seekSegs.length > 0) {
@@ -542,6 +590,19 @@ export function useAudioPlayer({
                 Math.max(0, audio.duration - 0.5),
                 targetSeg.startMs / 1000
               );
+            }
+          }
+        } else if (isBackground && !audio.paused && r.mode === 'surah' && audio.duration > 0) {
+          const segments = getVerifiedTimingSegments(r, s);
+          if (segments.length > 0) {
+            const matchedAyah = findAyahAtTimeMs(segments, curSec * 1000, offsetSec);
+            if (matchedAyah !== null && matchedAyah !== stateRef.current.activeAyah) {
+              stateRef.current.activeAyah = matchedAyah;
+              setActiveAyah(matchedAyah);
+              const v = allVerses.find(
+                (item) => item.surah === s && item.ayah === matchedAyah
+              );
+              if (v && onActiveVerseChange) onActiveVerseChange(v);
             }
           }
         }
@@ -683,6 +744,14 @@ export function useAudioPlayer({
             void loadAndPlay(nextTarget!.surah, nextTarget!.ayah, true);
           });
 
+          if (typeof navigator !== 'undefined' && 'mediaSession' in navigator) {
+            try {
+              navigator.mediaSession.playbackState = 'playing';
+            } catch {
+              // ignore WebView mediaSession quirk
+            }
+          }
+
           stateRef.current.activeSurah = nextTarget.surah;
           stateRef.current.activeAyah = nextTarget.ayah;
           setActiveSurah(nextTarget.surah);
@@ -820,6 +889,7 @@ export function useAudioPlayer({
     onActiveVerseChange,
     preloadUpcoming,
     releaseSlot,
+    syncMediaSessionPosition,
   ]);
 
   // High-frequency 60fps requestAnimationFrame clock loop for zero-lag verse sync
@@ -841,7 +911,12 @@ export function useAudioPlayer({
           activeSurah: s,
           verses: allVerses,
           audioSyncOffsetSec: offsetSec,
+          playbackSpeed: speed,
         } = stateRef.current;
+
+        if (Number.isFinite(audio.duration) && audio.duration > 0) {
+          syncMediaSessionPosition(audio.duration, curSec, speed);
+        }
 
         if (r.mode === 'surah' && audio.duration > 0) {
           const segments = getVerifiedTimingSegments(r, s);
@@ -873,7 +948,7 @@ export function useAudioPlayer({
 
     rafId = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(rafId);
-  }, [isPlaying, getVerifiedTimingSegments, onActiveVerseChange]);
+  }, [isPlaying, getVerifiedTimingSegments, onActiveVerseChange, syncMediaSessionPosition]);
 
   // Update playback speed immediately across active & standby decks
   useEffect(() => {
@@ -1007,6 +1082,14 @@ export function useAudioPlayer({
       if (activeDeck && Number.isFinite(seconds)) {
         activeDeck.currentTime = seconds;
         setCurrentTime(seconds);
+        if (Number.isFinite(activeDeck.duration) && activeDeck.duration > 0) {
+          syncMediaSessionPosition(
+            activeDeck.duration,
+            seconds,
+            stateRef.current.playbackSpeed,
+            true
+          );
+        }
 
         const {
           reciter: r,
@@ -1030,7 +1113,7 @@ export function useAudioPlayer({
         }
       }
     },
-    [getVerifiedTimingSegments, onActiveVerseChange]
+    [getVerifiedTimingSegments, onActiveVerseChange, syncMediaSessionPosition]
   );
 
   const cycleLoopMode = useCallback(() => {
@@ -1080,6 +1163,148 @@ export function useAudioPlayer({
     },
     [loadAndPlay]
   );
+
+  // Sync Media Session metadata & playback state for Android lock screen / notification controls
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
+    if (!hasStarted && !isPlaying) {
+      try {
+        navigator.mediaSession.playbackState = 'none';
+      } catch {
+        // ignore unsupported browser
+      }
+      return;
+    }
+
+    const surahMeta = surahs.find((s) => s.id === activeSurah);
+    const payload = buildMediaSessionMetadataPayload({
+      surah: activeSurah,
+      ayah: activeAyah,
+      surahMeta,
+      reciter,
+      lang,
+    });
+
+    try {
+      if (typeof MediaMetadata !== 'undefined') {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: payload.title,
+          artist: payload.artist,
+          album: payload.album,
+          artwork: payload.artwork,
+        });
+      }
+      navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+    } catch {
+      // Ignore MediaMetadata errors on partial WebViews
+    }
+
+    const activeAudio = decksRef.current?.[activeDeckIdxRef.current];
+    if (activeAudio && Number.isFinite(activeAudio.duration) && activeAudio.duration > 0) {
+      syncMediaSessionPosition(
+        activeAudio.duration,
+        activeAudio.currentTime || 0,
+        playbackSpeed,
+        true
+      );
+    }
+  }, [
+    hasStarted,
+    isPlaying,
+    activeSurah,
+    activeAyah,
+    reciter,
+    surahs,
+    lang,
+    playbackSpeed,
+    syncMediaSessionPosition,
+  ]);
+
+  // Wire lock-screen & notification bar action handlers (play, pause, prev, next, seekto, stop)
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
+    const ms = navigator.mediaSession;
+    if (typeof ms.setActionHandler !== 'function') return;
+
+    const safeSetHandler = (
+      action: MediaSessionAction,
+      handler: MediaSessionActionHandler | null
+    ) => {
+      try {
+        ms.setActionHandler(action, handler);
+      } catch {
+        // Action may be unsupported on older Android WebViews
+      }
+    };
+
+    safeSetHandler('play', () => {
+      const decks = decksRef.current;
+      const activeDeck = decks?.[activeDeckIdxRef.current];
+      const {activeSurah: s, activeAyah: a, hasStarted: started} = stateRef.current;
+      if (!activeDeck || !started || !activeDeck.src) {
+        void loadAndPlay(s, a, true);
+        return;
+      }
+      autoplayIntendedRef.current = true;
+      void activeDeck
+        .play()
+        .then(() => {
+          setIsPlaying(true);
+          void preloadUpcoming(s, a);
+        })
+        .catch(() => {
+          void loadAndPlay(s, a, true);
+        });
+    });
+
+    safeSetHandler('pause', () => {
+      clearTalqeenTimer();
+      autoplayIntendedRef.current = false;
+      const activeDeck = decksRef.current?.[activeDeckIdxRef.current];
+      activeDeck?.pause();
+      setIsPlaying(false);
+    });
+
+    safeSetHandler('previoustrack', () => {
+      playPrev();
+    });
+
+    safeSetHandler('nexttrack', () => {
+      playNext();
+    });
+
+    safeSetHandler('seekto', (details) => {
+      if (typeof details.seekTime === 'number' && Number.isFinite(details.seekTime)) {
+        seekTo(details.seekTime);
+      }
+    });
+
+    safeSetHandler('stop', () => {
+      clearTalqeenTimer();
+      autoplayIntendedRef.current = false;
+      const activeDeck = decksRef.current?.[activeDeckIdxRef.current];
+      if (activeDeck) {
+        activeDeck.pause();
+        activeDeck.currentTime = 0;
+      }
+      setIsPlaying(false);
+      setCurrentTime(0);
+      try {
+        ms.playbackState = 'none';
+      } catch {
+        // ignore
+      }
+    });
+
+    return () => {
+      safeSetHandler('play', null);
+      safeSetHandler('pause', null);
+      safeSetHandler('previoustrack', null);
+      safeSetHandler('nexttrack', null);
+      safeSetHandler('seekto', null);
+      safeSetHandler('stop', null);
+    };
+  }, [clearTalqeenTimer, loadAndPlay, playNext, playPrev, preloadUpcoming, seekTo]);
 
   return {
     activeSurah,

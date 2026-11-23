@@ -9,6 +9,7 @@ import {
   Download,
   Eye,
   EyeOff,
+  Image as ImageIcon,
   Loader2,
   Maximize2,
   Play,
@@ -30,9 +31,87 @@ import {
   toArabicDigits,
   tokenizeVerseWords,
 } from '../utils/quranLogic';
+import {renderHeartStoryCardPng} from '../utils/storyCardCanvas';
 import {getVerseTextByRiwayat} from '../services/quranLoader';
 import {SurahCartoucheBanner} from './OrnamentalSvg';
 import type {AppLang, Translations} from '../i18n/translations';
+
+const AyahMedallion: React.FC<{
+  ayah: number;
+  isBookmarked: boolean;
+  isSajda?: boolean;
+}> = ({ayah, isBookmarked, isSajda}) => {
+  const digits = toArabicDigits(ayah);
+  const svgFontSize = ayah >= 100 ? '9.5' : ayah >= 10 ? '11' : '13';
+  const strokeColor = isBookmarked ? '#EA580C' : '#B45309';
+  const fillTint = isBookmarked ? 'rgba(234, 88, 12, 0.14)' : 'rgba(217, 119, 6, 0.08)';
+
+  return (
+    <span
+      className="inline-flex items-center justify-center align-baseline mx-1 whitespace-nowrap select-none"
+      style={{verticalAlign: '-0.22em'}}
+      aria-hidden="true"
+    >
+      {isSajda && (
+        <span className="text-[0.72em] text-[#D97706] me-0.5 leading-none">۩</span>
+      )}
+      <svg
+        viewBox="0 0 36 36"
+        className="w-[1.28em] h-[1.28em] shrink-0 overflow-visible"
+      >
+        <rect
+          x="6.5"
+          y="6.5"
+          width="23"
+          height="23"
+          rx="4"
+          fill={fillTint}
+          stroke={strokeColor}
+          strokeWidth="1.45"
+        />
+        <rect
+          x="6.5"
+          y="6.5"
+          width="23"
+          height="23"
+          rx="4"
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth="1.2"
+          transform="rotate(45 18 18)"
+        />
+        <circle
+          cx="18"
+          cy="18"
+          r="9.8"
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth="0.8"
+          strokeOpacity="0.55"
+        />
+        <text
+          x="18"
+          y="19"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fill="currentColor"
+          className={
+            isBookmarked
+              ? 'text-[#EA580C] dark:text-[#FB923C]'
+              : 'text-[#92400E] dark:text-[#FBBF24]'
+          }
+          style={{
+            fontFamily: 'var(--font-quran-scheherazade)',
+            fontSize: `${svgFontSize}px`,
+            fontWeight: 700,
+          }}
+        >
+          {digits}
+        </text>
+      </svg>
+    </span>
+  );
+};
 
 const JUZ_START_PAGES = [
   1, 22, 42, 62, 82, 102, 121, 142, 162, 182, 201, 222, 242, 262, 282, 302, 322,
@@ -123,6 +202,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
   const [actionMenuVerse, setActionMenuVerse] = useState<QuranVerse | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [sharedKey, setSharedKey] = useState<string | null>(null);
+  const [storySavedKey, setStorySavedKey] = useState<string | null>(null);
   const [pageJumpInput, setPageJumpInput] = useState(String(currentPage));
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
@@ -155,9 +235,12 @@ export const MushafView: React.FC<MushafViewProps> = ({
 
   const primaryVerse = displayVerses[0];
   const headerSurahMeta = useMemo(() => {
-    const idOnPage = displayVerses.some((v) => v.surah === currentSurahId)
-      ? currentSurahId
-      : primaryVerse?.surah || currentSurahId;
+    const surahStartingHere = displayVerses.find((v) => v.ayah === 1)?.surah;
+    const idOnPage =
+      surahStartingHere ||
+      (displayVerses.some((v) => v.surah === currentSurahId)
+        ? currentSurahId
+        : primaryVerse?.surah || currentSurahId);
     return surahMap.get(idOnPage);
   }, [displayVerses, currentSurahId, primaryVerse?.surah, surahMap]);
 
@@ -319,6 +402,46 @@ export const MushafView: React.FC<MushafViewProps> = ({
       } catch {
         // ignore clipboard failure
       }
+    }
+  };
+
+  const handleStoryCardExport = async (verse: QuranVerse) => {
+    const key = `${verse.surah}:${verse.ayah}`;
+    const sMeta = surahMap.get(verse.surah);
+    const rawText = getVerseTextByRiwayat(verse, settings.riwayat, warshTexts);
+    const arabicText =
+      settings.riwayat === 'hafs'
+        ? stripLeadingBismillah(rawText, verse.surah, verse.ayah)
+        : rawText;
+    try {
+      const {dataUrl, filename} = await renderHeartStoryCardPng(
+        {
+          id: key,
+          mood: 'calm',
+          surah: verse.surah,
+          ayah: verse.ayah,
+          page: verse.page,
+          surahNameAr: sMeta?.nameAr.replace('سُورَةُ ', '') || '',
+          surahNameEn: sMeta?.nameEn || `Surah ${verse.surah}`,
+          arabic: arabicText,
+          translationEn:
+            translations?.[verse.index] ||
+            `${sMeta?.nameEn || 'Quran'} (${verse.surah}:${verse.ayah})`,
+          reflectionEn: `Madani Mushaf · Page ${verse.page}`,
+          reflectionAr: `مصحف المدينة المنورة · صفحة ${toArabicDigits(verse.page)}`,
+        },
+        lang
+      );
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setStorySavedKey(key);
+      setTimeout(() => setStorySavedKey(null), 2000);
+    } catch {
+      // ignore canvas failure
     }
   };
 
@@ -661,34 +784,37 @@ export const MushafView: React.FC<MushafViewProps> = ({
             className="relative mx-2.5 my-1 sm:mx-auto max-w-3xl rounded-3xl border border-amber-500/15 bg-white/80 dark:bg-[#211914]/90 backdrop-blur-md p-4 sm:p-8 shadow-sm shadow-amber-500/5 overflow-hidden"
           >
             <div className="relative z-10 px-0.5 sm:px-2 py-0.5 sm:py-1">
-              {/* Top Minimal Page Meta Strip */}
+              {/* Subtle Madani Mushaf Page Header (Surah on one side, Juz' on opposite side) */}
               <div
-                dir="ltr"
-                className="flex items-center justify-between gap-1.5 text-[11px] sm:text-xs text-[#6E5649] dark:text-[#D6C7B8] px-2 sm:px-4 pt-0.5 pb-2.5 mb-3.5 sm:mb-5 border-b border-amber-500/12 tabular-nums"
+                dir="rtl"
+                data-testid="mushaf-top-header"
+                className="flex items-center justify-between gap-2 text-xs font-medium text-amber-900/60 dark:text-amber-200/65 px-2 sm:px-4 pt-0.5 pb-2.5 mb-3.5 sm:mb-5 border-b border-amber-500/12 tabular-nums"
               >
-                <span className="font-quran-scheherazade text-xs sm:text-base text-[#B45309] dark:text-[#FBBF24] whitespace-nowrap">
-                  الجزء {toArabicDigits(primaryVerse?.juz || 1)} · الحزب{' '}
-                  {toArabicDigits(hizbInfo.hizb)}
-                </span>
-                <span className="font-semibold whitespace-nowrap">
+                <span className="font-quran-scheherazade text-sm sm:text-base whitespace-nowrap truncate">
                   {lang === 'ar'
-                    ? `${t.pageWord} ${toArabicDigits(currentPage)} ${t.ofWord} ٦٠٤`
-                    : `${t.pageWord} ${currentPage} ${t.ofWord} 604`}
+                    ? headerSurahMeta?.nameAr.replace('سُورَةُ ', '')
+                    : `${headerSurahMeta?.nameAr.replace('سُورَةُ ', '') || ''} · ${
+                        headerSurahMeta?.transliteration || headerSurahMeta?.nameEn || ''
+                      }`}
                 </span>
-                <span className="font-quran-scheherazade text-xs sm:text-base text-[#B45309] dark:text-[#FBBF24] whitespace-nowrap">
-                  {headerSurahMeta?.nameAr.replace('سُورَةُ ', '')}
+                <span className="whitespace-nowrap">
+                  {lang === 'ar'
+                    ? `الجزء ${toArabicDigits(primaryVerse?.juz || 1)}`
+                    : `الجزء ${toArabicDigits(primaryVerse?.juz || 1)} · Part ${
+                        primaryVerse?.juz || 1
+                      }`}
                 </span>
               </div>
 
               {/* Surah Groups */}
-              <div className="space-y-5 sm:space-y-8">
+              <div className="space-y-4 sm:space-y-6">
                 {surahGroups.map(({surah, items}) => {
                   const startsAtBeginning = items[0]?.ayah === 1;
                   const showBismillah =
                     startsAtBeginning && surah.id !== 1 && surah.id !== 9;
 
                   return (
-                    <div key={surah.id} className="space-y-3.5 sm:space-y-5">
+                    <div key={surah.id} className="space-y-2.5 sm:space-y-3.5">
                       {startsAtBeginning && (
                         <SurahCartoucheBanner
                           surah={surah}
@@ -701,7 +827,8 @@ export const MushafView: React.FC<MushafViewProps> = ({
                       {showBismillah && (
                         <div
                           dir="rtl"
-                          className={`${fontClass} tracking-normal text-center text-[21px] sm:text-3xl leading-[2.05] text-[#B45309] dark:text-[#FBBF24] py-0.5`}
+                          data-testid={`surah-bismillah-${surah.id}`}
+                          className={`${fontClass} tracking-normal text-center text-[21px] sm:text-[26px] leading-[2.05] text-[#2D231E] dark:text-[#FDE68A]/95 py-0.5`}
                         >
                           بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
                         </div>
@@ -864,10 +991,11 @@ export const MushafView: React.FC<MushafViewProps> = ({
                           })}
                         </div>
                       ) : (
-                        /* Connected Warm Paper RTL Mushaf Flow */
+                        /* Authentic Continuous Justified Madani Mushaf RTL Block */
                         <div
                           dir="rtl"
-                          className={`${fontClass} mushaf-script-flow px-2 sm:px-3 tracking-normal text-right md:text-justify md:[text-align-last:center] text-[#2D231E] dark:text-[#FAF5EE]`}
+                          data-testid={`mushaf-justified-block-${surah.id}`}
+                          className={`${fontClass} mushaf-script-flow mushaf-justified px-1 sm:px-3 text-[#2D231E] dark:text-[#FAF5EE]`}
                           style={
                             {
                               '--q-size': `${settings.fontSize}px`,
@@ -910,10 +1038,10 @@ export const MushafView: React.FC<MushafViewProps> = ({
                                   }
                                 }}
                                 aria-label={`Ayah ${verse.surah}:${verse.ayah}`}
-                                className={`inline px-1.5 py-0.5 [box-decoration-break:clone] tracking-normal rounded-xl transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D97706] ${
+                                className={`inline px-0.5 [box-decoration-break:clone] tracking-normal rounded transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D97706] ${
                                   isActiveAudio || isSelected
-                                    ? 'bg-amber-500/14 text-[#B45309] dark:text-[#FDE68A]'
-                                    : '[@media(hover:hover)]:hover:bg-amber-500/[0.06]'
+                                    ? 'bg-[#FDE68A]/75 dark:bg-amber-500/25'
+                                    : '[@media(hover:hover)]:hover:bg-[#FDE68A]/35 dark:[@media(hover:hover)]:hover:bg-amber-500/10'
                                 }`}
                               >
                                 {words.map((word, wIdx) => {
@@ -940,19 +1068,16 @@ export const MushafView: React.FC<MushafViewProps> = ({
                                         }`}
                                       >
                                         {word}
-                                      </span>{' '}
+                                      </span>
+                                      {wIdx < words.length - 1 ? ' ' : '\u00A0'}
                                     </React.Fragment>
                                   );
                                 })}
-                                <span
-                                  className={`inline-block whitespace-nowrap align-baseline mx-1 tracking-normal text-[0.8em] leading-none ${
-                                    isBookmarked
-                                      ? 'text-[#EA580C] dark:text-[#FB923C]'
-                                      : 'text-[#B45309] dark:text-[#FBBF24]'
-                                  }`}
-                                >
-                                  {verse.sajda ? '۩ ' : ''}﴿{toArabicDigits(verse.ayah)}﴾
-                                </span>{' '}
+                                <AyahMedallion
+                                  ayah={verse.ayah}
+                                  isBookmarked={isBookmarked}
+                                  isSajda={verse.sajda}
+                                />{' '}
                               </span>
                             );
                           })}
@@ -1017,12 +1142,13 @@ export const MushafView: React.FC<MushafViewProps> = ({
         </button>
       )}
 
-      {/* Tap-Ayah Floating Action Menu (Play, Bookmark, Share, Tafsir, Copy) */}
+      {/* Tap-Ayah Floating Action Menu (Play, Tafsir, Bookmark, Story Card, Share, Copy) */}
       {actionMenuVerse && (
         <div
           role="region"
+          data-testid="ayah-action-popover"
           aria-label={`Actions for Ayah ${actionMenuVerse.surah}:${actionMenuVerse.ayah}`}
-          className="fixed bottom-[calc(8.9rem+env(safe-area-inset-bottom,0px))] md:bottom-[76px] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-xl rounded-full border border-amber-500/30 bg-white/95 dark:bg-[#221914]/95 backdrop-blur-md px-3.5 py-2 shadow-xl flex items-center justify-between gap-2"
+          className="fixed bottom-[calc(8.9rem+env(safe-area-inset-bottom,0px))] md:bottom-[76px] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-2xl rounded-full border border-amber-500/30 bg-white/95 dark:bg-[#221914]/95 backdrop-blur-md px-3.5 py-2 shadow-xl flex items-center justify-between gap-2"
         >
           <span className="text-xs font-bold text-[#B45309] dark:text-[#FBBF24] tabular-nums px-1 whitespace-nowrap">
             {actionMenuVerse.surah}:{actionMenuVerse.ayah}
@@ -1039,6 +1165,50 @@ export const MushafView: React.FC<MushafViewProps> = ({
             >
               <Play className="h-3.5 w-3.5 fill-current" />
               <span>{t.playFromHere}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const target = actionMenuVerse;
+                setActionMenuVerse(null);
+                onOpenTafsir(target);
+              }}
+              className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 px-2.5 py-1.5 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] whitespace-nowrap"
+            >
+              <BookOpenText className="h-3.5 w-3.5 text-[#B45309] dark:text-[#FBBF24]" />
+              <span>{t.tafsir}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onToggleBookmark(actionMenuVerse)}
+              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
+                isActionVerseBookmarked
+                  ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
+                  : 'border-amber-500/20 text-[#2D231E] dark:text-[#FAF5EE]'
+              }`}
+            >
+              <Bookmark
+                className={`h-3.5 w-3.5 ${isActionVerseBookmarked ? 'fill-current' : ''}`}
+              />
+              <span className="hidden sm:inline">
+                {isActionVerseBookmarked ? t.bookmarked : t.bookmark}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => void handleStoryCardExport(actionMenuVerse)}
+              title={t.saveStoryCardBtn}
+              className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 px-2.5 py-1.5 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] whitespace-nowrap"
+            >
+              {storySavedKey === actionKey ? (
+                <Check className="h-3.5 w-3.5 text-[#D97706]" />
+              ) : (
+                <ImageIcon className="h-3.5 w-3.5 text-[#B45309] dark:text-[#FBBF24]" />
+              )}
+              <span className="hidden sm:inline">{t.saveStoryCardBtn}</span>
             </button>
 
             {hifzMode && actionKey && (
@@ -1060,24 +1230,8 @@ export const MushafView: React.FC<MushafViewProps> = ({
 
             <button
               type="button"
-              onClick={() => onToggleBookmark(actionMenuVerse)}
-              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
-                isActionVerseBookmarked
-                  ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
-                  : 'border-amber-500/20 text-[#2D231E] dark:text-[#FAF5EE]'
-              }`}
-            >
-              <Bookmark
-                className={`h-3.5 w-3.5 ${isActionVerseBookmarked ? 'fill-current' : ''}`}
-              />
-              <span className="hidden sm:inline">
-                {isActionVerseBookmarked ? t.bookmarked : t.bookmark}
-              </span>
-            </button>
-
-            <button
-              type="button"
               onClick={() => void handleShareVerse(actionMenuVerse)}
+              title={t.shareWord}
               className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 px-2.5 py-1.5 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] whitespace-nowrap"
             >
               {sharedKey === actionKey ? (
@@ -1085,25 +1239,12 @@ export const MushafView: React.FC<MushafViewProps> = ({
               ) : (
                 <Share2 className="h-3.5 w-3.5 text-[#B45309] dark:text-[#FBBF24]" />
               )}
-              <span className="hidden sm:inline">{t.shareWord}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                const target = actionMenuVerse;
-                setActionMenuVerse(null);
-                onOpenTafsir(target);
-              }}
-              className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 px-2.5 py-1.5 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] whitespace-nowrap"
-            >
-              <BookOpenText className="h-3.5 w-3.5 text-[#B45309] dark:text-[#FBBF24]" />
-              <span>{t.tafsir}</span>
             </button>
 
             <button
               type="button"
               onClick={() => void handleCopyVerse(actionMenuVerse)}
+              title={t.copy}
               className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 px-2.5 py-1.5 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] whitespace-nowrap"
             >
               {copiedKey === actionKey ? (

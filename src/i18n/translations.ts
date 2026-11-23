@@ -118,6 +118,10 @@ export interface Translations {
   hafsGroup: string;
   audioSyncOffsetLabel: string;
   resetOffsetLabel: string;
+  wakeLockLabel: string;
+  wakeLockActive: string;
+  wakeLockOff: string;
+  wakeLockDesc: string;
   // Tafsir Drawer
   tafsirMuyassarTab: string;
   englishTranslationTab: string;
@@ -366,6 +370,10 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     hafsGroup: "Hafs 'an 'Asim (حفص عن عاصم)",
     audioSyncOffsetLabel: 'Ayah Highlight Sync Offset',
     resetOffsetLabel: 'Reset',
+    wakeLockLabel: 'Keep Screen On',
+    wakeLockActive: 'Screen Awake: On',
+    wakeLockOff: 'Screen Awake: Off',
+    wakeLockDesc: 'Prevents screen sleep during long recitation sessions',
     tafsirMuyassarTab: 'التفسير الميسر (Al-Muyassar)',
     englishTranslationTab: 'English Translation',
     listenAyah: 'Listen Ayah',
@@ -401,7 +409,7 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     downloadPageHeading: 'Najm Quran for Android',
     downloadPageSubheading:
       'Carry the complete 604-page Madani Mushaf, Hafs & Warsh narrations, Prayer Times, Qibla compass, and Adhkar offline on Android.',
-    downloadVersionMeta: 'v2.1.0 · Free · 6.5 MB · Live OTA Updates',
+    downloadVersionMeta: 'v2.4.0 · Free · 5.9 MB · Live OTA Updates',
     downloadHighlightsTitle: 'Built for Serene Daily Recitation',
     downloadHighlight1: '604-Page Madani Mushaf with zero-gap Hafs & Warsh audio',
     downloadHighlight2: 'Accurate Qibla Compass & astronomical Prayer Times',
@@ -605,6 +613,10 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     hafsGroup: 'رواية حفص عن عاصم',
     audioSyncOffsetLabel: 'ضبط تزامن تمييز الآيات',
     resetOffsetLabel: 'إعادة ضبط',
+    wakeLockLabel: 'إبقاء الشاشة مضاءة',
+    wakeLockActive: 'الشاشة مضاءة: مُفعّل',
+    wakeLockOff: 'الشاشة مضاءة: متوقف',
+    wakeLockDesc: 'يمنع انطفاء الشاشة تلقائياً أثناء القراءة والتلاوة',
     tafsirMuyassarTab: 'التفسير الميسر',
     englishTranslationTab: 'الترجمة الإنجليزية',
     listenAyah: 'سماع الآية',
@@ -640,7 +652,7 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     downloadPageHeading: 'نَجم القرآن لأجهزة أندرويد',
     downloadPageSubheading:
       'احمل مصحف المدينة (٦٠٤ صفحة) بروايتي حفص وورش ومواقيت الصلاة وبوصلة القبلة والأذكار دون اتصال.',
-    downloadVersionMeta: 'v2.1.0 · مجاني · 6.5 MB · تحديث تلقائي مباشر',
+    downloadVersionMeta: 'v2.4.0 · مجاني · 5.9 MB · تحديث تلقائي مباشر',
     downloadHighlightsTitle: 'تجربة خاشعة ومتكاملة دون إنترنت',
     downloadHighlight1: 'مصحف المدينة المنورة (٦٠٤ صفحة) مع تلاوة متصلة بلا تقطع',
     downloadHighlight2: 'بوصلة القبلة الدقيقة ومواقيت الصلاة الفلكية',

@@ -47,16 +47,22 @@
 
 /* Responsive mobile-first Mushaf script proportions */
 .mushaf-script-flow {
-  font-size: clamp(20px, calc(var(--q-size, 26px) - 2px), 36px);
-  line-height: clamp(2.05, calc(var(--q-lh, 2.4) - 0.1), 2.65);
+  font-size: clamp(20px, calc(var(--q-size, 25px) - 1px), 36px);
+  line-height: var(--q-lh, 2.35);
   letter-spacing: 0 !important;
   word-spacing: normal;
 }
 
+.mushaf-justified {
+  text-align: justify;
+  text-align-last: center;
+  text-justify: inter-word;
+}
+
 @media (min-width: 640px) {
   .mushaf-script-flow {
-    font-size: var(--q-size, 28px);
-    line-height: var(--q-lh, 2.45);
+    font-size: var(--q-size, 26px);
+    line-height: var(--q-lh, 2.35);
   }
 }
 

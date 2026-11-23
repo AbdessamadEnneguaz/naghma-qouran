@@ -17,6 +17,7 @@ import {
   SkipForward,
   SlidersHorizontal,
   Smartphone,
+  Sun,
   X,
 } from 'lucide-react';
 import type {
@@ -79,6 +80,10 @@ interface AudioPlayerBarProps {
   collapseSignal: number;
   isInstalled?: boolean;
   hideOnMobileIdle?: boolean;
+  wakeLockSupported?: boolean;
+  wakeLockEnabled?: boolean;
+  wakeLockActive?: boolean;
+  onToggleWakeLock?: () => void;
   onUpdateTalqeen: (patch: Partial<TalqeenConfig>) => void;
   onSkipTalqeenPause: () => void;
   onOpenInstall?: () => void;
@@ -133,6 +138,10 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
   collapseSignal,
   isInstalled = false,
   hideOnMobileIdle = false,
+  wakeLockSupported = true,
+  wakeLockEnabled = false,
+  wakeLockActive = false,
+  onToggleWakeLock,
   onUpdateTalqeen,
   onSkipTalqeenPause,
   onOpenInstall,
@@ -432,8 +441,8 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
             </div>
 
             {/* Row 2: Typography & Display Controls */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-amber-500/12">
-              <div className="space-y-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-nowrap items-end gap-3 pt-2 border-t border-amber-500/12">
+              <div className="lg:flex-1 lg:min-w-[155px] space-y-1">
                 <label
                   htmlFor="dock-font-size"
                   className="flex justify-between text-[11px] font-semibold text-[#6E5649] dark:text-[#D6C7B8] tabular-nums"
@@ -453,7 +462,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                 />
               </div>
 
-              <div className="space-y-1">
+              <div className="lg:flex-1 lg:min-w-[155px] space-y-1">
                 <label
                   htmlFor="dock-line-height"
                   className="flex justify-between text-[11px] font-semibold text-[#6E5649] dark:text-[#D6C7B8] tabular-nums"
@@ -473,11 +482,11 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-1.5 items-end">
+              <div className="grid grid-cols-2 lg:flex gap-1.5 items-end shrink-0">
                 <button
                   type="button"
                   onClick={() => onUpdateSettings({font: 'amiri'})}
-                  className={`py-2 px-2 rounded-xl text-xs font-medium border ${
+                  className={`py-2 px-3 rounded-xl text-xs font-medium border whitespace-nowrap ${
                     settings.font === 'amiri'
                       ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
                       : 'border-amber-500/15 bg-[#FDFBF7] dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
@@ -488,7 +497,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                 <button
                   type="button"
                   onClick={() => onUpdateSettings({font: 'scheherazade'})}
-                  className={`py-2 px-2 rounded-xl text-xs font-medium border ${
+                  className={`py-2 px-3 rounded-xl text-xs font-medium border whitespace-nowrap ${
                     settings.font === 'scheherazade'
                       ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
                       : 'border-amber-500/15 bg-[#FDFBF7] dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
@@ -498,17 +507,42 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                 </button>
               </div>
 
-              <button
-                type="button"
-                onClick={() => onUpdateSettings({showTranslation: !settings.showTranslation})}
-                className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-colors ${
-                  settings.showTranslation
-                    ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
-                    : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
-                }`}
-              >
-                {settings.showTranslation ? t.translationVisible : t.translationHidden}
-              </button>
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => onUpdateSettings({showTranslation: !settings.showTranslation})}
+                  className={`flex-1 lg:flex-initial py-2 px-3 rounded-xl text-xs font-semibold border transition-colors whitespace-nowrap ${
+                    settings.showTranslation
+                      ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
+                      : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
+                  }`}
+                >
+                  {settings.showTranslation ? t.translationVisible : t.translationHidden}
+                </button>
+
+                {wakeLockSupported && onToggleWakeLock && (
+                  <button
+                    type="button"
+                    data-testid="wake-lock-toggle"
+                    onClick={onToggleWakeLock}
+                    aria-pressed={wakeLockEnabled}
+                    aria-label={t.wakeLockLabel}
+                    title={t.wakeLockDesc}
+                    className={`inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
+                      wakeLockEnabled
+                        ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
+                        : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
+                    }`}
+                  >
+                    <Sun
+                      className={`h-3.5 w-3.5 shrink-0 ${
+                        wakeLockActive ? 'text-[#D97706] dark:text-[#FBBF24]' : ''
+                      }`}
+                    />
+                    <span>{wakeLockEnabled ? t.wakeLockActive : t.wakeLockOff}</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Row 2B: Verse Timing Sync Fine Offset */}

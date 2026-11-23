@@ -119,12 +119,16 @@ export default defineConfig(() => {
               res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
               res.end(
                 JSON.stringify({
-                  version: '2.1.0',
+                  version: '2.4.0',
                   buildId: devBuildId,
-                  apkUrl: '/naghma-quran.apk',
+                  otaUrl: 'https://najmqouran.vercel.app',
+                  apkUrl: '/najm-quran.apk',
                 })
               );
               return;
+            }
+            if (req.url && /^\/naghma-quran\.apk(\?.*)?$/i.test(req.url)) {
+              req.url = '/najm-quran.apk';
             }
             if (req.url && /\.apk(\?.*)?$/i.test(req.url)) {
               res.setHeader('Content-Type', 'application/vnd.android.package-archive');
@@ -138,6 +142,9 @@ export default defineConfig(() => {
           server.middlewares.use((req, res, next) => {
             if (req.url && /^\/version\.json(\?.*)?$/i.test(req.url)) {
               res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+            }
+            if (req.url && /^\/naghma-quran\.apk(\?.*)?$/i.test(req.url)) {
+              req.url = '/najm-quran.apk';
             }
             if (req.url && /\.apk(\?.*)?$/i.test(req.url)) {
               res.setHeader('Content-Type', 'application/vnd.android.package-archive');
@@ -165,9 +172,10 @@ export default defineConfig(() => {
             fs.writeFileSync(
               path.join(distDir, 'version.json'),
               JSON.stringify({
-                version: '2.1.0',
+                version: '2.4.0',
                 buildId: `prod-${Date.now()}`,
-                apkUrl: '/naghma-quran.apk',
+                otaUrl: 'https://najmqouran.vercel.app',
+                apkUrl: '/najm-quran.apk',
               }),
               'utf-8'
             );

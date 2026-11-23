@@ -51,6 +51,7 @@ import {useAppUpdater} from './hooks/useAppUpdater';
 import {useKhatmaReminders} from './hooks/useKhatmaReminders';
 import {useOnlineStatus, usePWAInstall} from './hooks/usePWAInstall';
 import {useVoiceRecitation} from './hooks/useVoiceRecitation';
+import {useWakeLock} from './hooks/useWakeLock';
 import {TRANSLATIONS, type AppLang} from './i18n/translations';
 import {Header} from './components/Header';
 import {HomeView} from './components/HomeView';
@@ -74,8 +75,8 @@ const DEFAULT_SETTINGS: ReaderSettings = {
   theme: 'light',
   riwayat: 'hafs',
   font: 'amiri',
-  fontSize: 26,
-  lineHeight: 2.4,
+  fontSize: 25,
+  lineHeight: 2.35,
   showTranslation: false,
   readerMode: 'mushaf',
   reciterId: 'hafs_alafasy',
@@ -145,6 +146,7 @@ export default function App() {
   const isOnline = useOnlineStatus();
   const {isInstallable, isInstalled, isIOS, triggerNativeInstall} = usePWAInstall();
   const updater = useAppUpdater();
+  const wakeLock = useWakeLock();
   const [dismissedUpdateBanner, setDismissedUpdateBanner] = useState(false);
   const activeReciter = useMemo(() => getReciterById(settings.reciterId), [settings.reciterId]);
   const t = TRANSLATIONS[lang];
@@ -403,6 +405,7 @@ export default function App() {
     reciter: activeReciter,
     playbackSpeed: settings.playbackSpeed,
     audioSyncOffsetSec: settings.audioSyncOffsetSec ?? 0,
+    lang,
     onActiveVerseChange: handleAudioVerseChange,
   });
 
@@ -920,6 +923,10 @@ export default function App() {
         collapseSignal={audioCollapseSignal}
         isInstalled={isInstalled}
         hideOnMobileIdle={hideAudioBarOnMobileIdle}
+        wakeLockSupported={wakeLock.isSupported}
+        wakeLockEnabled={wakeLock.enabled}
+        wakeLockActive={wakeLock.isActive}
+        onToggleWakeLock={wakeLock.toggleWakeLock}
         onUpdateTalqeen={player.updateTalqeen}
         onSkipTalqeenPause={player.skipTalqeenPause}
         onOpenInstall={() => navigateToRoute('download')}

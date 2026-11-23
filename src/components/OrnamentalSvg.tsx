@@ -201,7 +201,7 @@ export const KaabaIconSvg: React.FC<{className?: string}> = ({className = 'h-5 w
 );
 
 /**
- * Warm Honey-Sand Surah Header Banner (matching image_17.png aesthetic)
+ * Authentic Ornamental Rectangular Madani Surah Title Banner
  */
 export const SurahCartoucheBanner: React.FC<{
   surah: SurahMeta;
@@ -209,47 +209,70 @@ export const SurahCartoucheBanner: React.FC<{
   t: Translations;
   onPlaySurah: () => void;
 }> = ({surah, lang, t, onPlaySurah}) => {
-  const revLabel = surah.revelationType === 'Meccan' ? t.meccan : t.medinan;
-  const countLabel =
-    lang === 'ar'
-      ? `${toArabicDigits(surah.totalAyahs)} ${t.ayahsWord}`
-      : `${surah.totalAyahs} ${t.versesWord}`;
-
   return (
-    <div className="relative my-2 sm:my-3 rounded-2xl bg-gradient-to-b from-amber-500/18 via-amber-500/10 to-orange-400/5 border border-amber-500/15 dark:border-amber-500/20 px-4 sm:px-7 py-4 sm:py-5 text-center space-y-2">
-      <div className="flex flex-col items-center gap-1">
-        <span className="text-[11px] sm:text-xs font-semibold tracking-wide text-[#B45309] dark:text-[#FBBF24] uppercase tabular-nums">
-          {lang === 'ar' ? `${revLabel} · ${countLabel}` : `${surah.nameEn} · ${countLabel}`}
-        </span>
+    <div
+      data-testid={`surah-banner-${surah.id}`}
+      className="relative my-2 sm:my-3 rounded-xl border border-amber-700/30 dark:border-amber-400/30 bg-gradient-to-r from-amber-500/[0.06] via-amber-500/[0.13] to-amber-500/[0.06] ring-1 ring-inset ring-amber-600/20 px-3 sm:px-5 py-2 sm:py-2.5 flex items-center justify-between gap-2"
+    >
+      {/* Left End Ornamental Rosette + Subtle Play Surah Trigger */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onPlaySurah();
+        }}
+        title={t.playSurah}
+        aria-label={t.playSurah}
+        className="h-8 w-8 rounded-full border border-amber-700/30 dark:border-amber-400/35 bg-white/80 dark:bg-[#2A201A]/90 text-[#B45309] dark:text-[#FBBF24] hover:bg-[#D97706] hover:text-white flex items-center justify-center shrink-0 transition-colors"
+      >
+        <Play className="h-3.5 w-3.5 fill-current ms-0.5" />
+      </button>
 
+      {/* Center Classic Uthmani Surah Title */}
+      <div className="min-w-0 flex-1 text-center">
         <h2
           dir="rtl"
-          className="font-quran-scheherazade text-2xl sm:text-3xl font-bold text-[#2D231E] dark:text-[#FAF5EE]"
+          className="font-quran-scheherazade text-2xl sm:text-[28px] leading-snug font-bold text-[#2D231E] dark:text-[#FAF5EE] truncate"
         >
           {surah.nameAr}
         </h2>
-
-        <div
-          dir="rtl"
-          className="font-quran-amiri text-xl sm:text-2xl text-[#4E3629] dark:text-[#FDE68A]/90 pt-0.5"
-        >
-          بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
-        </div>
       </div>
 
-      <div className="pt-1 flex justify-center">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onPlaySurah();
-          }}
-          className="inline-flex items-center gap-1.5 rounded-full bg-white/85 dark:bg-[#2A201A] border border-amber-500/25 px-4 py-1.5 text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] hover:bg-amber-500 hover:text-white transition-colors whitespace-nowrap"
-        >
-          <Play className="h-3 w-3 fill-current" />
-          <span>{t.playSurah}</span>
-        </button>
+      {/* Right End Matching Islamic 8-Pointed Flourish */}
+      <div
+        aria-hidden="true"
+        className="h-8 w-8 flex items-center justify-center shrink-0 text-[#B45309]/70 dark:text-[#FBBF24]/70"
+      >
+        <svg viewBox="0 0 32 32" className="h-6 w-6" fill="none">
+          <rect
+            x="7"
+            y="7"
+            width="18"
+            height="18"
+            rx="2.5"
+            stroke="currentColor"
+            strokeWidth="1.4"
+          />
+          <rect
+            x="7"
+            y="7"
+            width="18"
+            height="18"
+            rx="2.5"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            transform="rotate(45 16 16)"
+          />
+          <circle cx="16" cy="16" r="3" fill="currentColor" fillOpacity="0.35" />
+        </svg>
       </div>
+
+      {/* Subtle bilingual count caption when hovered/assisted */}
+      <span className="sr-only">
+        {lang === 'ar'
+          ? `${surah.nameAr} · ${toArabicDigits(surah.totalAyahs)} ${t.ayahsWord}`
+          : `${surah.nameEn} · ${surah.totalAyahs} ${t.versesWord}`}
+      </span>
     </div>
   );
 };

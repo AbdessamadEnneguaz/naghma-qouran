@@ -5,8 +5,9 @@
   "bundledWebRuntime": false,
   "server": {
     "androidScheme": "https",
-    "url": "https://ais-pre-sd7psl2bnxgqgy6mwqyrp5-846997521525.europe-west2.run.app",
-    "cleartext": false
+    "url": "https://najmqouran.vercel.app",
+    "cleartext": false,
+    "errorPath": "index.html"
   },
   "android": {
     "backgroundColor": "#FDFBF7",
