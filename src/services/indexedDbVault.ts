@@ -114,6 +114,26 @@ export async function setCachedQuranAsset(key: string, data: unknown): Promise<v
   await idbSet(STORE_QURAN, key, data);
 }
 
+export async function setCachedQuranAssets(
+  entries: Array<{key: string; data: unknown}>
+): Promise<void> {
+  if (entries.length === 0) return;
+  try {
+    const db = await openVaultDB();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_QURAN, 'readwrite');
+      const store = tx.objectStore(STORE_QURAN);
+      for (const entry of entries) {
+        store.put(entry.data, entry.key);
+      }
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch {
+    // Ignore storage quota errors gracefully
+  }
+}
+
 export async function getQuranVaultKeys(): Promise<string[]> {
   try {
     const db = await openVaultDB();

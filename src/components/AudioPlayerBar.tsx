@@ -1,6 +1,7 @@
-import React, {useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   Check,
+  ChevronUp,
   Clock,
   Download,
   Eye,
@@ -30,7 +31,13 @@ import type {
 } from '../types/quran';
 import {RECITERS} from '../data/reciters';
 import {formatAudioTime, toArabicDigits} from '../utils/quranLogic';
-import type {SleepTimerOption} from '../hooks/useAudioPlayer';
+import {
+  WAVEFORM_BAR_COUNT,
+  computePlayedBarCount,
+  computeSeekSecondsFromPointer,
+  generateWaveformBars,
+} from '../utils/waveformLogic';
+import type {ProgressListener, SleepTimerOption} from '../hooks/useAudioPlayer';
 import type {AppLang, Translations} from '../i18n/translations';
 
 interface AudioPlayerBarProps {
@@ -49,6 +56,7 @@ interface AudioPlayerBarProps {
   sleepSecondsLeft: number;
   currentTime: number;
   duration: number;
+  subscribeProgress: (listener: ProgressListener) => () => void;
   settings: ReaderSettings;
   offlineRecords: OfflineSurahRecord[];
   downloadProgress: {surah: number; completed: number; total: number} | null;
@@ -107,6 +115,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
   sleepSecondsLeft,
   currentTime,
   duration,
+  subscribeProgress,
   settings,
   offlineRecords,
   downloadProgress,
@@ -148,51 +157,141 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
 }) => {
   const [expanded, setExpanded] = useState(false);
 
-  React.useEffect(() => {
+  const waveformRef = useRef<HTMLDivElement | null>(null);
+  const barRefs = useRef<Array<HTMLSpanElement | null>>([]);
+  const isDraggingRef = useRef(false);
+  const latestDurationRef = useRef(duration);
+  latestDurationRef.current = duration;
+
+  useEffect(() => {
     if (forceExpandSignal > 0) {
       setExpanded(true);
     }
   }, [forceExpandSignal]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (collapseSignal > 0) {
       setExpanded(false);
     }
   }, [collapseSignal]);
 
-  const surahMeta = surahs.find((s) => s.id === activeSurah);
-  const warshReciters = RECITERS.filter((r) => r.riwayat === 'warsh');
-  const hafsReciters = RECITERS.filter((r) => r.riwayat === 'hafs');
+  const surahMeta = useMemo(
+    () => surahs.find((s) => s.id === activeSurah),
+    [surahs, activeSurah]
+  );
+  const warshReciters = useMemo(() => RECITERS.filter((r) => r.riwayat === 'warsh'), []);
+  const hafsReciters = useMemo(() => RECITERS.filter((r) => r.riwayat === 'hafs'), []);
+
+  const waveformBars = useMemo(
+    () =>
+      generateWaveformBars(
+        `${activeSurah}:${reciter.mode === 'ayah' ? activeAyah : 0}:${reciter.id}`,
+        WAVEFORM_BAR_COUNT
+      ),
+    [activeSurah, activeAyah, reciter.id, reciter.mode]
+  );
+
+  const paintBars = useCallback((curSec: number, durSec: number) => {
+    const playedCount = computePlayedBarCount(curSec, durSec, WAVEFORM_BAR_COUNT);
+    for (let i = 0; i < WAVEFORM_BAR_COUNT; i++) {
+      const el = barRefs.current[i];
+      if (!el) continue;
+      const isPlayed = i < playedCount;
+      el.dataset.played = isPlayed ? 'true' : 'false';
+    }
+  }, []);
+
+  // Direct 60fps DOM paint via pub-sub listener (zero React re-renders!)
+  useEffect(() => {
+    paintBars(currentTime, duration);
+    const unsub = subscribeProgress((curSec, durSec) => {
+      if (!isDraggingRef.current) {
+        if (durSec > 0) latestDurationRef.current = durSec;
+        paintBars(curSec, durSec > 0 ? durSec : latestDurationRef.current);
+      }
+    });
+    return unsub;
+  }, [subscribeProgress, paintBars, currentTime, duration, waveformBars]);
+
+  const seekFromClientX = useCallback(
+    (clientX: number, commit: boolean) => {
+      const track = waveformRef.current;
+      if (!track) return;
+      const rect = track.getBoundingClientRect();
+      const dur = latestDurationRef.current;
+      if (dur <= 0) return;
+      const targetSec = computeSeekSecondsFromPointer(clientX, rect.left, rect.width, dur);
+      paintBars(targetSec, dur);
+      if (commit) {
+        onSeek(targetSec);
+      }
+    },
+    [onSeek, paintBars]
+  );
+
+  const handleWaveformPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    isDraggingRef.current = true;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // ignore synthetic pointer events
+    }
+    seekFromClientX(e.clientX, true);
+  };
+
+  const handleWaveformPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingRef.current) return;
+    seekFromClientX(e.clientX, false);
+  };
+
+  const handleWaveformPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {
+      // ignore
+    }
+    seekFromClientX(e.clientX, true);
+  };
+
+  const handleWaveformKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const dur = latestDurationRef.current;
+    if (dur <= 0) return;
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      onSeek(Math.min(dur, currentTime + 5));
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      onSeek(Math.max(0, currentTime - 5));
+    }
+  };
 
   const isCurrentSurahOffline = offlineRecords.some(
     (r) => r.surah === activeSurah && r.reciterId === reciter.id
   );
   const isDownloadingCurrent = downloadProgress?.surah === activeSurah;
 
-  const progressPct =
-    duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0;
-
-  const nextSpeed = () => {
-    const idx = SPEEDS.indexOf(playbackSpeed);
-    const next = SPEEDS[(idx + 1) % SPEEDS.length];
-    onChangeSpeed(next);
-  };
-
   const surahTitle =
     lang === 'ar'
-      ? surahMeta?.nameAr || 'الفاتحة'
-      : surahMeta?.nameEn || 'Al-Fatiha';
+      ? surahMeta?.nameAr.replace('سُورَةُ ', '') || 'الفاتحة'
+      : surahMeta?.transliteration || surahMeta?.nameEn || 'Al-Fatihah';
 
   const ayahBadge =
     reciter.mode === 'ayah'
       ? lang === 'ar'
         ? `${toArabicDigits(activeSurah)}:${toArabicDigits(activeAyah)}`
         : `${activeSurah}:${activeAyah}`
-      : t.fullSurah;
+      : lang === 'ar'
+        ? `${toArabicDigits(activeSurah)}`
+        : `S${activeSurah}`;
 
   return (
     <div
-      className={`fixed bottom-[calc(4.6rem+env(safe-area-inset-bottom,0px))] md:bottom-0 left-0 right-0 z-30 transition-all duration-300 ${
+      className={`fixed bottom-[calc(4.9rem+env(safe-area-inset-bottom,0px))] md:bottom-4 left-0 right-0 z-30 pointer-events-none transition-all duration-300 ${
         hideOnMobileIdle ? 'hidden md:block' : ''
       } ${
         focusMode
@@ -200,107 +299,153 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
           : 'translate-y-0 opacity-100'
       }`}
     >
-      {/* Live Voice Follow Status Strip or Fallback Banner */}
-      {(isListening || voiceError) && (
-        <div className="mx-auto max-w-3xl px-3 mb-2">
-          {voiceError ? (
-            <div className="rounded-2xl border border-amber-500/35 bg-white/95 dark:bg-[#221914]/95 backdrop-blur-md px-3.5 py-2.5 text-xs text-[#B45309] dark:text-[#FBBF24] shadow-lg flex items-center justify-between gap-2">
-              <span>{voiceError}</span>
+      <div className="mx-auto max-w-2xl px-3 flex flex-col items-center gap-2">
+        {/* Live Voice Follow Status Strip */}
+        {(isListening || voiceError) && (
+          <div className="w-full max-w-lg pointer-events-auto">
+            {voiceError ? (
+              <div className="rounded-2xl border border-amber-500/35 bg-white/95 dark:bg-[#221914]/95 px-3.5 py-2.5 text-xs text-[#B45309] dark:text-[#FBBF24] shadow-lg flex items-center justify-between gap-2">
+                <span>{voiceError}</span>
+                <button
+                  type="button"
+                  onClick={onClearVoiceError}
+                  aria-label="Dismiss microphone notice"
+                  className="p-1 rounded-lg hover:bg-amber-500/10 shrink-0"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-amber-500/35 bg-white/95 dark:bg-[#221914]/95 px-3.5 py-2 text-xs shadow-lg flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="relative flex h-2.5 w-2.5 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F97316] opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D97706]" />
+                  </span>
+                  <span className="font-semibold text-[#B45309] dark:text-[#FBBF24] truncate">
+                    {hasMistakePulse
+                      ? t.micSkippedHint
+                      : interimText
+                        ? interimText
+                        : t.micListening}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 tabular-nums">
+                  <span className="text-[11px] font-semibold text-[#4E3629] dark:text-[#D6C7B8]">
+                    {lang === 'ar' ? toArabicDigits(matchedCount) : matchedCount}{' '}
+                    {t.micMatchedWords}
+                  </span>
+                  {matchedCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={onResetVoiceProgress}
+                      title="Reset"
+                      aria-label="Reset voice follow progress"
+                      className="p-1 rounded-md hover:bg-amber-500/10 text-[#6E5649] dark:text-[#D6C7B8]"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Talqeen Repeat-Aloud Pause Banner */}
+        {talqeenCountdown !== null && (
+          <div className="w-full max-w-lg pointer-events-auto">
+            <div className="rounded-2xl border border-amber-500/40 bg-white/95 dark:bg-[#221914]/95 px-3.5 py-2 text-xs shadow-lg flex items-center justify-between gap-2">
+              <span className="font-semibold text-[#B45309] dark:text-[#FBBF24] tabular-nums">
+                {t.talqeenPromptPrefix}{' '}
+                {lang === 'ar'
+                  ? `${toArabicDigits(talqeenCountdown)} ث`
+                  : `${talqeenCountdown}s`}
+              </span>
               <button
                 type="button"
-                onClick={onClearVoiceError}
-                aria-label="Dismiss microphone notice"
-                className="p-1 rounded-lg hover:bg-amber-500/10 shrink-0"
+                onClick={onSkipTalqeenPause}
+                className="rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-[11px] font-semibold text-[#B45309] dark:text-[#FBBF24]"
               >
-                <X className="h-3.5 w-3.5" />
+                {t.talqeenSkipPause}
               </button>
             </div>
-          ) : (
-            <div className="rounded-2xl border border-amber-500/35 bg-white/95 dark:bg-[#221914]/95 backdrop-blur-md px-3.5 py-2 text-xs shadow-lg flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="relative flex h-2.5 w-2.5 shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F97316] opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D97706]" />
-                </span>
-                <span className="font-semibold text-[#B45309] dark:text-[#FBBF24] truncate">
-                  {hasMistakePulse
-                    ? t.micSkippedHint
-                    : interimText
-                      ? interimText
-                      : t.micListening}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 shrink-0 tabular-nums">
-                <span className="text-[11px] font-semibold text-[#4E3629] dark:text-[#D6C7B8]">
-                  {lang === 'ar' ? toArabicDigits(matchedCount) : matchedCount} {t.micMatchedWords}
-                </span>
-                {matchedCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={onResetVoiceProgress}
-                    title="Reset"
-                    aria-label="Reset voice follow progress"
-                    className="p-1 rounded-md hover:bg-amber-500/10 text-[#6E5649] dark:text-[#D6C7B8]"
-                  >
-                    <RotateCcw className="h-3.5 w-3.5" />
-                  </button>
-                )}
+          </div>
+        )}
+
+        {/* Expandable Settings & Reciter Drawer (Floating Sheet Above Capsule) */}
+        {expanded && (
+          <div
+            data-testid="audio-player-drawer"
+            className="w-full max-w-2xl pointer-events-auto rounded-3xl border border-amber-500/20 bg-[#FDFBF7]/98 dark:bg-[#1E1611]/98 md:backdrop-blur-md shadow-2xl px-4 sm:px-5 py-4 space-y-4 max-h-[58vh] overflow-y-auto"
+          >
+            {/* Header Info + Quick Actions (Mic, Hifz, Jump, Close) */}
+            <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-amber-500/12">
+              <button
+                type="button"
+                onClick={onJumpToActiveAyah}
+                className="min-w-0 text-start hover:opacity-80 transition-opacity"
+              >
+                <div className="text-sm font-bold text-[#2D231E] dark:text-[#FAF5EE] truncate tabular-nums">
+                  {surahTitle} · {ayahBadge}
+                </div>
+                <div className="text-[11px] text-[#6E5649] dark:text-[#D6C7B8] truncate">
+                  {lang === 'ar' ? reciter.nameAr : reciter.nameEn}
+                </div>
+              </button>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={onToggleVoiceRecite}
+                  aria-pressed={isListening}
+                  aria-label={isListening ? t.micStop : t.micRecite}
+                  className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors ${
+                    isListening
+                      ? 'border-rose-500 bg-rose-500 text-white'
+                      : 'border-amber-500/25 bg-amber-500/10 text-[#7C4A15] dark:text-[#FBBF24]'
+                  }`}
+                >
+                  {isListening ? (
+                    <MicOff className="h-3.5 w-3.5" />
+                  ) : (
+                    <Mic className="h-3.5 w-3.5" />
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onToggleHifzMode}
+                  aria-pressed={hifzMode}
+                  aria-label={t.hifzMode}
+                  className={`h-8 px-2.5 inline-flex items-center gap-1 rounded-full border text-[11px] font-semibold transition-colors ${
+                    hifzMode
+                      ? 'border-[#7C4A15] bg-[#7C4A15] text-white'
+                      : 'border-amber-500/20 bg-white dark:bg-[#2A2018] text-[#4E3629] dark:text-[#D6C7B8]'
+                  }`}
+                >
+                  {hifzMode ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                  <span>{t.hifzMode}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setExpanded(false)}
+                  aria-label={t.closeWord}
+                  className="h-8 w-8 flex items-center justify-center rounded-full text-[#6E5649] dark:text-[#D6C7B8] hover:bg-amber-500/10"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
             </div>
-          )}
-        </div>
-      )}
 
-      {/* Talqeen Repeat-Aloud Pause Banner */}
-      {talqeenCountdown !== null && (
-        <div className="mx-auto max-w-3xl px-3 mb-2">
-          <div className="rounded-2xl border border-amber-500/40 bg-white/95 dark:bg-[#221914]/95 backdrop-blur-md px-3.5 py-2 text-xs shadow-lg flex items-center justify-between gap-2">
-            <span className="font-semibold text-[#B45309] dark:text-[#FBBF24] tabular-nums">
-              {t.talqeenPromptPrefix}{' '}
-              {lang === 'ar'
-                ? `${toArabicDigits(talqeenCountdown)} ث`
-                : `${talqeenCountdown}s`}
-            </span>
-            <button
-              type="button"
-              onClick={onSkipTalqeenPause}
-              className="rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-[11px] font-semibold text-[#B45309] dark:text-[#FBBF24]"
-            >
-              {t.talqeenSkipPause}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Warm Honey & Ivory Floating/Docked Audio Container */}
-      <div className="mx-2.5 md:mx-0 rounded-3xl md:rounded-none border md:border-x-0 md:border-b-0 border-amber-500/20 bg-white/94 dark:bg-[#1E1611]/95 backdrop-blur-md shadow-lg md:shadow-none overflow-hidden">
-        {/* Top Warm Sunset Audio Progress Bar */}
-        <div className="relative h-1 w-full bg-amber-500/15">
-          <div
-            className="h-full bg-gradient-to-r from-[#D97706] to-[#F97316] transition-all duration-100"
-            style={{width: `${progressPct}%`}}
-          />
-          <input
-            type="range"
-            min={0}
-            max={duration > 0 ? duration : 100}
-            step="any"
-            value={duration > 0 ? currentTime : 0}
-            onChange={(e) => onSeek(Number(e.target.value))}
-            aria-label="Seek recitation progress"
-            className="absolute inset-0 h-3 -top-1 w-full opacity-0 cursor-pointer"
-          />
-        </div>
-
-        {/* Expandable Settings & Reciter Drawer */}
-        {expanded && (
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-4 border-b border-amber-500/12 space-y-4 max-h-[56vh] overflow-y-auto">
             {audioError && (
               <p className="text-xs font-medium text-[#B45309] dark:text-[#FBBF24]">
                 {audioError}
               </p>
             )}
 
+            {/* Transport & Elapsed Readout */}
             <div className="flex items-center justify-between text-xs text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
               <span>
                 {t.elapsed}: {formatAudioTime(currentTime)}
@@ -310,7 +455,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   type="button"
                   onClick={onPlayPrev}
                   aria-label={t.prevSurah}
-                  className="p-1.5 rounded-full bg-amber-500/12 text-[#B45309] dark:text-[#FBBF24]"
+                  className="p-1.5 rounded-full bg-amber-500/12 text-[#7C4A15] dark:text-[#FBBF24]"
                 >
                   <SkipBack className="h-3.5 w-3.5" />
                 </button>
@@ -318,7 +463,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   type="button"
                   onClick={onPlayNext}
                   aria-label={t.nextSurah}
-                  className="p-1.5 rounded-full bg-amber-500/12 text-[#B45309] dark:text-[#FBBF24]"
+                  className="p-1.5 rounded-full bg-amber-500/12 text-[#7C4A15] dark:text-[#FBBF24]"
                 >
                   <SkipForward className="h-3.5 w-3.5" />
                 </button>
@@ -328,8 +473,8 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
               </span>
             </div>
 
-            {/* Row 1: Reciter, Repeat/Speed/Download, Sleep Timer */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+            {/* Row 1: Reciter, Repeat, Speed, Offline, Sleep Timer */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
               <div className="space-y-1">
                 <label
                   htmlFor="dock-reciter-select"
@@ -341,7 +486,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   id="dock-reciter-select"
                   value={reciter.id}
                   onChange={(e) => onChangeReciter(e.target.value)}
-                  className="w-full rounded-xl border border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] px-3 py-2 text-xs font-medium text-[#2D231E] dark:text-[#FAF5EE] focus:outline-none focus:ring-2 focus:ring-[#D97706]"
+                  className="w-full rounded-xl border border-amber-500/20 bg-white dark:bg-[#17110D] px-3 py-2 text-xs font-medium text-[#2D231E] dark:text-[#FAF5EE] focus:outline-none focus:ring-2 focus:ring-[#D97706]"
                 >
                   <optgroup label={t.warshGroup}>
                     {warshReciters.map((r) => (
@@ -366,8 +511,8 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   onClick={onCycleLoopMode}
                   className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${
                     loopMode !== 'none'
-                      ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
-                      : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] text-[#2D231E] dark:text-[#FAF5EE]'
+                      ? 'border-[#7C4A15] bg-amber-500/15 text-[#7C4A15] dark:text-[#FBBF24]'
+                      : 'border-amber-500/20 bg-white dark:bg-[#17110D] text-[#2D231E] dark:text-[#FAF5EE]'
                   }`}
                 >
                   {loopMode === 'ayah' ? (
@@ -384,13 +529,22 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   </span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={nextSpeed}
-                  className="rounded-xl border border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] px-3 py-2 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] tabular-nums"
-                >
-                  {playbackSpeed}x
-                </button>
+                <div className="inline-flex items-center rounded-xl border border-amber-500/20 bg-white dark:bg-[#17110D] p-0.5 tabular-nums">
+                  {SPEEDS.map((spd) => (
+                    <button
+                      key={spd}
+                      type="button"
+                      onClick={() => onChangeSpeed(spd)}
+                      className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${
+                        playbackSpeed === spd
+                          ? 'bg-[#7C4A15] text-white'
+                          : 'text-[#6E5649] dark:text-[#D6C7B8]'
+                      }`}
+                    >
+                      {spd}x
+                    </button>
+                  ))}
+                </div>
 
                 {surahMeta && (
                   <button
@@ -400,8 +554,8 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                     aria-label={isCurrentSurahOffline ? t.offlineReady : t.downloadSurahOffline}
                     className={`min-h-[34px] min-w-[34px] flex items-center justify-center rounded-xl border transition-colors ${
                       isCurrentSurahOffline
-                        ? 'border-[#D97706]/40 bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
-                        : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] text-[#2D231E] dark:text-[#FAF5EE]'
+                        ? 'border-[#D97706]/40 bg-amber-500/15 text-[#7C4A15] dark:text-[#FBBF24]'
+                        : 'border-amber-500/20 bg-white dark:bg-[#17110D] text-[#2D231E] dark:text-[#FAF5EE]'
                     }`}
                   >
                     {isDownloadingCurrent ? (
@@ -414,7 +568,10 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   </button>
                 )}
               </div>
+            </div>
 
+            {/* Sleep Timer & Typography Controls */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end pt-2 border-t border-amber-500/12">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-[#D97706] shrink-0" />
                 <select
@@ -423,7 +580,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   onChange={(e) =>
                     onChangeSleepTimer(Number(e.target.value) as SleepTimerOption)
                   }
-                  className="flex-1 rounded-xl border border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] px-3 py-2 text-xs font-medium text-[#2D231E] dark:text-[#FAF5EE] focus:outline-none focus:ring-2 focus:ring-[#D97706]"
+                  className="flex-1 rounded-xl border border-amber-500/20 bg-white dark:bg-[#17110D] px-2.5 py-2 text-xs font-medium text-[#2D231E] dark:text-[#FAF5EE]"
                 >
                   <option value={0}>{t.sleepTimerOff}</option>
                   <option value={15}>15 {t.minutesUnit}</option>
@@ -438,11 +595,8 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   </span>
                 )}
               </div>
-            </div>
 
-            {/* Row 2: Typography & Display Controls */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-nowrap items-end gap-3 pt-2 border-t border-amber-500/12">
-              <div className="lg:flex-1 lg:min-w-[155px] space-y-1">
+              <div className="space-y-1">
                 <label
                   htmlFor="dock-font-size"
                   className="flex justify-between text-[11px] font-semibold text-[#6E5649] dark:text-[#D6C7B8] tabular-nums"
@@ -458,11 +612,11 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   step={1}
                   value={settings.fontSize}
                   onChange={(e) => onUpdateSettings({fontSize: Number(e.target.value)})}
-                  className="w-full accent-[#D97706]"
+                  className="w-full accent-[#7C4A15]"
                 />
               </div>
 
-              <div className="lg:flex-1 lg:min-w-[155px] space-y-1">
+              <div className="space-y-1">
                 <label
                   htmlFor="dock-line-height"
                   className="flex justify-between text-[11px] font-semibold text-[#6E5649] dark:text-[#D6C7B8] tabular-nums"
@@ -478,81 +632,76 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   step={0.05}
                   value={settings.lineHeight}
                   onChange={(e) => onUpdateSettings({lineHeight: Number(e.target.value)})}
-                  className="w-full accent-[#D97706]"
+                  className="w-full accent-[#7C4A15]"
                 />
-              </div>
-
-              <div className="grid grid-cols-2 lg:flex gap-1.5 items-end shrink-0">
-                <button
-                  type="button"
-                  onClick={() => onUpdateSettings({font: 'amiri'})}
-                  className={`py-2 px-3 rounded-xl text-xs font-medium border whitespace-nowrap ${
-                    settings.font === 'amiri'
-                      ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
-                      : 'border-amber-500/15 bg-[#FDFBF7] dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
-                  }`}
-                >
-                  Amiri Quran
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onUpdateSettings({font: 'scheherazade'})}
-                  className={`py-2 px-3 rounded-xl text-xs font-medium border whitespace-nowrap ${
-                    settings.font === 'scheherazade'
-                      ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
-                      : 'border-amber-500/15 bg-[#FDFBF7] dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
-                  }`}
-                >
-                  Scheherazade
-                </button>
-              </div>
-
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => onUpdateSettings({showTranslation: !settings.showTranslation})}
-                  className={`flex-1 lg:flex-initial py-2 px-3 rounded-xl text-xs font-semibold border transition-colors whitespace-nowrap ${
-                    settings.showTranslation
-                      ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
-                      : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
-                  }`}
-                >
-                  {settings.showTranslation ? t.translationVisible : t.translationHidden}
-                </button>
-
-                {wakeLockSupported && onToggleWakeLock && (
-                  <button
-                    type="button"
-                    data-testid="wake-lock-toggle"
-                    onClick={onToggleWakeLock}
-                    aria-pressed={wakeLockEnabled}
-                    aria-label={t.wakeLockLabel}
-                    title={t.wakeLockDesc}
-                    className={`inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
-                      wakeLockEnabled
-                        ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
-                        : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
-                    }`}
-                  >
-                    <Sun
-                      className={`h-3.5 w-3.5 shrink-0 ${
-                        wakeLockActive ? 'text-[#D97706] dark:text-[#FBBF24]' : ''
-                      }`}
-                    />
-                    <span>{wakeLockEnabled ? t.wakeLockActive : t.wakeLockOff}</span>
-                  </button>
-                )}
               </div>
             </div>
 
-            {/* Row 2B: Verse Timing Sync Fine Offset */}
-            <div className="pt-2.5 border-t border-amber-500/12 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-              <div className="flex items-center justify-between sm:min-w-[220px] gap-2 text-[11px] font-semibold text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
-                <label htmlFor="dock-sync-offset">{t.audioSyncOffsetLabel}</label>
-                <span
-                  data-testid="sync-offset-readout"
-                  className="text-[#B45309] dark:text-[#FBBF24]"
+            {/* Font Family, Translation, Wake Lock */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => onUpdateSettings({font: 'amiri'})}
+                className={`py-1.5 px-3 rounded-xl text-xs font-medium border whitespace-nowrap ${
+                  settings.font === 'amiri'
+                    ? 'border-[#7C4A15] bg-amber-500/15 text-[#7C4A15] dark:text-[#FBBF24]'
+                    : 'border-amber-500/15 bg-white dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
+                }`}
+              >
+                Amiri Quran
+              </button>
+              <button
+                type="button"
+                onClick={() => onUpdateSettings({font: 'scheherazade'})}
+                className={`py-1.5 px-3 rounded-xl text-xs font-medium border whitespace-nowrap ${
+                  settings.font === 'scheherazade'
+                    ? 'border-[#7C4A15] bg-amber-500/15 text-[#7C4A15] dark:text-[#FBBF24]'
+                    : 'border-amber-500/15 bg-white dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
+                }`}
+              >
+                Scheherazade
+              </button>
+              <button
+                type="button"
+                onClick={() => onUpdateSettings({showTranslation: !settings.showTranslation})}
+                className={`py-1.5 px-3 rounded-xl text-xs font-semibold border transition-colors whitespace-nowrap ${
+                  settings.showTranslation
+                    ? 'border-[#7C4A15] bg-amber-500/15 text-[#7C4A15] dark:text-[#FBBF24]'
+                    : 'border-amber-500/20 bg-white dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
+                }`}
+              >
+                {settings.showTranslation ? t.translationVisible : t.translationHidden}
+              </button>
+
+              {wakeLockSupported && onToggleWakeLock && (
+                <button
+                  type="button"
+                  data-testid="wake-lock-toggle"
+                  onClick={onToggleWakeLock}
+                  aria-pressed={wakeLockEnabled}
+                  aria-label={t.wakeLockLabel}
+                  title={t.wakeLockDesc}
+                  className={`inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-semibold border transition-colors whitespace-nowrap ${
+                    wakeLockEnabled
+                      ? 'border-[#7C4A15] bg-amber-500/15 text-[#7C4A15] dark:text-[#FBBF24]'
+                      : 'border-amber-500/20 bg-white dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
+                  }`}
                 >
+                  <Sun
+                    className={`h-3.5 w-3.5 shrink-0 ${
+                      wakeLockActive ? 'text-[#D97706] dark:text-[#FBBF24]' : ''
+                    }`}
+                  />
+                  <span>{wakeLockEnabled ? t.wakeLockActive : t.wakeLockOff}</span>
+                </button>
+              )}
+            </div>
+
+            {/* Verse Timing Sync Fine Offset */}
+            <div className="pt-2.5 border-t border-amber-500/12 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <div className="flex items-center justify-between sm:min-w-[180px] gap-2 text-[11px] font-semibold text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
+                <label htmlFor="dock-sync-offset">{t.audioSyncOffsetLabel}</label>
+                <span data-testid="sync-offset-readout" className="text-[#7C4A15] dark:text-[#FBBF24]">
                   {settings.audioSyncOffsetSec > 0 ? '+' : ''}
                   {settings.audioSyncOffsetSec.toFixed(1)}s
                 </span>
@@ -569,7 +718,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                     onUpdateSettings({audioSyncOffsetSec: next});
                   }}
                   aria-label="Sync offset minus 0.5 seconds"
-                  className="rounded-lg border border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] px-2.5 py-1 text-[11px] font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] transition-colors shrink-0 tabular-nums"
+                  className="rounded-lg border border-amber-500/20 bg-white dark:bg-[#17110D] px-2.5 py-1 text-[11px] font-semibold text-[#2D231E] dark:text-[#FAF5EE] tabular-nums"
                 >
                   -0.5s
                 </button>
@@ -586,7 +735,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                     })
                   }
                   aria-label={t.audioSyncOffsetLabel}
-                  className="w-full accent-[#D97706]"
+                  className="w-full accent-[#7C4A15]"
                 />
                 <button
                   type="button"
@@ -599,7 +748,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                     onUpdateSettings({audioSyncOffsetSec: next});
                   }}
                   aria-label="Sync offset plus 0.5 seconds"
-                  className="rounded-lg border border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] px-2.5 py-1 text-[11px] font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] transition-colors shrink-0 tabular-nums"
+                  className="rounded-lg border border-amber-500/20 bg-white dark:bg-[#17110D] px-2.5 py-1 text-[11px] font-semibold text-[#2D231E] dark:text-[#FAF5EE] tabular-nums"
                 >
                   +0.5s
                 </button>
@@ -608,7 +757,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                     type="button"
                     data-testid="sync-nudge-reset"
                     onClick={() => onUpdateSettings({audioSyncOffsetSec: 0})}
-                    className="rounded-lg border border-amber-500/20 px-2 py-1 text-[11px] font-semibold text-[#6E5649] dark:text-[#D6C7B8] hover:text-[#2D231E] shrink-0"
+                    className="rounded-lg border border-amber-500/20 px-2 py-1 text-[11px] font-semibold text-[#6E5649] dark:text-[#D6C7B8]"
                   >
                     {t.resetOffsetLabel}
                   </button>
@@ -616,8 +765,8 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
               </div>
             </div>
 
-            {/* Row 3: Talqeen Memorization Mode */}
-            <div className="pt-3 border-t border-amber-500/12 space-y-2.5">
+            {/* Talqeen Memorization Mode */}
+            <div className="pt-2.5 border-t border-amber-500/12 space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <div className="text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE]">
@@ -637,17 +786,17 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                     }
                     onUpdateTalqeen({enabled: nextEnabled});
                   }}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors whitespace-nowrap ${
+                  className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors whitespace-nowrap ${
                     talqeen.enabled
-                      ? 'border-[#D97706] bg-amber-500/18 text-[#B45309] dark:text-[#FBBF24]'
-                      : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
+                      ? 'border-[#7C4A15] bg-amber-500/18 text-[#7C4A15] dark:text-[#FBBF24]'
+                      : 'border-amber-500/20 bg-white dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
                   }`}
                 >
                   {talqeen.enabled ? t.talqeenEnabled : t.talqeenOff}
                 </button>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-xs tabular-nums">
                   <span className="font-semibold text-[#6E5649] dark:text-[#D6C7B8]">
                     {t.talqeenRangeLabel}:
@@ -666,7 +815,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                       })
                     }
                     aria-label="Talqeen start ayah"
-                    className="w-16 rounded-lg border border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] px-2 py-1 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE]"
+                    className="w-14 rounded-lg border border-amber-500/20 bg-white dark:bg-[#17110D] px-2 py-1 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE]"
                   />
                   <span className="text-[#6E5649] dark:text-[#D6C7B8]">{t.talqeenToWord}</span>
                   <input
@@ -686,11 +835,11 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                       })
                     }
                     aria-label="Talqeen end ayah"
-                    className="w-16 rounded-lg border border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] px-2 py-1 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE]"
+                    className="w-14 rounded-lg border border-amber-500/20 bg-white dark:bg-[#17110D] px-2 py-1 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE]"
                   />
                 </div>
 
-                <div className="flex items-center gap-1.5 text-xs">
+                <div className="flex items-center gap-1 text-xs">
                   <span className="font-semibold text-[#6E5649] dark:text-[#D6C7B8]">
                     {t.talqeenPauseLabel}:
                   </span>
@@ -699,10 +848,10 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                       key={sec}
                       type="button"
                       onClick={() => onUpdateTalqeen({pauseSeconds: sec})}
-                      className={`px-2.5 py-1 rounded-full border text-xs font-semibold tabular-nums transition-colors ${
+                      className={`px-2 py-1 rounded-full border text-xs font-semibold tabular-nums transition-colors ${
                         talqeen.pauseSeconds === sec
-                          ? 'border-[#D97706] bg-amber-500/18 text-[#B45309] dark:text-[#FBBF24]'
-                          : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
+                          ? 'border-[#7C4A15] bg-amber-500/18 text-[#7C4A15] dark:text-[#FBBF24]'
+                          : 'border-amber-500/20 bg-white dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
                       }`}
                     >
                       {lang === 'ar' ? `${toArabicDigits(sec)}ث` : `${sec}s`}
@@ -713,7 +862,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
             </div>
 
             {!isInstalled && onOpenInstall && (
-              <div className="pt-3 border-t border-amber-500/12 flex items-center justify-between gap-3">
+              <div className="pt-2.5 border-t border-amber-500/12 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE]">
                     {t.downloadApkTitle}
@@ -729,7 +878,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                     setExpanded(false);
                     onOpenInstall();
                   }}
-                  className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-amber-500/35 bg-amber-500/12 px-3 py-1.5 text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] hover:bg-amber-500/20 transition-colors whitespace-nowrap"
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-amber-500/35 bg-amber-500/12 px-3 py-1.5 text-xs font-semibold text-[#7C4A15] dark:text-[#FBBF24] whitespace-nowrap"
                 >
                   <Smartphone className="h-3.5 w-3.5" />
                   <span>{t.downloadApkBtn}</span>
@@ -739,121 +888,80 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
           </div>
         )}
 
-        {/* Main Compact Player Bar */}
-        <div className="mx-auto max-w-5xl px-3 sm:px-6 h-[56px] sm:h-[60px] flex items-center justify-between gap-1.5 sm:gap-4">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <button
-              type="button"
-              onClick={onTogglePlayPause}
-              aria-label={isPlaying ? t.pauseReciter : t.playReciter}
-              className="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-full bg-[#D97706] text-white shadow-sm hover:bg-[#B45309] transition-colors shrink-0"
-            >
-              {isBuffering ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : isPlaying ? (
-                <Pause className="h-4 w-4 fill-current" />
-              ) : (
-                <Play className="h-4 w-4 fill-current ms-0.5" />
-              )}
-            </button>
+        {/* Luxury Waveform Capsule Audio Player (Exact Match to Reference Capsule) */}
+        <div
+          data-testid="waveform-capsule-player"
+          className="w-full max-w-[366px] sm:max-w-lg pointer-events-auto rounded-full bg-[#F5DEC1] dark:bg-[#2A2018] shadow-md shadow-amber-900/10 border border-[#7C4A15]/10 dark:border-amber-500/20 px-2.5 py-2 flex items-center gap-3"
+        >
+          {/* Left Circular Deep Bronze-Espresso Play/Pause Button */}
+          <button
+            type="button"
+            data-testid="capsule-play-btn"
+            onClick={onTogglePlayPause}
+            aria-label={isPlaying ? t.pauseReciter : t.playReciter}
+            className="w-10 h-10 rounded-full bg-[#7C4A15] hover:bg-[#663C10] active:scale-95 text-white flex items-center justify-center shadow-sm transition-all shrink-0"
+          >
+            {isBuffering ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : isPlaying ? (
+              <Pause className="h-4 w-4 fill-current" />
+            ) : (
+              <Play className="h-4 w-4 fill-current ms-0.5" />
+            )}
+          </button>
 
-            <button
-              type="button"
-              onClick={onJumpToActiveAyah}
-              className="min-w-0 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D97706] rounded-lg px-0.5 sm:px-1"
-            >
-              <div
-                className={`font-semibold text-[#2D231E] dark:text-[#FAF5EE] truncate tabular-nums ${
-                  lang === 'ar'
-                    ? 'font-quran-scheherazade text-sm sm:text-base'
-                    : 'text-xs sm:text-sm'
-                }`}
-              >
-                {surahTitle} · {ayahBadge}
-              </div>
-              <div className="hidden sm:block text-[11px] text-[#6E5649] dark:text-[#D6C7B8] truncate">
-                {lang === 'ar' ? reciter.nameAr : reciter.nameEn}
-              </div>
-            </button>
+          {/* Center Symmetric Interactive Multi-Bar Acoustic Waveform */}
+          <div
+            ref={waveformRef}
+            dir="ltr"
+            role="slider"
+            tabIndex={0}
+            data-testid="waveform-seeker"
+            aria-label="Seek recitation progress"
+            aria-valuemin={0}
+            aria-valuemax={Math.round(duration > 0 ? duration : 100)}
+            aria-valuenow={Math.round(currentTime)}
+            onPointerDown={handleWaveformPointerDown}
+            onPointerMove={handleWaveformPointerMove}
+            onPointerUp={handleWaveformPointerUp}
+            onPointerCancel={handleWaveformPointerUp}
+            onKeyDown={handleWaveformKeyDown}
+            className="flex-1 min-w-0 h-8 flex items-center justify-between gap-[2px] sm:gap-[3px] cursor-pointer touch-none select-none px-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C4A15] rounded-full"
+          >
+            {waveformBars.map((amp, idx) => (
+              <span
+                key={idx}
+                ref={(el) => {
+                  barRefs.current[idx] = el;
+                }}
+                data-played="false"
+                className="w-[2.5px] sm:w-[3px] rounded-full transition-colors duration-75 bg-[#DFC29D]/55 dark:bg-[#DFC29D]/30 data-[played=true]:bg-[#7C4A15] dark:data-[played=true]:bg-[#F59E0B]"
+                style={{height: `${Math.round(amp * 100)}%`}}
+              />
+            ))}
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-            <button
-              type="button"
-              onClick={onToggleVoiceRecite}
-              aria-pressed={isListening}
-              aria-label={isListening ? t.micStop : t.micRecite}
-              className={`h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-full shadow-sm transition-all ${
-                isListening
-                  ? 'bg-rose-500 text-white ring-4 ring-rose-500/25'
-                  : 'bg-amber-500/15 border border-amber-500/30 text-[#B45309] dark:text-[#FBBF24] hover:bg-amber-500/25'
-              }`}
-            >
-              {isListening ? (
-                <MicOff className="h-4 w-4" />
-              ) : (
-                <Mic className="h-4 w-4" />
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={onToggleHifzMode}
-              aria-pressed={hifzMode}
-              aria-label={t.hifzMode}
-              className={`h-9 px-2.5 sm:px-3.5 inline-flex items-center gap-1.5 rounded-full border text-xs font-semibold transition-colors whitespace-nowrap ${
-                hifzMode
-                  ? 'border-[#D97706] bg-amber-500/18 text-[#B45309] dark:text-[#FBBF24]'
-                  : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#221914] text-[#4E3629] dark:text-[#D6C7B8]'
-              }`}
-            >
-              {hifzMode ? (
-                <Eye className="h-4 w-4" />
-              ) : (
-                <EyeOff className="h-4 w-4" />
-              )}
-              <span className="hidden sm:inline">{t.hifzMode}</span>
-            </button>
-          </div>
-
-          <div className="flex items-center justify-end gap-1.5 sm:gap-2 flex-1 min-w-0">
-            <select
-              aria-label={t.reciterLabel}
-              value={reciter.id}
-              onChange={(e) => onChangeReciter(e.target.value)}
-              className="hidden md:block w-40 lg:w-48 rounded-full border border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] px-3 py-1.5 text-xs font-medium text-[#2D231E] dark:text-[#FAF5EE] focus:outline-none focus:ring-2 focus:ring-[#D97706] truncate"
-            >
-              <optgroup label={t.warshGroup}>
-                {warshReciters.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {lang === 'ar' ? r.nameAr : r.nameEn}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label={t.hafsGroup}>
-                {hafsReciters.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {lang === 'ar' ? r.nameAr : r.nameEn}
-                  </option>
-                ))}
-              </optgroup>
-            </select>
-
-            <button
-              type="button"
-              onClick={() => setExpanded((e) => !e)}
-              aria-expanded={expanded}
-              aria-label={t.settingsBtn}
-              className={`h-9 px-2.5 sm:px-3 inline-flex items-center gap-1.5 rounded-full border text-xs font-semibold transition-colors shrink-0 ${
-                expanded
-                  ? 'border-[#D97706] bg-amber-500/18 text-[#B45309] dark:text-[#FBBF24]'
-                  : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#221914] text-[#6E5649] dark:text-[#D6C7B8]'
-              }`}
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              <span className="hidden sm:inline">{t.settingsBtn}</span>
-            </button>
-          </div>
+          {/* Right Subtle Pill Badge / Controls Drawer Toggle */}
+          <button
+            type="button"
+            data-testid="capsule-drawer-toggle"
+            onClick={() => setExpanded((e) => !e)}
+            aria-expanded={expanded}
+            aria-label={t.settingsBtn}
+            title={`${surahTitle} · ${ayahBadge} · ${playbackSpeed}x`}
+            className={`h-8 px-2.5 inline-flex items-center gap-1 rounded-full text-[11px] font-bold transition-colors shrink-0 tabular-nums ${
+              expanded
+                ? 'bg-[#7C4A15] text-white'
+                : 'bg-white/60 dark:bg-black/25 text-[#5C360E] dark:text-[#FDE68A] hover:bg-white/85'
+            }`}
+          >
+            <span className="max-w-[54px] truncate">{ayahBadge}</span>
+            {expanded ? (
+              <ChevronUp className="h-3.5 w-3.5 rotate-180 transition-transform" />
+            ) : (
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+            )}
+          </button>
         </div>
       </div>
     </div>

@@ -141,7 +141,7 @@ export const QiblaPage: React.FC<QiblaPageProps> = ({lang, t}) => {
       </div>
 
       {/* Location & GPS Strip */}
-      <div className="rounded-3xl border border-amber-500/15 bg-white/75 dark:bg-[#211914]/85 backdrop-blur-md p-3 sm:p-4 shadow-sm shadow-amber-500/5 flex flex-wrap items-center gap-2.5">
+      <div className="rounded-3xl border border-amber-500/15 bg-white/90 dark:bg-[#211914]/92 md:bg-white/75 md:dark:bg-[#211914]/85 md:backdrop-blur-md p-3 sm:p-4 shadow-sm shadow-amber-500/5 flex flex-wrap items-center gap-2.5">
         <div className="flex items-center gap-2 flex-1 min-w-[165px]">
           <label
             htmlFor="qibla-city-select"
@@ -186,7 +186,7 @@ export const QiblaPage: React.FC<QiblaPageProps> = ({lang, t}) => {
       </div>
 
       {/* Main 3D Gold Compass Card */}
-      <section className="rounded-3xl border border-amber-500/15 bg-white/75 dark:bg-[#211914]/85 backdrop-blur-md p-5 sm:p-8 shadow-sm shadow-amber-500/5 flex flex-col items-center space-y-4 sm:space-y-5">
+      <section className="rounded-3xl border border-amber-500/15 bg-white/90 dark:bg-[#211914]/92 md:bg-white/75 md:dark:bg-[#211914]/85 md:backdrop-blur-md p-5 sm:p-8 shadow-sm shadow-amber-500/5 flex flex-col items-center space-y-4 sm:space-y-5">
         {/* Top Direction Target Triangle */}
         <div className="flex flex-col items-center">
           <div

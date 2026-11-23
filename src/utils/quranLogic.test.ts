@@ -10,8 +10,12 @@ import {
   getAyahAudioUrl,
   getGlobalAyahNumber,
   getNextAyah,
+  getNextSurahAyah,
   getPrevAyah,
+  getPrevSurahAyah,
+  getSurahAyahCount,
   getUpcomingAyahs,
+  getUpcomingSurahAyahTargets,
   getUpcomingSurahs,
   normalizeSpeechWord,
   parseSearchQuery,
@@ -279,5 +283,23 @@ test('resolveActiveContextTarget resolves viewed Surah, Mushaf page first verse,
     }),
     {surah: 18, ayah: 10}
   );
+});
+
+test('O(1) Surah/Ayah navigation helpers traverse cross-Surah boundaries without full dataset', () => {
+  assert.equal(getSurahAyahCount(1), 7);
+  assert.equal(getSurahAyahCount(2), 286);
+  assert.equal(getSurahAyahCount(114), 6);
+  assert.equal(getSurahAyahCount(0), 0);
+
+  assert.deepEqual(getNextSurahAyah(1, 7), {surah: 2, ayah: 1});
+  assert.deepEqual(getNextSurahAyah(114, 6), null);
+  assert.deepEqual(getPrevSurahAyah(2, 1), {surah: 1, ayah: 7});
+  assert.deepEqual(getPrevSurahAyah(1, 1), null);
+  assert.deepEqual(getUpcomingSurahAyahTargets(1, 6, 3), [
+    {surah: 1, ayah: 7},
+    {surah: 2, ayah: 1},
+    {surah: 2, ayah: 2},
+  ]);
+  assert.deepEqual(getUpcomingSurahAyahTargets(114, 5, 3), [{surah: 114, ayah: 6}]);
 });
 

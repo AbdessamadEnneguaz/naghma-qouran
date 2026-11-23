@@ -23,7 +23,7 @@ export const AppFooter: React.FC<AppFooterProps> = ({
   return (
     <footer
       data-testid="app-footer"
-      className="border-t border-amber-500/15 bg-[#FAF5EE]/75 dark:bg-[#140E0B]/85 backdrop-blur-sm mt-8 pt-7 pb-36 md:pb-24 px-4 sm:px-6"
+      className="border-t border-amber-500/15 bg-[#FAF5EE]/92 dark:bg-[#140E0B]/95 md:bg-[#FAF5EE]/75 md:dark:bg-[#140E0B]/85 md:backdrop-blur-sm mt-8 pt-7 pb-36 md:pb-24 px-4 sm:px-6"
     >
       <div className="mx-auto max-w-5xl flex flex-col sm:flex-row sm:items-center justify-between gap-5">
         <div className="flex items-start sm:items-center gap-3">

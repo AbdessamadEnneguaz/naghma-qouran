@@ -70,7 +70,7 @@ export const DownloadApkPage: React.FC<DownloadApkPageProps> = ({
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 pt-6 sm:pt-10 pb-8 space-y-6">
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-7 items-center rounded-3xl border border-amber-500/18 bg-white/80 dark:bg-[#211914]/90 backdrop-blur-md p-5 sm:p-8 lg:p-10 shadow-sm">
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-7 items-center rounded-3xl border border-amber-500/18 bg-white/92 dark:bg-[#211914]/95 md:bg-white/80 md:dark:bg-[#211914]/90 md:backdrop-blur-md p-5 sm:p-8 lg:p-10 shadow-sm">
         <div className="lg:col-span-7 space-y-5">
           <div className="space-y-2.5">
             <div className="flex flex-wrap items-center gap-2.5 text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] tabular-nums">

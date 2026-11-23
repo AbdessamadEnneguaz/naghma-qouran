@@ -4,8 +4,10 @@ import {
   alignVersesToAcousticValleys,
   extractAcousticPauseValleys,
   findAyahAtTimeMs,
+  getFallbackAyahReciterId,
   parseMp3QuranAyatTiming,
   parseQuranComChapterTimestamps,
+  shouldFallbackToAyahDeck,
 } from './surahTimingLogic';
 import type {QuranVerse} from '../types/quran';
 
@@ -96,4 +98,46 @@ test('extractAcousticPauseValleys & alignVersesToAcousticValleys snap strictly t
   assert.ok(segments[1].startMs >= 5600 && segments[1].startMs <= 6600, `Ayah 2 should snap near 6.2s pause, got ${segments[1].startMs}`);
   assert.ok(segments[2].startMs >= 9700 && segments[2].startMs <= 10700, `Ayah 3 should snap near 10.2s pause, got ${segments[2].startMs}`);
   assert.equal(segments[2].endMs, 20000);
+});
+
+test('getFallbackAyahReciterId & shouldFallbackToAyahDeck handle chapter timing fallback cleanly', () => {
+  assert.equal(getFallbackAyahReciterId('hafs'), 'hafs_alafasy');
+  assert.equal(getFallbackAyahReciterId('warsh'), 'warsh_abdulbasit');
+
+  assert.equal(
+    shouldFallbackToAyahDeck({
+      reciterMode: 'surah',
+      timingResolved: true,
+      hasSegments: false,
+      hasOfflineChapter: false,
+    }),
+    true
+  );
+  assert.equal(
+    shouldFallbackToAyahDeck({
+      reciterMode: 'surah',
+      timingResolved: true,
+      hasSegments: true,
+      hasOfflineChapter: false,
+    }),
+    false
+  );
+  assert.equal(
+    shouldFallbackToAyahDeck({
+      reciterMode: 'surah',
+      timingResolved: true,
+      hasSegments: false,
+      hasOfflineChapter: true,
+    }),
+    false
+  );
+  assert.equal(
+    shouldFallbackToAyahDeck({
+      reciterMode: 'ayah',
+      timingResolved: true,
+      hasSegments: false,
+      hasOfflineChapter: false,
+    }),
+    false
+  );
 });

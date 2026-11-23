@@ -9,14 +9,21 @@ import type {
 import {
   getAyahAudioCandidates,
   getGlobalAyahNumber,
-  getNextAyah,
-  getPrevAyah,
-  getUpcomingAyahs,
+  getNextSurahAyah,
+  getPrevSurahAyah,
+  getUpcomingSurahAyahTargets,
   getUpcomingSurahs,
 } from '../utils/quranLogic';
-import {findAyahAtTimeMs, type AyahTimingSegment} from '../utils/surahTimingLogic';
+import {
+  findAyahAtTimeMs,
+  getFallbackAyahReciterId,
+  shouldFallbackToAyahDeck,
+  type AyahTimingSegment,
+} from '../utils/surahTimingLogic';
 import {getCachedSurahTimingSync, getSurahAyatTiming} from '../services/surahTimingService';
 import {getCachedAudioBlob} from '../services/indexedDbVault';
+import {findVerseAndPage} from '../services/quranLoader';
+import {syncActiveVerseDomHighlight} from '../utils/verseHighlightDom';
 import {
   buildMediaSessionMetadataPayload,
   computeSafePositionState,
@@ -29,6 +36,7 @@ import {
 import type {AppLang} from '../i18n/translations';
 
 export type SleepTimerOption = 0 | 15 | 30 | 45 | 60 | -1; // -1 = end of surah
+export type ProgressListener = (currentTimeSec: number, durationSec: number) => void;
 
 function getPlaybackErrorMessage(curLang: AppLang): string {
   const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
@@ -52,6 +60,7 @@ interface UseAudioPlayerArgs {
   viewSurah?: number;
   viewAyah?: number;
   onActiveVerseChange?: (verse: QuranVerse) => void;
+  onFallbackReciter?: (reciterId: string) => void;
 }
 
 interface DeckSlot {
@@ -87,6 +96,7 @@ export function useAudioPlayer({
   viewSurah = 1,
   viewAyah = 1,
   onActiveVerseChange,
+  onFallbackReciter,
 }: UseAudioPlayerArgs) {
   const decksRef = useRef<[HTMLAudioElement, HTMLAudioElement] | null>(null);
   const lookahead2Ref = useRef<HTMLAudioElement | null>(null);
@@ -97,12 +107,14 @@ export function useAudioPlayer({
   const exactTimingCacheRef = useRef<Map<string, AyahTimingSegment[] | null>>(new Map());
   const pendingSurahSeekAyahRef = useRef<{surah: number; ayah: number} | null>(null);
   const loadedTrackRef = useRef<{surah: number; ayah: number; reciterId: string} | null>(null);
+  const progressListenersRef = useRef<Set<ProgressListener>>(new Set());
 
   const playEpochRef = useRef<number>(0);
   const preloadEpochRef = useRef<number>(0);
   const autoplayIntendedRef = useRef<boolean>(false);
   const talqeenTimerRef = useRef<number | null>(null);
   const lastPositionSyncMsRef = useRef<number>(0);
+  const lastUiClockCommitMsRef = useRef<number>(0);
 
   const [activeSurah, setActiveSurah] = useState<number>(viewSurah);
   const [activeAyah, setActiveAyah] = useState<number>(viewAyah);
@@ -116,7 +128,6 @@ export function useAudioPlayer({
   const [duration, setDuration] = useState<number>(0);
   const [hasStarted, setHasStarted] = useState<boolean>(false);
 
-  // Talqeen (Listen & Repeat) Memorization Mode
   const [talqeen, setTalqeen] = useState<TalqeenConfig>({
     enabled: false,
     startAyah: 1,
@@ -164,6 +175,53 @@ export function useAudioPlayer({
     talqeen,
   };
 
+  const subscribeProgress = useCallback((listener: ProgressListener) => {
+    progressListenersRef.current.add(listener);
+    const activeAudio = decksRef.current?.[activeDeckIdxRef.current];
+    if (activeAudio) {
+      const dur = Number.isFinite(activeAudio.duration) ? activeAudio.duration : 0;
+      listener(activeAudio.currentTime || 0, dur);
+    }
+    return () => {
+      progressListenersRef.current.delete(listener);
+    };
+  }, []);
+
+  const emitProgress = useCallback((curSec: number, durSec: number, forceUiState = false) => {
+    for (const listener of progressListenersRef.current) {
+      listener(curSec, durSec);
+    }
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    if (forceUiState || now - lastUiClockCommitMsRef.current >= 480) {
+      lastUiClockCommitMsRef.current = now;
+      setCurrentTime(curSec);
+      if (durSec > 0) setDuration(durSec);
+    }
+  }, []);
+
+  const notifyActiveVerseChange = useCallback(
+    async (surah: number, ayah: number) => {
+      syncActiveVerseDomHighlight(surah, ayah, true);
+      const localMatch = stateRef.current.verses.find(
+        (item) => item.surah === surah && item.ayah === ayah
+      );
+      if (localMatch) {
+        onActiveVerseChange?.(localMatch);
+        return;
+      }
+      const located = await findVerseAndPage(surah, ayah);
+      if (located && stateRef.current.activeSurah === surah && stateRef.current.activeAyah === ayah) {
+        onActiveVerseChange?.(located.verse);
+      }
+    },
+    [onActiveVerseChange]
+  );
+
+  // Sync direct DOM highlight whenever play state or active coordinates change
+  useEffect(() => {
+    syncActiveVerseDomHighlight(activeSurah, activeAyah, isPlaying);
+  }, [activeSurah, activeAyah, isPlaying]);
+
   const syncMediaSessionPosition = useCallback(
     (audioDuration: number, audioCurrentTime: number, speed: number, force = false) => {
       if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
@@ -204,14 +262,35 @@ export function useAudioPlayer({
   );
 
   const ensureSurahTiming = useCallback(
-    async (targetReciter: Reciter, surah: number) => {
+    async (targetReciter: Reciter, surah: number, triggeredByPlayback = false) => {
       if (targetReciter.mode !== 'surah') return;
       const key = `${targetReciter.id}:${surah}`;
       const existing = exactTimingCacheRef.current.get(key);
       if (existing && existing.length > 0) return;
 
       const surahVerses = stateRef.current.verses.filter((v) => v.surah === surah);
-      const segments = await getSurahAyatTiming(targetReciter, surah, surahVerses);
+      const [segments, cachedChapter] = await Promise.all([
+        getSurahAyatTiming(targetReciter, surah, surahVerses),
+        getCachedAudioBlob(targetReciter, surah),
+      ]);
+
+      if (
+        (!segments || segments.length === 0) &&
+        triggeredByPlayback &&
+        shouldFallbackToAyahDeck({
+          reciterMode: targetReciter.mode,
+          timingResolved: true,
+          hasSegments: false,
+          hasOfflineChapter: Boolean(cachedChapter),
+        }) &&
+        onFallbackReciter &&
+        stateRef.current.reciter.id === targetReciter.id &&
+        stateRef.current.activeSurah === surah
+      ) {
+        onFallbackReciter(getFallbackAyahReciterId(targetReciter.riwayat));
+        return;
+      }
+
       if (!segments || segments.length === 0) return;
       exactTimingCacheRef.current.set(key, segments);
 
@@ -224,7 +303,6 @@ export function useAudioPlayer({
         return;
       }
 
-      // Apply pending "Play from here" ayah seek if audio duration is ready
       const pending = pendingSurahSeekAyahRef.current;
       if (pending && pending.surah === surah && pending.ayah > 1) {
         const seg = segments.find((s) => s.ayah === pending.ayah);
@@ -237,7 +315,6 @@ export function useAudioPlayer({
         }
       }
 
-  // Immediately sync active highlight to verified timestamp
       if (!activeAudio.paused) {
         const matchedAyah = findAyahAtTimeMs(
           segments,
@@ -252,14 +329,11 @@ export function useAudioPlayer({
             reciterId: targetReciter.id,
           };
           setActiveAyah(matchedAyah);
-          const v = stateRef.current.verses.find(
-            (item) => item.surah === surah && item.ayah === matchedAyah
-          );
-          if (v && onActiveVerseChange) onActiveVerseChange(v);
+          void notifyActiveVerseChange(surah, matchedAyah);
         }
       }
     },
-    [onActiveVerseChange]
+    [notifyActiveVerseChange, onFallbackReciter]
   );
 
   // Sync displayed Surah/Ayah immediately when navigating Surahs/Mushaf pages while idle/paused
@@ -274,14 +348,22 @@ export function useAudioPlayer({
 
     const loaded = loadedTrackRef.current;
     if (loaded && (loaded.surah !== viewSurah || loaded.ayah !== viewAyah)) {
-      setCurrentTime(0);
+      emitProgress(0, 0, true);
       setDuration(0);
     }
 
     if (reciter.mode === 'surah') {
-      void ensureSurahTiming(reciter, viewSurah);
+      void ensureSurahTiming(reciter, viewSurah, false);
     }
-  }, [viewSurah, viewAyah, isPlaying, talqeenCountdown, reciter, ensureSurahTiming]);
+  }, [
+    viewSurah,
+    viewAyah,
+    isPlaying,
+    talqeenCountdown,
+    reciter,
+    ensureSurahTiming,
+    emitProgress,
+  ]);
 
   // Keep Talqeen ayah bounds synced with active Surah total ayahs
   useEffect(() => {
@@ -344,7 +426,7 @@ export function useAudioPlayer({
       targetReciter: Reciter,
       surah: number,
       ayah: number,
-      epoch: number,
+      _epoch: number,
       isCurrentEpoch: () => boolean
     ) => {
       const existing = getSlot();
@@ -378,9 +460,8 @@ export function useAudioPlayer({
   );
 
   /**
-   * Lookahead buffer: whenever a verse (or Surah in Surah mode) starts playing,
-   * immediately preload the next 2 verses (N+1 into the Standby Deck, N+2 into Lookahead2)
-   * with preload="auto" so streams are buffered in memory before transition.
+   * O(1) Lookahead buffer: preloads N+1 into Standby Deck and N+2 into Lookahead2
+   * without scanning all 6,236 verses.
    */
   const preloadUpcoming = useCallback(
     async (curSurah: number, curAyah: number) => {
@@ -390,32 +471,24 @@ export function useAudioPlayer({
 
       const epoch = ++preloadEpochRef.current;
       const isCurrent = () => preloadEpochRef.current === epoch;
-      const {reciter: curReciter, verses: allVerses} = stateRef.current;
+      const {reciter: curReciter} = stateRef.current;
 
       const targets: Array<{surah: number; ayah: number}> =
         curReciter.mode === 'ayah'
-          ? getUpcomingAyahs(allVerses, curSurah, curAyah, 2).map((v) => ({
-              surah: v.surah,
-              ayah: v.ayah,
-            }))
+          ? getUpcomingSurahAyahTargets(curSurah, curAyah, 2)
           : getUpcomingSurahs(curSurah, 2).map((s) => ({surah: s, ayah: 1}));
 
       const standbyIdx: 0 | 1 = activeDeckIdxRef.current === 0 ? 1 : 0;
       const standbyAudio = decks[standbyIdx];
 
-      // Preload N+1 into Standby Deck
       if (targets[0]) {
         const t1 = targets[0];
         const currentStandby = deckSlotsRef.current[standbyIdx];
         if (!matchesSlot(currentStandby, curReciter, t1.surah, t1.ayah)) {
-          // Promote lookahead2 directly if it already holds N+1!
           const l2 = lookahead2SlotRef.current;
           if (matchesSlot(l2, curReciter, t1.surah, t1.ayah) && l2) {
             releaseSlot(standbyAudio, currentStandby);
-            const promotedSlot: DeckSlot = {
-              ...l2,
-              ready: false,
-            };
+            const promotedSlot: DeckSlot = {...l2, ready: false};
             lookahead2SlotRef.current = null;
             lookahead2.pause();
             lookahead2.removeAttribute('src');
@@ -448,7 +521,6 @@ export function useAudioPlayer({
 
       if (!isCurrent()) return;
 
-      // Preload N+2 into Lookahead2 background buffer
       if (targets[1]) {
         const t2 = targets[1];
         await assignTargetToBuffer(
@@ -485,7 +557,7 @@ export function useAudioPlayer({
         curReciter.mode === 'surah' && ayah > 1 ? {surah, ayah} : null;
 
       if (curReciter.mode === 'surah') {
-        void ensureSurahTiming(curReciter, surah);
+        void ensureSurahTiming(curReciter, surah, autoplay);
       }
 
       setActiveSurah(surah);
@@ -494,21 +566,16 @@ export function useAudioPlayer({
       stateRef.current.activeAyah = ayah;
       setHasStarted(true);
       setAudioError(null);
-      setCurrentTime(0);
+      emitProgress(0, 0, true);
       setDuration(0);
 
-      const foundVerse = stateRef.current.verses.find(
-        (v) => v.surah === surah && v.ayah === ayah
-      );
-      if (foundVerse && onActiveVerseChange) {
-        onActiveVerseChange(foundVerse);
-      }
+      syncActiveVerseDomHighlight(surah, ayah, autoplay);
+      void notifyActiveVerseChange(surah, ayah);
 
       if (autoplay) {
         startAudioKeepAlive();
       }
 
-      // Check if Standby Deck already holds this exact verse pre-buffered!
       const curIdx = activeDeckIdxRef.current;
       const standbyIdx: 0 | 1 = curIdx === 0 ? 1 : 0;
       const standbySlot = deckSlotsRef.current[standbyIdx];
@@ -524,7 +591,9 @@ export function useAudioPlayer({
         activeDeckIdxRef.current = standbyIdx;
         standbyDeck.currentTime = 0;
         standbyDeck.playbackRate = stateRef.current.playbackSpeed;
-        setDuration(Number.isFinite(standbyDeck.duration) ? standbyDeck.duration : 0);
+        const dur = Number.isFinite(standbyDeck.duration) ? standbyDeck.duration : 0;
+        setDuration(dur);
+        emitProgress(0, dur, true);
         setIsBuffering(standbyDeck.readyState < 3);
 
         try {
@@ -543,7 +612,6 @@ export function useAudioPlayer({
         } catch (err) {
           if (playEpochRef.current !== epoch) return;
           if (err instanceof DOMException && err.name === 'AbortError') return;
-          // Fall through to full load on error
         }
       }
 
@@ -591,14 +659,16 @@ export function useAudioPlayer({
         setIsBuffering(false);
         setIsPlaying(false);
         stopAudioKeepAlive();
+        syncActiveVerseDomHighlight(surah, ayah, false);
         if (err instanceof DOMException && err.name === 'AbortError') return;
         setAudioError(getPlaybackErrorMessage(stateRef.current.lang));
       }
     },
     [
       clearTalqeenTimer,
+      emitProgress,
       ensureSurahTiming,
-      onActiveVerseChange,
+      notifyActiveVerseChange,
       preloadUpcoming,
       releaseSlot,
       resolveAudioSource,
@@ -622,39 +692,37 @@ export function useAudioPlayer({
       const handleTimeUpdate = () => {
         if (deckIdx !== activeDeckIdxRef.current) return;
         const curSec = audio.currentTime || 0;
+        const durSec = Number.isFinite(audio.duration) ? audio.duration : 0;
         const isBackground =
           typeof document !== 'undefined' && document.visibilityState === 'hidden';
-        // While visible & playing, the 60fps requestAnimationFrame loop drives currentTime;
-        // while paused or backgrounded (rAF throttled when screen is off), timeupdate keeps UI & lock-screen state synced.
+
         if (audio.paused || isBackground) {
-          setCurrentTime(curSec);
+          emitProgress(curSec, durSec, true);
         }
-        if (Number.isFinite(audio.duration) && audio.duration > 0) {
-          setDuration(audio.duration);
-          if (!audio.paused) {
-            syncMediaSessionPosition(audio.duration, curSec, stateRef.current.playbackSpeed);
-          }
+        if (durSec > 0 && !audio.paused) {
+          syncMediaSessionPosition(durSec, curSec, stateRef.current.playbackSpeed);
         }
+
         const pending = pendingSurahSeekAyahRef.current;
         const {
           reciter: r,
           activeSurah: s,
-          verses: allVerses,
           audioSyncOffsetSec: offsetSec,
         } = stateRef.current;
-        if (pending && r.mode === 'surah' && pending.surah === s && audio.duration > 0) {
+
+        if (pending && r.mode === 'surah' && pending.surah === s && durSec > 0) {
           const seekSegs = getVerifiedTimingSegments(r, s);
           if (seekSegs.length > 0) {
             const targetSeg = seekSegs.find((seg) => seg.ayah === pending.ayah);
             pendingSurahSeekAyahRef.current = null;
             if (targetSeg) {
               audio.currentTime = Math.min(
-                Math.max(0, audio.duration - 0.5),
+                Math.max(0, durSec - 0.5),
                 targetSeg.startMs / 1000
               );
             }
           }
-        } else if (isBackground && !audio.paused && r.mode === 'surah' && audio.duration > 0) {
+        } else if (isBackground && !audio.paused && r.mode === 'surah' && durSec > 0) {
           const segments = getVerifiedTimingSegments(r, s);
           if (segments.length > 0) {
             const matchedAyah = findAyahAtTimeMs(segments, curSec * 1000, offsetSec);
@@ -666,10 +734,7 @@ export function useAudioPlayer({
                 reciterId: r.id,
               };
               setActiveAyah(matchedAyah);
-              const v = allVerses.find(
-                (item) => item.surah === s && item.ayah === matchedAyah
-              );
-              if (v && onActiveVerseChange) onActiveVerseChange(v);
+              void notifyActiveVerseChange(s, matchedAyah);
             }
           }
         }
@@ -684,13 +749,11 @@ export function useAudioPlayer({
           loopMode: loop,
           sleepTimer: sleep,
           reciter: r,
-          verses: allVerses,
           surahs: allSurahs,
           talqeen: tq,
           playbackSpeed: speed,
         } = stateRef.current;
 
-        // 1. Talqeen Mode: pause (3s / 5s / 8s) for user to repeat aloud, then loop range
         if (tq.enabled && r.mode === 'ayah') {
           const meta = allSurahs.find((item) => item.id === s);
           const maxSurahAyah = meta?.totalAyahs || a;
@@ -716,7 +779,6 @@ export function useAudioPlayer({
           return;
         }
 
-        // 2. Repeat single Ayah immediately on the active deck (zero gap)
         if (loop === 'ayah' && r.mode === 'ayah') {
           audio.currentTime = 0;
           audio.playbackRate = speed;
@@ -727,8 +789,7 @@ export function useAudioPlayer({
           return;
         }
 
-        // 3. Determine next target (Ayah or Surah)
-        let nextTarget: {surah: number; ayah: number; verse?: QuranVerse} | null = null;
+        let nextTarget: {surah: number; ayah: number} | null = null;
 
         if (r.mode === 'surah') {
           if (loop === 'surah') {
@@ -747,19 +808,17 @@ export function useAudioPlayer({
             return;
           }
           if (s < 114) {
-            const firstVerse = allVerses.find((v) => v.surah === s + 1 && v.ayah === 1);
-            nextTarget = {surah: s + 1, ayah: 1, verse: firstVerse};
+            nextTarget = {surah: s + 1, ayah: 1};
           } else {
             autoplayIntendedRef.current = false;
             setIsPlaying(false);
             return;
           }
         } else {
-          const next = getNextAyah(allVerses, s, a);
+          const next = getNextSurahAyah(s, a);
           if (!next) {
             if (loop === 'surah') {
-              const firstVerse = allVerses.find((v) => v.surah === s && v.ayah === 1);
-              nextTarget = {surah: s, ayah: 1, verse: firstVerse};
+              nextTarget = {surah: s, ayah: 1};
             } else {
               autoplayIntendedRef.current = false;
               setIsPlaying(false);
@@ -767,24 +826,22 @@ export function useAudioPlayer({
             }
           } else if (next.surah !== s) {
             if (loop === 'surah') {
-              const firstVerse = allVerses.find((v) => v.surah === s && v.ayah === 1);
-              nextTarget = {surah: s, ayah: 1, verse: firstVerse};
+              nextTarget = {surah: s, ayah: 1};
             } else if (sleep === -1) {
               autoplayIntendedRef.current = false;
               setIsPlaying(false);
               setSleepTimer(0);
               return;
             } else {
-              nextTarget = {surah: next.surah, ayah: next.ayah, verse: next};
+              nextTarget = next;
             }
           } else {
-            nextTarget = {surah: next.surah, ayah: next.ayah, verse: next};
+            nextTarget = next;
           }
         }
 
         if (!nextTarget) return;
 
-        // 4. Synchronous Dual-Deck Zero-Gap Handoff to pre-buffered Standby Deck
         const decks = decksRef.current;
         const standbyIdx: 0 | 1 = deckIdx === 0 ? 1 : 0;
         const standbyAudio = decks?.[standbyIdx];
@@ -805,7 +862,6 @@ export function useAudioPlayer({
             standbyAudio.currentTime = 0;
           }
 
-          // Start audio playback immediately, then synchronize state in the same tick (0ms drift)
           standbyAudio.play().catch((err) => {
             if (err instanceof DOMException && err.name === 'AbortError') return;
             void loadAndPlay(nextTarget!.surah, nextTarget!.ayah, true);
@@ -828,28 +884,23 @@ export function useAudioPlayer({
           };
           setActiveSurah(nextTarget.surah);
           setActiveAyah(nextTarget.ayah);
-          setCurrentTime(0);
-          setDuration(
-            Number.isFinite(standbyAudio.duration) ? standbyAudio.duration : 0
-          );
+          const dur = Number.isFinite(standbyAudio.duration) ? standbyAudio.duration : 0;
+          setDuration(dur);
+          emitProgress(0, dur, true);
           setIsPlaying(true);
           startAudioKeepAlive();
           setIsBuffering(standbyAudio.readyState < 3);
 
-          if (nextTarget.verse && onActiveVerseChange) {
-            onActiveVerseChange(nextTarget.verse);
-          }
+          void notifyActiveVerseChange(nextTarget.surah, nextTarget.ayah);
 
           if (r.mode === 'surah') {
-            void ensureSurahTiming(r, nextTarget.surah);
+            void ensureSurahTiming(r, nextTarget.surah, true);
           }
 
-          // Immediately warm the newly freed deck with N+2 & lookahead with N+3
           void preloadUpcoming(nextTarget.surah, nextTarget.ayah);
           return;
         }
 
-        // Fallback when standby wasn't pre-populated (e.g. Repeat Surah jump to 1)
         void loadAndPlay(nextTarget.surah, nextTarget.ayah, true);
       };
 
@@ -861,10 +912,11 @@ export function useAudioPlayer({
 
       const handlePause = () => {
         if (deckIdx !== activeDeckIdxRef.current) return;
-        // Ignore transient pause fired by ended event right before deck swap
         if (audio.ended) return;
         stopAudioKeepAlive();
         setIsPlaying(false);
+        const durSec = Number.isFinite(audio.duration) ? audio.duration : 0;
+        emitProgress(audio.currentTime || 0, durSec, true);
       };
 
       const handleWaiting = () => {
@@ -877,12 +929,15 @@ export function useAudioPlayer({
         if (slot) slot.ready = true;
         if (deckIdx !== activeDeckIdxRef.current) return;
         setIsBuffering(false);
-        setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+        const durSec = Number.isFinite(audio.duration) ? audio.duration : 0;
+        if (durSec > 0) {
+          setDuration(durSec);
+          emitProgress(audio.currentTime || 0, durSec, false);
+        }
       };
 
       const handleError = () => {
         const slot = deckSlotsRef.current[deckIdx];
-        // Silently retry fallback CDN candidates if available
         if (slot && slot.candidateIdx + 1 < slot.candidates.length) {
           slot.candidateIdx += 1;
           slot.ready = false;
@@ -890,7 +945,7 @@ export function useAudioPlayer({
           if (deckIdx === activeDeckIdxRef.current && autoplayIntendedRef.current) {
             audio.playbackRate = stateRef.current.playbackSpeed;
             void audio.play().catch(() => {
-              // Handled on subsequent error if all candidates fail
+              // Handled on subsequent error
             });
           } else {
             audio.load();
@@ -958,16 +1013,17 @@ export function useAudioPlayer({
     };
   }, [
     clearTalqeenTimer,
+    emitProgress,
     ensureSurahTiming,
     getVerifiedTimingSegments,
     loadAndPlay,
-    onActiveVerseChange,
+    notifyActiveVerseChange,
     preloadUpcoming,
     releaseSlot,
     syncMediaSessionPosition,
   ]);
 
-  // High-frequency 60fps requestAnimationFrame clock loop for zero-lag verse sync
+  // 60fps zero-re-render pub-sub loop for waveform bar + DOM verse highlight (throttles React clock to ~2Hz)
   useEffect(() => {
     if (!isPlaying) return;
     let rafId = 0;
@@ -976,24 +1032,22 @@ export function useAudioPlayer({
       const audio = decksRef.current?.[activeDeckIdxRef.current];
       if (audio && !audio.paused) {
         const curSec = audio.currentTime || 0;
-        setCurrentTime(curSec);
-        if (Number.isFinite(audio.duration) && audio.duration > 0) {
-          setDuration(audio.duration);
-        }
+        const durSec = Number.isFinite(audio.duration) ? audio.duration : 0;
+
+        emitProgress(curSec, durSec, false);
 
         const {
           reciter: r,
           activeSurah: s,
-          verses: allVerses,
           audioSyncOffsetSec: offsetSec,
           playbackSpeed: speed,
         } = stateRef.current;
 
-        if (Number.isFinite(audio.duration) && audio.duration > 0) {
-          syncMediaSessionPosition(audio.duration, curSec, speed);
+        if (durSec > 0) {
+          syncMediaSessionPosition(durSec, curSec, speed);
         }
 
-        if (r.mode === 'surah' && audio.duration > 0) {
+        if (r.mode === 'surah' && durSec > 0) {
           const segments = getVerifiedTimingSegments(r, s);
           const pending = pendingSurahSeekAyahRef.current;
           if (pending && pending.surah === s && pending.ayah > 1 && segments.length > 0) {
@@ -1001,7 +1055,7 @@ export function useAudioPlayer({
             pendingSurahSeekAyahRef.current = null;
             if (targetSeg) {
               audio.currentTime = Math.min(
-                Math.max(0, audio.duration - 0.5),
+                Math.max(0, durSec - 0.5),
                 targetSeg.startMs / 1000
               );
             }
@@ -1015,10 +1069,7 @@ export function useAudioPlayer({
                 reciterId: r.id,
               };
               setActiveAyah(matchedAyah);
-              const v = allVerses.find(
-                (item) => item.surah === s && item.ayah === matchedAyah
-              );
-              if (v && onActiveVerseChange) onActiveVerseChange(v);
+              void notifyActiveVerseChange(s, matchedAyah);
             }
           }
         }
@@ -1028,7 +1079,13 @@ export function useAudioPlayer({
 
     rafId = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(rafId);
-  }, [isPlaying, getVerifiedTimingSegments, onActiveVerseChange, syncMediaSessionPosition]);
+  }, [
+    isPlaying,
+    emitProgress,
+    getVerifiedTimingSegments,
+    notifyActiveVerseChange,
+    syncMediaSessionPosition,
+  ]);
 
   // Update playback speed immediately across active & standby decks
   useEffect(() => {
@@ -1153,9 +1210,9 @@ export function useAudioPlayer({
       }
       return;
     }
-    const next = getNextAyah(verses, activeSurah, activeAyah);
+    const next = getNextSurahAyah(activeSurah, activeAyah);
     if (next) void loadAndPlay(next.surah, next.ayah, true);
-  }, [reciter.mode, verses, activeSurah, activeAyah, loadAndPlay, clearTalqeenTimer]);
+  }, [reciter.mode, activeSurah, activeAyah, loadAndPlay, clearTalqeenTimer]);
 
   const playPrev = useCallback(() => {
     clearTalqeenTimer();
@@ -1165,48 +1222,41 @@ export function useAudioPlayer({
       }
       return;
     }
-    const prev = getPrevAyah(verses, activeSurah, activeAyah);
+    const prev = getPrevSurahAyah(activeSurah, activeAyah);
     if (prev) void loadAndPlay(prev.surah, prev.ayah, true);
-  }, [reciter.mode, verses, activeSurah, activeAyah, loadAndPlay, clearTalqeenTimer]);
+  }, [reciter.mode, activeSurah, activeAyah, loadAndPlay, clearTalqeenTimer]);
 
   const seekTo = useCallback(
     (seconds: number) => {
       const activeDeck = decksRef.current?.[activeDeckIdxRef.current];
       if (activeDeck && Number.isFinite(seconds)) {
-        activeDeck.currentTime = seconds;
-        setCurrentTime(seconds);
-        if (Number.isFinite(activeDeck.duration) && activeDeck.duration > 0) {
-          syncMediaSessionPosition(
-            activeDeck.duration,
-            seconds,
-            stateRef.current.playbackSpeed,
-            true
-          );
+        const durSec = Number.isFinite(activeDeck.duration) ? activeDeck.duration : 0;
+        const clamped = durSec > 0 ? Math.max(0, Math.min(durSec, seconds)) : Math.max(0, seconds);
+        activeDeck.currentTime = clamped;
+        emitProgress(clamped, durSec, true);
+        if (durSec > 0) {
+          syncMediaSessionPosition(durSec, clamped, stateRef.current.playbackSpeed, true);
         }
 
         const {
           reciter: r,
           activeSurah: s,
-          verses: allVerses,
           audioSyncOffsetSec: offsetSec,
         } = stateRef.current;
         if (r.mode === 'surah') {
           const segments = getVerifiedTimingSegments(r, s);
           if (segments.length > 0) {
-            const matchedAyah = findAyahAtTimeMs(segments, seconds * 1000, offsetSec);
+            const matchedAyah = findAyahAtTimeMs(segments, clamped * 1000, offsetSec);
             if (matchedAyah !== null && matchedAyah !== stateRef.current.activeAyah) {
               stateRef.current.activeAyah = matchedAyah;
               setActiveAyah(matchedAyah);
-              const v = allVerses.find(
-                (item) => item.surah === s && item.ayah === matchedAyah
-              );
-              if (v && onActiveVerseChange) onActiveVerseChange(v);
+              void notifyActiveVerseChange(s, matchedAyah);
             }
           }
         }
       }
     },
-    [getVerifiedTimingSegments, onActiveVerseChange, syncMediaSessionPosition]
+    [emitProgress, getVerifiedTimingSegments, notifyActiveVerseChange, syncMediaSessionPosition]
   );
 
   const cycleLoopMode = useCallback(() => {
@@ -1313,7 +1363,7 @@ export function useAudioPlayer({
     syncMediaSessionPosition,
   ]);
 
-  // Wire lock-screen & notification bar action handlers (play, pause, prev, next, seekto, stop)
+  // Wire lock-screen & notification bar action handlers
   useEffect(() => {
     if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
     const ms = navigator.mediaSession;
@@ -1397,7 +1447,7 @@ export function useAudioPlayer({
         activeDeck.currentTime = 0;
       }
       setIsPlaying(false);
-      setCurrentTime(0);
+      emitProgress(0, 0, true);
       try {
         ms.playbackState = 'none';
       } catch {
@@ -1413,7 +1463,15 @@ export function useAudioPlayer({
       safeSetHandler('seekto', null);
       safeSetHandler('stop', null);
     };
-  }, [clearTalqeenTimer, loadAndPlay, playNext, playPrev, preloadUpcoming, seekTo]);
+  }, [
+    clearTalqeenTimer,
+    emitProgress,
+    loadAndPlay,
+    playNext,
+    playPrev,
+    preloadUpcoming,
+    seekTo,
+  ]);
 
   return {
     activeSurah,
@@ -1429,6 +1487,7 @@ export function useAudioPlayer({
     duration,
     talqeen,
     talqeenCountdown,
+    subscribeProgress,
     playVerse: (surah: number, ayah: number) => loadAndPlay(surah, ayah, true),
     togglePlayPause,
     playNext,

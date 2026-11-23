@@ -37,6 +37,59 @@ export function getGlobalAyahNumber(surah: number, ayah: number): number {
   return offset + Math.min(safeAyah, SURAH_AYAH_COUNTS[safeSurah - 1]);
 }
 
+export function getSurahAyahCount(surah: number): number {
+  if (!Number.isFinite(surah) || surah < 1 || surah > 114) return 0;
+  return SURAH_AYAH_COUNTS[Math.floor(surah) - 1] ?? 0;
+}
+
+export function getNextSurahAyah(
+  surah: number,
+  ayah: number
+): {surah: number; ayah: number} | null {
+  const count = getSurahAyahCount(surah);
+  if (count === 0) return null;
+  if (ayah < count) {
+    return {surah, ayah: ayah + 1};
+  }
+  if (surah < 114) {
+    return {surah: surah + 1, ayah: 1};
+  }
+  return null;
+}
+
+export function getPrevSurahAyah(
+  surah: number,
+  ayah: number
+): {surah: number; ayah: number} | null {
+  if (surah < 1 || surah > 114 || ayah < 1) return null;
+  if (ayah > 1) {
+    return {surah, ayah: ayah - 1};
+  }
+  if (surah > 1) {
+    const prevSurah = surah - 1;
+    return {surah: prevSurah, ayah: getSurahAyahCount(prevSurah)};
+  }
+  return null;
+}
+
+export function getUpcomingSurahAyahTargets(
+  surah: number,
+  ayah: number,
+  count = 2
+): Array<{surah: number; ayah: number}> {
+  const out: Array<{surah: number; ayah: number}> = [];
+  let curS = surah;
+  let curA = ayah;
+  for (let i = 0; i < count; i++) {
+    const next = getNextSurahAyah(curS, curA);
+    if (!next) break;
+    out.push(next);
+    curS = next.surah;
+    curA = next.ayah;
+  }
+  return out;
+}
+
 function buildAudioUrlFromBase(
   baseOrTemplate: string,
   mode: Reciter['mode'],

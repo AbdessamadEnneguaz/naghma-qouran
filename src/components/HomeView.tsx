@@ -280,7 +280,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       <section
         aria-label={t.prayerTimesTitle}
         data-testid="home-prayer-times"
-        className="rounded-3xl border border-amber-500/12 bg-white/75 dark:bg-[#211914]/85 backdrop-blur-md p-4 sm:p-6 shadow-sm shadow-amber-500/5 space-y-4"
+        className="rounded-3xl border border-amber-500/12 bg-white/90 dark:bg-[#211914]/92 md:bg-white/75 md:dark:bg-[#211914]/85 md:backdrop-blur-md p-4 sm:p-6 shadow-sm shadow-amber-500/5 space-y-4"
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -357,7 +357,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             type="button"
             data-testid="bento-khatma"
             onClick={onOpenKhatma}
-            className="text-start rounded-3xl border border-amber-500/12 bg-white/75 dark:bg-[#211914]/85 backdrop-blur-md p-4 shadow-sm shadow-amber-500/5 hover:border-amber-500/40 transition-colors space-y-2.5"
+            className="text-start rounded-3xl border border-amber-500/12 bg-white/90 dark:bg-[#211914]/92 md:bg-white/75 md:dark:bg-[#211914]/85 md:backdrop-blur-md p-4 shadow-sm shadow-amber-500/5 hover:border-amber-500/40 transition-colors space-y-2.5"
           >
             <div className="flex items-center justify-between">
               <span className="h-10 w-10 rounded-2xl bg-amber-500/14 text-[#D97706] dark:text-[#FBBF24] flex items-center justify-center">
@@ -385,7 +385,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             type="button"
             data-testid="bento-talqeen"
             onClick={onLaunchTalqeen}
-            className="text-start rounded-3xl border border-amber-500/12 bg-white/75 dark:bg-[#211914]/85 backdrop-blur-md p-4 shadow-sm shadow-amber-500/5 hover:border-amber-500/40 transition-colors space-y-2.5"
+            className="text-start rounded-3xl border border-amber-500/12 bg-white/90 dark:bg-[#211914]/92 md:bg-white/75 md:dark:bg-[#211914]/85 md:backdrop-blur-md p-4 shadow-sm shadow-amber-500/5 hover:border-amber-500/40 transition-colors space-y-2.5"
           >
             <div className="flex items-center justify-between">
               <span className="h-10 w-10 rounded-2xl bg-orange-400/15 text-[#EA580C] dark:text-[#FB923C] flex items-center justify-center">
@@ -411,7 +411,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             type="button"
             data-testid="bento-heart"
             onClick={onOpenHeartGuide}
-            className="text-start rounded-3xl border border-amber-500/12 bg-white/75 dark:bg-[#211914]/85 backdrop-blur-md p-4 shadow-sm shadow-amber-500/5 hover:border-amber-500/40 transition-colors space-y-2.5"
+            className="text-start rounded-3xl border border-amber-500/12 bg-white/90 dark:bg-[#211914]/92 md:bg-white/75 md:dark:bg-[#211914]/85 md:backdrop-blur-md p-4 shadow-sm shadow-amber-500/5 hover:border-amber-500/40 transition-colors space-y-2.5"
           >
             <div className="flex items-center justify-between">
               <span className="h-10 w-10 rounded-2xl bg-amber-500/14 text-[#D97706] dark:text-[#FBBF24] flex items-center justify-center">
@@ -433,7 +433,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             type="button"
             data-testid="bento-adhkar"
             onClick={onOpenAdhkar}
-            className="text-start rounded-3xl border border-amber-500/12 bg-white/75 dark:bg-[#211914]/85 backdrop-blur-md p-4 shadow-sm shadow-amber-500/5 hover:border-amber-500/40 transition-colors space-y-2.5"
+            className="text-start rounded-3xl border border-amber-500/12 bg-white/90 dark:bg-[#211914]/92 md:bg-white/75 md:dark:bg-[#211914]/85 md:backdrop-blur-md p-4 shadow-sm shadow-amber-500/5 hover:border-amber-500/40 transition-colors space-y-2.5"
           >
             <div className="flex items-center justify-between">
               <span className="h-10 w-10 rounded-2xl bg-orange-400/15 text-[#EA580C] dark:text-[#FB923C] flex items-center justify-center">

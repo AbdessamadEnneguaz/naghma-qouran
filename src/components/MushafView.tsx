@@ -33,6 +33,12 @@ import {
 } from '../utils/quranLogic';
 import {renderHeartStoryCardPng} from '../utils/storyCardCanvas';
 import {getVerseTextByRiwayat} from '../services/quranLoader';
+import {
+  ACTIVE_VERSE_ATTR,
+  VERSE_KEY_ATTR,
+  shouldAutoScrollToVerse,
+  syncActiveVerseDomHighlight,
+} from '../utils/verseHighlightDom';
 import {SurahCartoucheBanner} from './OrnamentalSvg';
 import type {AppLang, Translations} from '../i18n/translations';
 
@@ -159,7 +165,7 @@ interface MushafViewProps {
 
 type ReaderBrowseTab = 'quran' | 'surah' | 'juz' | 'page';
 
-export const MushafView: React.FC<MushafViewProps> = ({
+const MushafViewInner: React.FC<MushafViewProps> = ({
   lang,
   t,
   surahs,
@@ -291,32 +297,50 @@ export const MushafView: React.FC<MushafViewProps> = ({
     settings.font === 'amiri' ? 'font-quran-amiri' : 'font-quran-scheherazade';
 
   const lastScrolledPlayingRef = useRef<string | null>(null);
+  const lastUserScrollMsRef = useRef<number>(0);
 
   useEffect(() => {
-    if (!isPlaying || !containerRef.current) {
-      if (!isPlaying) lastScrolledPlayingRef.current = null;
+    const markUserScroll = () => {
+      lastUserScrollMsRef.current = Date.now();
+    };
+    window.addEventListener('wheel', markUserScroll, {passive: true});
+    window.addEventListener('touchmove', markUserScroll, {passive: true});
+    return () => {
+      window.removeEventListener('wheel', markUserScroll);
+      window.removeEventListener('touchmove', markUserScroll);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    syncActiveVerseDomHighlight(playingSurah, playingAyah, isPlaying, containerRef.current);
+
+    if (!isPlaying) {
+      lastScrolledPlayingRef.current = null;
       return;
     }
     const key = `${playingSurah}:${playingAyah}@${currentPage}`;
     if (lastScrolledPlayingRef.current === key) return;
     const el = containerRef.current.querySelector<HTMLElement>(
-      `[data-ayah-key="${playingSurah}:${playingAyah}"]`
+      `[${VERSE_KEY_ATTR}="${playingSurah}:${playingAyah}"]`
     );
     if (el) {
       lastScrolledPlayingRef.current = key;
-      el.scrollIntoView({behavior: 'smooth', block: 'center'});
+      if (shouldAutoScrollToVerse(lastUserScrollMsRef.current, Date.now(), 4000)) {
+        el.scrollIntoView({behavior: 'smooth', block: 'center'});
+      }
     }
-  }, [isPlaying, playingSurah, playingAyah, currentPage]);
+  }, [isPlaying, playingSurah, playingAyah, currentPage, displayVerses]);
 
   useEffect(() => {
     if (!selectedAyahKey || !containerRef.current) return;
     const idx = displayVerses.findIndex(
       (v) => `${v.surah}:${v.ayah}` === selectedAyahKey
     );
-    if (idx > 0) {
+    if (idx > 0 && shouldAutoScrollToVerse(lastUserScrollMsRef.current, Date.now(), 2500)) {
       const raf = requestAnimationFrame(() => {
         const el = containerRef.current?.querySelector<HTMLElement>(
-          `[data-ayah-key="${selectedAyahKey}"]`
+          `[${VERSE_KEY_ATTR}="${selectedAyahKey}"]`
         );
         el?.scrollIntoView({behavior: 'smooth', block: 'center'});
       });
@@ -781,7 +805,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
           <article
             data-testid="mushaf-page-frame"
             dir={lang === 'ar' ? 'rtl' : 'ltr'}
-            className="relative mx-2.5 my-1 sm:mx-auto max-w-3xl rounded-3xl border border-amber-500/15 bg-white/80 dark:bg-[#211914]/90 backdrop-blur-md p-4 sm:p-8 shadow-sm shadow-amber-500/5 overflow-hidden"
+            className="relative mx-2.5 my-1 sm:mx-auto max-w-3xl rounded-3xl border border-amber-500/15 bg-white/92 dark:bg-[#211914]/95 md:bg-white/80 md:dark:bg-[#211914]/90 md:backdrop-blur-md p-4 sm:p-8 shadow-sm shadow-amber-500/5 overflow-hidden"
           >
             <div className="relative z-10 px-0.5 sm:px-2 py-0.5 sm:py-1">
               {/* Subtle Madani Mushaf Page Header (Surah on one side, Juz' on opposite side) */}
@@ -863,6 +887,8 @@ export const MushafView: React.FC<MushafViewProps> = ({
                               <div
                                 key={ayahKey}
                                 data-ayah-key={ayahKey}
+                                {...{[VERSE_KEY_ATTR]: ayahKey}}
+                                {...(isActiveAudio ? {[ACTIVE_VERSE_ATTR]: 'true'} : {})}
                                 className={`py-4 px-2.5 sm:px-4 rounded-2xl transition-colors ${
                                   isSelected
                                     ? 'bg-amber-500/12 dark:bg-amber-500/15'
@@ -1028,6 +1054,8 @@ export const MushafView: React.FC<MushafViewProps> = ({
                               <span
                                 key={ayahKey}
                                 data-ayah-key={ayahKey}
+                                {...{[VERSE_KEY_ATTR]: ayahKey}}
+                                {...(isActiveAudio ? {[ACTIVE_VERSE_ATTR]: 'true'} : {})}
                                 role="button"
                                 tabIndex={0}
                                 onClick={() => handleVerseInteraction(verse)}
@@ -1039,7 +1067,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
                                 }}
                                 aria-label={`Ayah ${verse.surah}:${verse.ayah}`}
                                 className={`inline px-0.5 [box-decoration-break:clone] tracking-normal rounded transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D97706] ${
-                                  isActiveAudio || isSelected
+                                  isSelected
                                     ? 'bg-[#FDE68A]/75 dark:bg-amber-500/25'
                                     : '[@media(hover:hover)]:hover:bg-[#FDE68A]/35 dark:[@media(hover:hover)]:hover:bg-amber-500/10'
                                 }`}
@@ -1135,7 +1163,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
         <button
           type="button"
           onClick={onToggleFocusMode}
-          className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-white/90 dark:bg-[#221914]/95 backdrop-blur-md px-3.5 py-2 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] shadow-lg hover:border-[#D97706]"
+          className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-white/95 dark:bg-[#221914]/98 md:backdrop-blur-md px-3.5 py-2 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] shadow-lg hover:border-[#D97706]"
         >
           <Maximize2 className="h-3.5 w-3.5 text-[#D97706]" />
           <span>{t.exitFocus}</span>
@@ -1148,7 +1176,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
           role="region"
           data-testid="ayah-action-popover"
           aria-label={`Actions for Ayah ${actionMenuVerse.surah}:${actionMenuVerse.ayah}`}
-          className="fixed bottom-[calc(8.9rem+env(safe-area-inset-bottom,0px))] md:bottom-[76px] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-2xl rounded-full border border-amber-500/30 bg-white/95 dark:bg-[#221914]/95 backdrop-blur-md px-3.5 py-2 shadow-xl flex items-center justify-between gap-2"
+          className="fixed bottom-[calc(9.1rem+env(safe-area-inset-bottom,0px))] md:bottom-[82px] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-2xl rounded-full border border-amber-500/30 bg-white/98 dark:bg-[#221914]/98 md:backdrop-blur-md px-3.5 py-2 shadow-xl flex items-center justify-between gap-2"
         >
           <span className="text-xs font-bold text-[#B45309] dark:text-[#FBBF24] tabular-nums px-1 whitespace-nowrap">
             {actionMenuVerse.surah}:{actionMenuVerse.ayah}
@@ -1268,3 +1296,6 @@ export const MushafView: React.FC<MushafViewProps> = ({
     </div>
   );
 };
+
+export const MushafView = React.memo(MushafViewInner);
+

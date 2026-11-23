@@ -38,7 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header
-      className={`sticky top-0 z-30 pt-safe-top border-b border-amber-500/12 dark:border-amber-500/15 bg-[#FDFBF7]/92 dark:bg-[#17110D]/92 backdrop-blur-md transition-all duration-300 ${
+      className={`sticky top-0 z-30 pt-safe-top border-b border-amber-500/12 dark:border-amber-500/15 bg-[#FDFBF7]/96 dark:bg-[#17110D]/96 md:bg-[#FDFBF7]/92 md:dark:bg-[#17110D]/92 md:backdrop-blur-md transition-all duration-300 ${
         hidden
           ? '-translate-y-full opacity-0 pointer-events-none'
           : 'translate-y-0 opacity-100'

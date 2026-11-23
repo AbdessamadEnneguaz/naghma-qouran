@@ -374,3 +374,20 @@ export function findAyahAtTimeMs(
 
   return candidate;
 }
+
+export function getFallbackAyahReciterId(riwayat: 'hafs' | 'warsh'): string {
+  return riwayat === 'warsh' ? 'warsh_abdulbasit' : 'hafs_alafasy';
+}
+
+export function shouldFallbackToAyahDeck(params: {
+  reciterMode: 'ayah' | 'surah';
+  timingResolved: boolean;
+  hasSegments: boolean;
+  hasOfflineChapter: boolean;
+}): boolean {
+  if (params.reciterMode !== 'surah') return false;
+  if (params.hasOfflineChapter) return false;
+  if (!params.timingResolved) return false;
+  return !params.hasSegments;
+}
+

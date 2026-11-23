@@ -85,14 +85,30 @@
     radial-gradient(circle at bottom center, rgba(249, 115, 22, 0.03), transparent 55%);
 }
 
-/* Subtle warm-sand grain card surface */
+/* Subtle warm-sand grain card surface (skip heavy blur on mobile GPUs) */
 .sand-card {
-  background-color: rgba(255, 255, 255, 0.74);
-  backdrop-filter: blur(12px);
+  background-color: rgba(255, 255, 255, 0.88);
+}
+
+@media (min-width: 768px) {
+  .sand-card {
+    background-color: rgba(255, 255, 255, 0.74);
+    backdrop-filter: blur(12px);
+  }
 }
 
 html.dark .sand-card {
-  background-color: rgba(34, 25, 20, 0.84);
+  background-color: rgba(34, 25, 20, 0.9);
+}
+
+/* Direct DOM active-verse highlighting (zero React re-render overhead) */
+[data-verse-key][data-active-verse="true"] {
+  background-color: rgba(253, 230, 138, 0.78);
+  border-radius: 0.45rem;
+}
+
+html.dark [data-verse-key][data-active-verse="true"] {
+  background-color: rgba(217, 119, 6, 0.28);
 }
 
 /* Subtle custom scrollbar */

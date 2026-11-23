@@ -45,7 +45,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
       <nav
         aria-label="Mobile navigation"
         data-testid="mobile-bottom-nav"
-        className="pointer-events-auto w-full max-w-md rounded-full bg-white/92 dark:bg-[#221914]/95 border border-amber-500/18 dark:border-amber-500/20 shadow-lg shadow-amber-900/10 backdrop-blur-md px-3 py-1"
+        className="pointer-events-auto w-full max-w-md rounded-full bg-white/95 dark:bg-[#221914]/98 border border-amber-500/18 dark:border-amber-500/20 shadow-lg shadow-amber-900/10 md:backdrop-blur-md px-3 py-1"
       >
         <div className="grid grid-cols-5 h-12 items-center">
           {navItems.map((item) => {

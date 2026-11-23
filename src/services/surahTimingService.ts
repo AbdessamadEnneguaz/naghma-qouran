@@ -11,11 +11,25 @@ import {getCachedAudioBlob, getCachedQuranAsset, setCachedQuranAsset} from './in
 
 const LS_TIMING_PREFIX = 'naghma_timing_v3:';
 const MAX_ACOUSTIC_DECODE_BYTES = 3 * 1024 * 1024;
+const API_TIMEOUT_MS = 5500;
 const memoryCache = new Map<string, AyahTimingSegment[] | null>();
 const inFlightRequests = new Map<string, Promise<AyahTimingSegment[] | null>>();
+const resolvedEmptySet = new Set<string>();
 
 function getCacheKey(reciterId: string, surah: number): string {
   return `timing_v3:${reciterId}:${surah}`;
+}
+
+function createTimeoutSignal(ms: number): AbortSignal | undefined {
+  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+    return AbortSignal.timeout(ms);
+  }
+  if (typeof AbortController !== 'undefined') {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), ms);
+    return controller.signal;
+  }
+  return undefined;
 }
 
 function readFromLocalStorage(key: string): AyahTimingSegment[] | null {
@@ -53,13 +67,17 @@ export function getCachedSurahTimingSync(
   return null;
 }
 
+export function isSurahTimingUnavailable(reciterId: string, surah: number): boolean {
+  return resolvedEmptySet.has(getCacheKey(reciterId, surah));
+}
+
 async function fetchQuranComTimings(
   quranComReciterId: number,
   surah: number
 ): Promise<AyahTimingSegment[] | null> {
   try {
     const url = `https://api.quran.com/api/v4/chapter_recitations/${quranComReciterId}/${surah}?segments=true`;
-    const res = await fetch(url);
+    const res = await fetch(url, {signal: createTimeoutSignal(API_TIMEOUT_MS)});
     if (!res.ok) return null;
     const data: unknown = await res.json();
     const segments = parseQuranComChapterTimestamps(data);
@@ -75,7 +93,7 @@ async function fetchMp3QuranTimings(
 ): Promise<AyahTimingSegment[] | null> {
   try {
     const url = `https://www.mp3quran.net/api/v3/ayat_timing?surah=${surah}&read=${mp3quranReadId}`;
-    const res = await fetch(url);
+    const res = await fetch(url, {signal: createTimeoutSignal(API_TIMEOUT_MS)});
     if (!res.ok) return null;
     const data: unknown = await res.json();
     const segments = parseMp3QuranAyatTiming(data);
@@ -85,12 +103,39 @@ async function fetchMp3QuranTimings(
   }
 }
 
+async function resolveFirstValidTiming(
+  tasks: Array<Promise<AyahTimingSegment[] | null>>
+): Promise<AyahTimingSegment[] | null> {
+  if (tasks.length === 0) return null;
+  return new Promise((resolve) => {
+    let pending = tasks.length;
+    let settled = false;
+    for (const p of tasks) {
+      p.then((segs) => {
+        if (!settled && segs && segs.length > 0) {
+          settled = true;
+          resolve(segs);
+          return;
+        }
+        pending -= 1;
+        if (!settled && pending === 0) {
+          resolve(null);
+        }
+      }).catch(() => {
+        pending -= 1;
+        if (!settled && pending === 0) {
+          resolve(null);
+        }
+      });
+    }
+  });
+}
+
 async function analyzeSurahAcousticTimings(
   reciter: Reciter,
   surah: number,
   surahVerses: QuranVerse[]
 ): Promise<AyahTimingSegment[] | null> {
-  // Never run heavy full-file decodeAudioData on long Surahs or when JSON APIs are configured
   if (
     surahVerses.length === 0 ||
     surahVerses.length > 20 ||
@@ -114,7 +159,10 @@ async function analyzeSurahAcousticTimings(
     const candidates = getAyahAudioCandidates(reciter, surah, 1);
     for (const url of candidates) {
       try {
-        const res = await fetch(url, {mode: 'cors'});
+        const res = await fetch(url, {
+          mode: 'cors',
+          signal: createTimeoutSignal(API_TIMEOUT_MS),
+        });
         if (!res.ok) continue;
         const contentLen = Number(res.headers.get('content-length') || '0');
         if (contentLen > MAX_ACOUSTIC_DECODE_BYTES) {
@@ -151,11 +199,10 @@ async function analyzeSurahAcousticTimings(
 }
 
 /**
- * Resolves exact verse timestamps for a full-Surah reciter instantaneously:
+ * Resolves exact verse timestamps for a full-Surah reciter with parallel API lookup & 5.5s timeout:
  * 1. Permanent cache lookup (Memory -> localStorage -> IndexedDB)
- * 2. MP3Quran v3 ayat_timing (e.g. read=236 for Al-Luhaidan, read=80/16/120 for Warsh)
- * 3. Quran.com v4 chapter_recitations (e.g. 174 fallback for Al-Luhaidan)
- * 4. Tiny-Surah acoustic pause alignment only when no upstream JSON exists (< 3 MB)
+ * 2. Parallel race between MP3Quran v3 ayat_timing & Quran.com v4 chapter_recitations
+ * 3. Tiny-Surah acoustic pause alignment only when no upstream JSON exists (< 3 MB)
  */
 export async function getSurahAyatTiming(
   reciter: Reciter,
@@ -169,6 +216,9 @@ export async function getSurahAyatTiming(
   const key = getCacheKey(reciter.id, surah);
   if (memoryCache.has(key)) {
     return memoryCache.get(key) ?? null;
+  }
+  if (resolvedEmptySet.has(key)) {
+    return null;
   }
 
   const lsCached = readFromLocalStorage(key);
@@ -189,30 +239,33 @@ export async function getSurahAyatTiming(
         return idbCached;
       }
 
-      let segments: AyahTimingSegment[] | null = null;
-
-      // For MP3Quran reciters (like Al-Luhaidan read=236), fetch lightweight JSON timestamps first
+      const apiTasks: Array<Promise<AyahTimingSegment[] | null>> = [];
       if (reciter.mp3quranReadId) {
-        segments = await fetchMp3QuranTimings(reciter.mp3quranReadId, surah);
+        apiTasks.push(fetchMp3QuranTimings(reciter.mp3quranReadId, surah));
+      }
+      if (reciter.quranComReciterId) {
+        apiTasks.push(fetchQuranComTimings(reciter.quranComReciterId, surah));
       }
 
-      if (!segments && reciter.quranComReciterId) {
-        segments = await fetchQuranComTimings(reciter.quranComReciterId, surah);
-      }
+      let segments = await resolveFirstValidTiming(apiTasks);
 
       if (!segments && surahVerses.length > 0) {
         segments = await analyzeSurahAcousticTimings(reciter, surah, surahVerses);
       }
 
       if (!segments || segments.length === 0) {
+        resolvedEmptySet.add(key);
+        memoryCache.set(key, null);
         return null;
       }
 
+      resolvedEmptySet.delete(key);
       memoryCache.set(key, segments);
       writeToLocalStorage(key, segments);
       await setCachedQuranAsset(key, segments);
       return segments;
     } catch {
+      resolvedEmptySet.add(key);
       return null;
     } finally {
       inFlightRequests.delete(key);
