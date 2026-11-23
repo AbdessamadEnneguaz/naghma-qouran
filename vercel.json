@@ -5,11 +5,18 @@
       "destination": "/najm-quran.apk"
     },
     {
-      "source": "/((?!assets/|data/|version\\.json$|.*\\.apk$|.*\\.png$|.*\\.svg$|.*\\.webmanifest$|sw\\.js$|workbox-.*\\.js$).*)",
+      "source": "/((?!assets/|data/|ads\\.txt$|robots\\.txt$|sitemap\\.xml$|google.*\\.html$|version\\.json$|.*\\.apk$|.*\\.png$|.*\\.svg$|.*\\.webmanifest$|sw\\.js$|workbox-.*\\.js$).*)",
       "destination": "/index.html"
     }
   ],
   "headers": [
+    {
+      "source": "/ads.txt",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    },
     {
       "source": "/version.json",
       "headers": [
