@@ -22,10 +22,10 @@ export default defineConfig(() => {
         ],
         manifest: {
           id: '/',
-          name: 'Najm Quran',
-          short_name: 'Najm',
+          name: 'Mihrab Noor',
+          short_name: 'Mihrab',
           description:
-            'Offline-first Holy Quran, 604-page Madani Mushaf (نَجم القرآن), Prayer Times & Qibla Finder with Hafs & Warsh narrations.',
+            'Offline-first Holy Quran, 604-page Madani Mushaf (مِحْرَاب النُّور), Prayer Times & Qibla Finder with Hafs & Warsh narrations.',
           theme_color: '#FDFBF7',
           background_color: '#FDFBF7',
           display: 'standalone',
@@ -121,20 +121,20 @@ export default defineConfig(() => {
               res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
               res.end(
                 JSON.stringify({
-                  version: '2.5.0',
+                  version: '3.0.0',
                   buildId: devBuildId,
                   otaUrl: 'https://najmqouran.vercel.app',
-                  apkUrl: '/najm-quran.apk',
+                  apkUrl: '/mihrab-noor.apk',
                 })
               );
               return;
             }
-            if (req.url && /^\/naghma-quran\.apk(\?.*)?$/i.test(req.url)) {
-              req.url = '/najm-quran.apk';
+            if (req.url && /^\/(naghma-quran|najm-quran)\.apk(\?.*)?$/i.test(req.url)) {
+              req.url = '/mihrab-noor.apk';
             }
             if (req.url && /\.apk(\?.*)?$/i.test(req.url)) {
               res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-              res.setHeader('Content-Disposition', 'attachment; filename="najm-quran.apk"');
+              res.setHeader('Content-Disposition', 'attachment; filename="mihrab-noor.apk"');
               res.setHeader('X-Content-Type-Options', 'nosniff');
             }
             next();
@@ -145,12 +145,12 @@ export default defineConfig(() => {
             if (req.url && /^\/version\.json(\?.*)?$/i.test(req.url)) {
               res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
             }
-            if (req.url && /^\/naghma-quran\.apk(\?.*)?$/i.test(req.url)) {
-              req.url = '/najm-quran.apk';
+            if (req.url && /^\/(naghma-quran|najm-quran)\.apk(\?.*)?$/i.test(req.url)) {
+              req.url = '/mihrab-noor.apk';
             }
             if (req.url && /\.apk(\?.*)?$/i.test(req.url)) {
               res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-              res.setHeader('Content-Disposition', 'attachment; filename="najm-quran.apk"');
+              res.setHeader('Content-Disposition', 'attachment; filename="mihrab-noor.apk"');
               res.setHeader('X-Content-Type-Options', 'nosniff');
             }
             next();
@@ -174,10 +174,10 @@ export default defineConfig(() => {
             fs.writeFileSync(
               path.join(distDir, 'version.json'),
               JSON.stringify({
-                version: '2.5.0',
+                version: '3.0.0',
                 buildId: `prod-${Date.now()}`,
                 otaUrl: 'https://najmqouran.vercel.app',
-                apkUrl: '/najm-quran.apk',
+                apkUrl: '/mihrab-noor.apk',
               }),
               'utf-8'
             );

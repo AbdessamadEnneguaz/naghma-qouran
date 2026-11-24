@@ -6,7 +6,7 @@ import {toArabicDigits} from '../utils/quranLogic';
 import type {PrayerId} from '../utils/prayerTimes';
 
 /**
- * Najm Quran (نَجم القرآن) Warm Honey-Gold 8-Pointed Star Emblem SVG
+ * Mihrab Noor (مِحْرَاب النُّور) Warm Honey-Gold 8-Pointed Star Emblem SVG
  */
 export const NaghmaEmblemSvg: React.FC<{className?: string}> = ({
   className = 'h-7 w-7',
@@ -46,12 +46,12 @@ export const NaghmaEmblemSvg: React.FC<{className?: string}> = ({
 };
 
 /**
- * Najm Quran App Icon Image with crisp SVG fallback
+ * Mihrab Noor App Icon Image with crisp SVG fallback
  */
 export const NaghmaAppIconImg: React.FC<{
   className?: string;
   alt?: string;
-}> = ({className = 'h-8 w-8 rounded-xl', alt = 'Najm Quran'}) => {
+}> = ({className = 'h-8 w-8 rounded-xl', alt = 'Mihrab Noor'}) => {
   const [failed, setFailed] = useState(false);
 
   if (failed) {

@@ -1,7 +1,7 @@
 {
-  "version": "2.5.0",
-  "buildId": "2026-11-23-najm-250",
+  "version": "3.0.0",
+  "buildId": "2026-11-24-mihrab-300",
   "otaUrl": "https://najmqouran.vercel.app",
-  "apkUrl": "/najm-quran.apk",
-  "apkBytes": 6715970
+  "apkUrl": "/mihrab-noor.apk",
+  "apkBytes": 11654987
 }

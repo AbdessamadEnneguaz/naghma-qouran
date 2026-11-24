@@ -2,7 +2,7 @@ import React from 'react';
 import {CheckCircle2, Download, Share, Smartphone, X} from 'lucide-react';
 import type {AppLang, Translations} from '../i18n/translations';
 import {getApkDownloadUrl} from '../hooks/usePWAInstall';
-import {DEFAULT_APK_FILENAME} from '../utils/apkHelpers';
+import {DEFAULT_APK_FILENAME, DEFAULT_APK_SIZE_BYTES, formatApkSizeMb} from '../utils/apkHelpers';
 import {NaghmaAppIconImg} from './OrnamentalSvg';
 
 interface InstallModalProps {
@@ -45,7 +45,7 @@ export const InstallModal: React.FC<InstallModalProps> = ({
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <NaghmaAppIconImg
-              alt="Najm Quran"
+              alt="Mihrab Noor"
               className="h-11 w-11 rounded-2xl shrink-0"
             />
             <div>
@@ -91,7 +91,7 @@ export const InstallModal: React.FC<InstallModalProps> = ({
                 <Download className="h-4 w-4 shrink-0" />
                 <span>{t.downloadApkCta}</span>
                 <span className="text-xs opacity-90 tabular-nums" dir="ltr">
-                  (6.5 MB)
+                  ({formatApkSizeMb(DEFAULT_APK_SIZE_BYTES)})
                 </span>
               </a>
               <ol className="space-y-1.5 text-[11px] sm:text-xs text-[#6E5649] dark:text-[#D6C7B8] pt-1">
@@ -138,8 +138,8 @@ export const InstallModal: React.FC<InstallModalProps> = ({
                   </li>
                   <li>
                     {lang === 'ar'
-                      ? '٣. اضغط "إضافة" لتشغيل نَجم القرآن دون إنترنت.'
-                      : '3. Tap Add to launch Najm Quran offline anytime.'}
+                      ? '٣. اضغط "إضافة" لتشغيل مِحْرَاب النُّور دون إنترنت.'
+                      : '3. Tap Add to launch Mihrab Noor offline anytime.'}
                   </li>
                 </ol>
               </div>

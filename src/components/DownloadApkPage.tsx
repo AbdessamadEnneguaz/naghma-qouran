@@ -130,8 +130,8 @@ export const DownloadApkPage: React.FC<DownloadApkPageProps> = ({
               {downloadStarted && (
                 <p className="text-xs font-medium text-[#B45309] dark:text-[#FBBF24]">
                   {lang === 'ar'
-                    ? 'بدأ تنزيل najm-quran.apk — افتح الملف من إشعارات المتصفح للتثبيت.'
-                    : 'Downloading najm-quran.apk — open the file from your browser downloads to install.'}
+                    ? 'بدأ تنزيل mihrab-noor.apk — افتح الملف من إشعارات المتصفح للتثبيت.'
+                    : 'Downloading mihrab-noor.apk — open the file from your browser downloads to install.'}
                 </p>
               )}
             </div>
@@ -146,6 +146,12 @@ export const DownloadApkPage: React.FC<DownloadApkPageProps> = ({
               <li>{t.apkStep2}</li>
               <li>{t.apkStep3}</li>
             </ol>
+            <p
+              data-testid="apk-uninstall-tip"
+              className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-3.5 py-2.5 text-xs font-medium text-[#92400E] dark:text-[#FBBF24]"
+            >
+              {t.apkUninstallTip}
+            </p>
             <p className="text-xs text-[#D97706] dark:text-[#FBBF24] pt-1">
               {lang === 'ar'
                 ? 'التحديثات المباشرة: أي تحسين أو ميزة جديدة تُنشر هنا تصلك تلقائياً داخل التطبيق دون حاجة لإعادة التحميل.'
@@ -154,19 +160,19 @@ export const DownloadApkPage: React.FC<DownloadApkPageProps> = ({
           </div>
         </div>
 
-        {/* Right: Warm Sand Minimal Phone Preview with Najm Quran Icon */}
+        {/* Right: Warm Sand Minimal Phone Preview with Mihrab Noor Icon */}
         <div className="lg:col-span-5 flex justify-center">
           <div
-            aria-label="Najm Quran Android App Preview"
+            aria-label="Mihrab Noor Android App Preview"
             className="w-[248px] sm:w-[264px] rounded-[34px] border-[4px] border-[#3A2B21] bg-gradient-to-b from-[#FDFBF7] to-[#FAF5EE] p-3.5 shadow-xl space-y-3"
           >
             <div className="mx-auto h-1 w-12 rounded-full bg-amber-900/15" />
 
             <div className="flex items-center justify-between px-1.5 text-[#2D231E]">
               <div className="flex items-center gap-1.5">
-                <NaghmaAppIconImg alt="Najm Quran" className="h-5 w-5 rounded-md" />
+                <NaghmaAppIconImg alt="Mihrab Noor" className="h-5 w-5 rounded-md" />
                 <span className="font-quran-scheherazade text-base font-bold text-[#B45309]">
-                  نَجم القرآن
+                  مِحْرَاب النُّور
                 </span>
               </div>
               <span dir="ltr" className="text-[10px] text-[#6E5649] tabular-nums">١ / ٦٠٤</span>

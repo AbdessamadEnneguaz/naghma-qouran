@@ -882,7 +882,7 @@ export default function App() {
           <Loader2 className="h-8 w-8 animate-spin text-[#D97706]" />
           <div className="text-center space-y-1">
             <p className="font-quran-scheherazade text-2xl text-[#B45309] dark:text-[#FBBF24]">
-              نَجم القرآن · المصحف الشريف
+              مِحْرَاب النُّور · المصحف الشريف
             </p>
             <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8]">
               {lang === 'ar'
@@ -1028,6 +1028,7 @@ export default function App() {
             onOpenVault={() => navigateToRoute('vault')}
             onOpenKhatma={() => navigateToRoute('khatma')}
             onOpenAdhkar={() => navigateToRoute('adhkar')}
+            onOpenQibla={() => navigateToRoute('qibla')}
             onOpenDownloadApk={() => navigateToRoute('download')}
             onLaunchTalqeen={() => {
               const targetSurah = lastRead?.surah || currentSurahId || 1;

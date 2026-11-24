@@ -36,7 +36,7 @@ export const AppFooter: React.FC<AppFooterProps> = ({
               data-testid="footer-developer-signature"
               className="text-xs sm:text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE]"
             >
-              {t.footerCraftedBy}
+              Mihrab Noor · مِحْرَاب النُّور
             </p>
             <p
               data-testid="footer-copyright"

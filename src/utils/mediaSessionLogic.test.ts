@@ -32,7 +32,7 @@ test('buildMediaSessionMetadataPayload formats Arabic and English titles with ar
   });
   assert.equal(enPayload.title, 'Surah Ibrahim - Ayah 7');
   assert.equal(enPayload.artist, luhaidan.nameEn);
-  assert.equal(enPayload.album, 'Najm Quran · نَجم القرآن');
+  assert.equal(enPayload.album, 'Mihrab Noor · مِحْرَاب النُّور');
   assert.deepEqual(
     enPayload.artwork.map((a) => a.src),
     ['/pwa-192x192.png', '/pwa-512x512.png']

@@ -4,8 +4,11 @@ import {
   BookHeart,
   BookOpen,
   ChevronRight,
+  Compass,
   Download,
   Flame,
+  Headphones,
+  Layers,
   Lightbulb,
   Search,
   Sparkles,
@@ -47,6 +50,7 @@ interface HomeViewProps {
   onOpenVault: () => void;
   onOpenKhatma: () => void;
   onOpenAdhkar: () => void;
+  onOpenQibla: () => void;
   onOpenDownloadApk: () => void;
   onLaunchTalqeen: () => void;
   onOpenHeartGuide: () => void;
@@ -69,34 +73,7 @@ function getStoredCity(): QiblaCity {
   return QIBLA_CITIES[0];
 }
 
-export const HomeView: React.FC<HomeViewProps> = ({
-  lang,
-  t,
-  surahs,
-  lastRead,
-  offlineRecords,
-  riwayat,
-  khatmaSchedule,
-  readingStats,
-  talqeenPauseSeconds,
-  isInstalled,
-  onChangeRiwayat,
-  onOpenSurah,
-  onOpenPage,
-  onOpenSearch,
-  onOpenAllSurahs,
-  onOpenVault,
-  onOpenKhatma,
-  onOpenAdhkar,
-  onOpenDownloadApk,
-  onLaunchTalqeen,
-  onOpenHeartGuide,
-}) => {
-  const effectiveStats = useMemo(
-    () => getEffectiveReadingStats(readingStats),
-    [readingStats]
-  );
-  const [pageJumpInput, setPageJumpInput] = useState('');
+const PrayerTimesSection = React.memo<{lang: AppLang; t: Translations}>(({lang, t}) => {
   const [selectedCity, setSelectedCity] = useState<QiblaCity>(getStoredCity);
   const [now, setNow] = useState<Date>(() => new Date());
 
@@ -116,6 +93,110 @@ export const HomeView: React.FC<HomeViewProps> = ({
     [now, selectedCity]
   );
 
+  const handleCityChange = (cityId: string) => {
+    const found = QIBLA_CITIES.find((c) => c.id === cityId);
+    if (!found) return;
+    setSelectedCity(found);
+    try {
+      localStorage.setItem(CITY_STORAGE_KEY, found.id);
+    } catch {
+      // ignore storage errors
+    }
+  };
+
+  return (
+    <section
+      aria-label={t.prayerTimesTitle}
+      data-testid="home-prayer-times"
+      className="rounded-3xl border border-amber-500/12 bg-white/90 dark:bg-[#211914]/92 md:bg-white/75 md:dark:bg-[#211914]/85 md:backdrop-blur-md p-4 sm:p-6 shadow-sm shadow-amber-500/5 space-y-4"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 className="text-sm sm:text-base font-bold text-[#2D231E] dark:text-[#FAF5EE]">
+            {t.prayerTimesTitle}
+          </h2>
+          <p className="text-xs font-medium text-[#B45309] dark:text-[#FBBF24] tabular-nums mt-0.5">
+            {t.remainingTimeLabel}:{' '}
+            <span className="font-bold">
+              {lang === 'ar'
+                ? prayerSchedule.nextPrayer.nameAr
+                : prayerSchedule.nextPrayer.nameEn}{' '}
+              {prayerSchedule.remainingFormatted}
+            </span>
+          </p>
+        </div>
+
+        <select
+          aria-label={t.selectCityLabel}
+          value={selectedCity.id}
+          onChange={(e) => handleCityChange(e.target.value)}
+          className="rounded-full border border-amber-500/20 bg-[#FAF5EE] dark:bg-[#17110D] px-3 py-1.5 text-xs font-semibold text-[#4E3629] dark:text-[#D6C7B8] focus:outline-none focus:ring-2 focus:ring-[#D97706]"
+        >
+          {QIBLA_CITIES.map((c) => (
+            <option key={c.id} value={c.id}>
+              {lang === 'ar' ? c.nameAr : c.nameEn}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+        {prayerSchedule.entries.map((entry) => {
+          const isNext = entry.id === prayerSchedule.nextPrayer.id;
+          return (
+            <div
+              key={entry.id}
+              className={`rounded-2xl p-3 flex flex-col items-center text-center gap-1.5 border transition-colors ${
+                isNext
+                  ? 'bg-gradient-to-b from-amber-500/18 to-orange-400/10 border-amber-500/35 shadow-sm'
+                  : 'bg-[#FAF5EE]/80 dark:bg-[#19120E]/80 border-amber-500/10'
+              }`}
+            >
+              <PrayerTimeIconSvg id={entry.id} className="h-7 w-7" />
+              <span className="text-xs font-semibold text-[#6E5649] dark:text-[#D6C7B8]">
+                {lang === 'ar' ? entry.nameAr : entry.nameEn}
+              </span>
+              <span className="text-sm font-bold text-[#2D231E] dark:text-[#FAF5EE] tabular-nums">
+                {entry.formatted24}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+});
+
+const HomeViewInner: React.FC<HomeViewProps> = ({
+  lang,
+  t,
+  surahs,
+  lastRead,
+  offlineRecords,
+  riwayat,
+  khatmaSchedule,
+  readingStats,
+  talqeenPauseSeconds,
+  isInstalled,
+  onChangeRiwayat,
+  onOpenSurah,
+  onOpenPage,
+  onOpenSearch,
+  onOpenAllSurahs,
+  onOpenVault,
+  onOpenKhatma,
+  onOpenAdhkar,
+  onOpenQibla,
+  onOpenDownloadApk,
+  onLaunchTalqeen,
+  onOpenHeartGuide,
+}) => {
+  const effectiveStats = useMemo(
+    () => getEffectiveReadingStats(readingStats),
+    [readingStats]
+  );
+  const [pageJumpInput, setPageJumpInput] = useState('');
+
   const lastReadSurah = useMemo(
     () => surahs.find((s) => s.id === (lastRead?.surah || 1)) || surahs[0],
     [surahs, lastRead]
@@ -128,17 +209,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
       ) as SurahMeta[],
     [surahs]
   );
-
-  const handleCityChange = (cityId: string) => {
-    const found = QIBLA_CITIES.find((c) => c.id === cityId);
-    if (!found) return;
-    setSelectedCity(found);
-    try {
-      localStorage.setItem(CITY_STORAGE_KEY, found.id);
-    } catch {
-      // ignore storage errors
-    }
-  };
 
   const handlePageJumpSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -332,64 +402,86 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </section>
 
-      {/* 2. Prayer Times Bento Section (Fajr, Dhuhr, Asr, Maghrib, Isha) */}
-      <section
-        aria-label={t.prayerTimesTitle}
-        data-testid="home-prayer-times"
-        className="rounded-3xl border border-amber-500/12 bg-white/90 dark:bg-[#211914]/92 md:bg-white/75 md:dark:bg-[#211914]/85 md:backdrop-blur-md p-4 sm:p-6 shadow-sm shadow-amber-500/5 space-y-4"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h2 className="text-sm sm:text-base font-bold text-[#2D231E] dark:text-[#FAF5EE]">
-              {t.prayerTimesTitle}
-            </h2>
-            <p className="text-xs font-medium text-[#B45309] dark:text-[#FBBF24] tabular-nums mt-0.5">
-              {t.remainingTimeLabel}:{' '}
-              <span className="font-bold">
-                {lang === 'ar'
-                  ? prayerSchedule.nextPrayer.nameAr
-                  : prayerSchedule.nextPrayer.nameEn}{' '}
-                {prayerSchedule.remainingFormatted}
-              </span>
-            </p>
-          </div>
+      {/* 2. Isolated Prayer Times Section (1s timer never re-renders rest of Home) */}
+      <PrayerTimesSection lang={lang} t={t} />
 
-          <select
-            aria-label={t.selectCityLabel}
-            value={selectedCity.id}
-            onChange={(e) => handleCityChange(e.target.value)}
-            className="rounded-full border border-amber-500/20 bg-[#FAF5EE] dark:bg-[#17110D] px-3 py-1.5 text-xs font-semibold text-[#4E3629] dark:text-[#D6C7B8] focus:outline-none focus:ring-2 focus:ring-[#D97706]"
-          >
-            {QIBLA_CITIES.map((c) => (
-              <option key={c.id} value={c.id}>
-                {lang === 'ar' ? c.nameAr : c.nameEn}
-              </option>
-            ))}
-          </select>
+      {/* 2b. Everything in Mihrab Noor — Visual Features Showcase */}
+      <section
+        aria-label={t.featuresShowcaseTitle}
+        data-testid="home-features-showcase"
+        className="space-y-3"
+      >
+        <div className="px-1">
+          <h2 className="text-sm sm:text-base font-bold text-[#2D231E] dark:text-[#FAF5EE]">
+            {t.featuresShowcaseTitle}
+          </h2>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-          {prayerSchedule.entries.map((entry) => {
-            const isNext = entry.id === prayerSchedule.nextPrayer.id;
-            return (
-              <div
-                key={entry.id}
-                className={`rounded-2xl p-3 flex flex-col items-center text-center gap-1.5 border transition-colors ${
-                  isNext
-                    ? 'bg-gradient-to-b from-amber-500/18 to-orange-400/10 border-amber-500/35 shadow-sm'
-                    : 'bg-[#FAF5EE]/80 dark:bg-[#19120E]/80 border-amber-500/10'
-                }`}
-              >
-                <PrayerTimeIconSvg id={entry.id} className="h-7 w-7" />
-                <span className="text-xs font-semibold text-[#6E5649] dark:text-[#D6C7B8]">
-                  {lang === 'ar' ? entry.nameAr : entry.nameEn}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+          {(
+            [
+              {
+                id: 'mushaf',
+                Icon: BookOpen,
+                title: t.showcaseMushafTitle,
+                desc: t.showcaseMushafDesc,
+                onClick: () => onOpenPage(lastRead?.page || 1),
+              },
+              {
+                id: 'audio',
+                Icon: Headphones,
+                title: t.showcaseAudioTitle,
+                desc: t.showcaseAudioDesc,
+                onClick: onOpenAllSurahs,
+              },
+              {
+                id: 'hifz',
+                Icon: Layers,
+                title: t.showcaseHifzTitle,
+                desc: t.showcaseHifzDesc,
+                onClick: () => onOpenPage(lastRead?.page || 1),
+              },
+              {
+                id: 'qibla',
+                Icon: Compass,
+                title: t.showcaseQiblaTitle,
+                desc: t.showcaseQiblaDesc,
+                onClick: onOpenQibla,
+              },
+              {
+                id: 'daily',
+                Icon: Sparkles,
+                title: t.showcaseDailyTitle,
+                desc: t.showcaseDailyDesc,
+                onClick: onOpenAdhkar,
+              },
+            ] as const
+          ).map(({id, Icon, title, desc, onClick}) => (
+            <button
+              key={id}
+              type="button"
+              data-testid={`showcase-card-${id}`}
+              onClick={onClick}
+              className={`min-h-[64px] text-start rounded-2xl border border-amber-500/14 bg-white/85 dark:bg-[#211914]/90 p-3.5 sm:p-4 hover:border-amber-500/45 shadow-sm transition-colors flex items-center justify-between gap-3.5 ${
+                id === 'daily' ? 'md:col-span-2' : ''
+              }`}
+            >
+              <div className="flex items-center gap-3.5 min-w-0">
+                <span className="h-12 w-12 rounded-2xl bg-amber-500/14 text-[#B45309] dark:text-[#FBBF24] flex items-center justify-center shrink-0">
+                  <Icon className="h-6 w-6" />
                 </span>
-                <span className="text-sm font-bold text-[#2D231E] dark:text-[#FAF5EE] tabular-nums">
-                  {entry.formatted24}
-                </span>
+                <div className="min-w-0">
+                  <div className="text-sm font-bold text-[#2D231E] dark:text-[#FAF5EE] truncate">
+                    {title}
+                  </div>
+                  <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8] mt-0.5 line-clamp-2">
+                    {desc}
+                  </p>
+                </div>
               </div>
-            );
-          })}
+              <ChevronRight className="h-4.5 w-4.5 text-[#B45309]/65 dark:text-[#FBBF24]/65 shrink-0 rtl:rotate-180" />
+            </button>
+          ))}
         </div>
       </section>
 
@@ -564,3 +656,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
     </div>
   );
 };
+
+export const HomeView = React.memo(HomeViewInner);
+

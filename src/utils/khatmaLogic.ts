@@ -196,18 +196,18 @@ export function buildKhatmaNotificationText(
   if (summary.pagesRemaining === 0) {
     if (lang === 'ar') {
       return {
-        title: 'نَجم القرآن · مبارك إتمام الختمة',
+        title: 'مِحْرَاب النُّور · مبارك إتمام الختمة',
         body: 'أتممت قراءة المصحف الشريف كاملاً (٦٠٤ صفحة). تقبل الله طاعتك.',
       };
     }
     if (lang === 'fr') {
       return {
-        title: 'Najm Quran · Khatma terminée',
+        title: 'Mihrab Noor · Khatma terminée',
         body: 'Alhamdulillah ! Vous avez complété les 604 pages de votre Khatma.',
       };
     }
     return {
-      title: 'Najm Quran · Khatma Completed',
+      title: 'Mihrab Noor · Khatma Completed',
       body: 'Alhamdulillah! You have completed all 604 pages of your Khatma.',
     };
   }
@@ -215,18 +215,18 @@ export function buildKhatmaNotificationText(
   const remainingToday = Math.max(1, summary.todayRemainingPages || summary.adaptiveDailyTarget);
   if (lang === 'ar') {
     return {
-      title: 'نَجم القرآن · تذكير الختمة اليومية',
+      title: 'مِحْرَاب النُّور · تذكير الختمة اليومية',
       body: `وِردك اليومي: بقي لك ${remainingToday} صفحات لإتمام هدف اليوم · باقي ${summary.daysRemaining} يوماً على الختمة`,
     };
   }
   if (lang === 'fr') {
     return {
-      title: 'Najm Quran · Rappel quotidien Khatma',
+      title: 'Mihrab Noor · Rappel quotidien Khatma',
       body: `Lecture du jour : ${remainingToday} pages restantes (p. ${summary.todayStartPage}–${summary.todayEndPage}) · ${summary.daysRemaining} jours restants`,
     };
   }
   return {
-    title: 'Najm Quran · Daily Khatma Reminder',
+    title: 'Mihrab Noor · Daily Khatma Reminder',
     body: `Daily Khatma: ${remainingToday} pages left today (p. ${summary.todayStartPage}–${summary.todayEndPage}) · ${summary.daysRemaining} days remaining`,
   };
 }
@@ -248,18 +248,18 @@ export function buildFridayKahfNotificationText(lang: 'en' | 'ar' | 'fr'): {
 } {
   if (lang === 'ar') {
     return {
-      title: 'نَجم القرآن · نور الجمعة — سورة الكهف',
+      title: 'مِحْرَاب النُّور · نور الجمعة — سورة الكهف',
       body: 'تذكير يوم الجمعة المبارك: اقرأ سورة الكهف ليضيء لك من النور ما بين الجمعتين.',
     };
   }
   if (lang === 'fr') {
     return {
-      title: 'Najm Quran · Rappel du Vendredi — Sourate Al-Kahf',
+      title: 'Mihrab Noor · Rappel du Vendredi — Sourate Al-Kahf',
       body: 'Béni soit votre vendredi ! Prenez un moment pour réciter la sourate Al-Kahf.',
     };
   }
   return {
-    title: 'Najm Quran · Friday Noor — Surah Al-Kahf',
+    title: 'Mihrab Noor · Friday Noor — Surah Al-Kahf',
     body: 'Jumu’ah Mubarak! Read Surah Al-Kahf today to illuminate your Friday with peace and barakah.',
   };
 }

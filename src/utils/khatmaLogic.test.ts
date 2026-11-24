@@ -52,13 +52,13 @@ test('buildKhatmaNotificationText returns trilingual motivating copy with remain
   const ar = buildKhatmaNotificationText(summary, 'ar');
   const en = buildKhatmaNotificationText(summary, 'en');
   const fr = buildKhatmaNotificationText(summary, 'fr');
-  assert.ok(ar.title.includes('نَجم القرآن'));
+  assert.ok(ar.title.includes('مِحْرَاب النُّور'));
   assert.ok(ar.body.includes('وِردك اليومي'));
   assert.ok(ar.body.includes('12'));
-  assert.ok(en.title.includes('Najm Quran'));
+  assert.ok(en.title.includes('Mihrab Noor'));
   assert.ok(en.body.includes('Daily Khatma:'));
   assert.ok(en.body.includes('12 days remaining'));
-  assert.ok(fr.title.includes('Najm Quran'));
+  assert.ok(fr.title.includes('Mihrab Noor'));
   assert.ok(fr.body.includes('12 jours'));
 });
 

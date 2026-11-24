@@ -146,7 +146,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({isDataReady}) => {
               className="animate-[najm-stroke-draw_820ms_cubic-bezier(0.22,1,0.36,1)_220ms_forwards]"
             />
 
-            {/* Center Golden Crescent & Najm Star */}
+            {/* Center Golden Crescent & Mihrab Star */}
             <g
               style={{transformOrigin: '56px 56px'}}
               className="animate-[najm-crescent-fill_520ms_cubic-bezier(0.22,1,0.36,1)_420ms_both]"
@@ -168,10 +168,10 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({isDataReady}) => {
             dir="rtl"
             className="font-quran-scheherazade text-4xl sm:text-5xl font-bold text-[#B45309] dark:text-[#FBBF24] leading-tight animate-[najm-title-stagger_520ms_cubic-bezier(0.22,1,0.36,1)_280ms_both]"
           >
-            نَجم القرآن
+            مِحْرَاب النُّور
           </p>
           <p className="text-xs sm:text-sm font-semibold tracking-[0.22em] uppercase text-[#4E3629] dark:text-[#F5E6D3] animate-[najm-title-stagger_520ms_cubic-bezier(0.22,1,0.36,1)_430ms_both]">
-            Najm Quran
+            Mihrab Noor
           </p>
         </div>
       </div>

@@ -23,7 +23,7 @@ export const PrivacyPage: React.FC<PrivacyPageProps> = ({lang, t, onBackHome}) =
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#2D231E] dark:text-[#FAF5EE]">
-              {isAr ? 'سياسة الخصوصية — نَجم القرآن' : 'Privacy Policy — Najm Quran'}
+              {isAr ? 'سياسة الخصوصية — مِحْرَاب النُّور' : 'Privacy Policy — Mihrab Noor'}
             </h1>
             <p className="text-xs sm:text-sm text-[#6E5649] dark:text-[#D6C7B8] mt-0.5 tabular-nums">
               {isAr
@@ -53,8 +53,8 @@ export const PrivacyPage: React.FC<PrivacyPageProps> = ({lang, t, onBackHome}) =
           </h2>
           <p className="text-sm leading-relaxed text-[#4E3629] dark:text-[#D6C7B8]">
             {isAr
-              ? 'صُمم تطبيق نَجم القرآن (Najm Quran) ليعمل محلياً بالكامل دون الحاجة إلى تسجيل حساب أو إرسال بياناتك الشخصية إلى أي خادم خارجي. يتم حفظ نصوص المصحف الشريف، والإشارات المرجعية، وآخر موضع قراءة، وتقدم الختمة والأذكار، والتلاوات الصوتية المُحمّلة محلياً داخل متصفحك أو جهازك عبر قاعدة بيانات IndexedDB (najm_quran_db) وLocalStorage.'
-              : 'Najm Quran is engineered as a local-first application that requires no user registration and collects no personal profile data on private servers. Quranic texts, bookmarks, last-read position, Khatma progress, Adhkar counters, reader preferences, and optional offline Surah audio recordings remain stored directly on your device inside IndexedDB (najm_quran_db) and LocalStorage.'}
+              ? 'صُمم تطبيق مِحْرَاب النُّور (Mihrab Noor) ليعمل محلياً بالكامل دون الحاجة إلى تسجيل حساب أو إرسال بياناتك الشخصية إلى أي خادم خارجي. يتم حفظ نصوص المصحف الشريف، والإشارات المرجعية، وآخر موضع قراءة، وتقدم الختمة والأذكار، والتلاوات الصوتية المُحمّلة محلياً داخل متصفحك أو جهازك عبر قاعدة بيانات IndexedDB (najm_quran_db) وLocalStorage.'
+              : 'Mihrab Noor is engineered as a local-first application that requires no user registration and collects no personal profile data on private servers. Quranic texts, bookmarks, last-read position, Khatma progress, Adhkar counters, reader preferences, and optional offline Surah audio recordings remain stored directly on your device inside IndexedDB (najm_quran_db) and LocalStorage.'}
           </p>
         </section>
 
@@ -84,8 +84,8 @@ export const PrivacyPage: React.FC<PrivacyPageProps> = ({lang, t, onBackHome}) =
           </h2>
           <p className="text-sm leading-relaxed text-[#4E3629] dark:text-[#D6C7B8]">
             {isAr
-              ? 'للمساعدة في تغطية تكاليف الخوادم وإبقاء تطبيق نَجم القرآن مجانياً للجميع، قد يعرض الموقع إعلانات عبر خدمة Google AdSense. تستخدم Google وبائعو الإعلانات التابعون لجهات خارجية ملفات تعريف الارتباط (بما في ذلك ملف تعريف ارتباط DART وإعلانات Google المخصصة) لعرض إعلانات ملائمة استناداً إلى زياراتك السابقة لهذا الموقع أو مواقع أخرى على شبكة الإنترنت.'
-              : 'To sustain hosting and keep Najm Quran freely accessible, we may display advertisements served by Google AdSense. Third-party vendors, including Google, use cookies (such as the Google DoubleClick DART cookie) to serve ads based on a user’s prior visits to this website or other websites on the Internet.'}
+              ? 'للمساعدة في تغطية تكاليف الخوادم وإبقاء تطبيق مِحْرَاب النُّور مجانياً للجميع، قد يعرض الموقع إعلانات عبر خدمة Google AdSense. تستخدم Google وبائعو الإعلانات التابعون لجهات خارجية ملفات تعريف الارتباط (بما في ذلك ملف تعريف ارتباط DART وإعلانات Google المخصصة) لعرض إعلانات ملائمة استناداً إلى زياراتك السابقة لهذا الموقع أو مواقع أخرى على شبكة الإنترنت.'
+              : 'To sustain hosting and keep Mihrab Noor freely accessible, we may display advertisements served by Google AdSense. Third-party vendors, including Google, use cookies (such as the Google DoubleClick DART cookie) to serve ads based on a user’s prior visits to this website or other websites on the Internet.'}
           </p>
           <p className="text-sm leading-relaxed text-[#4E3629] dark:text-[#D6C7B8]">
             {isAr
@@ -142,9 +142,7 @@ export const PrivacyPage: React.FC<PrivacyPageProps> = ({lang, t, onBackHome}) =
                 : 'Crafted & Developed by Abdessamad Enneguaz (عبد الصمد النكاز)'}
             </p>
             <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8]">
-              {isAr
-                ? '© ٢٠٢٦ نَجم القرآن (Najm Quran). جميع الحقوق محفوظة.'
-                : '© 2026 Najm Quran (نَجم القرآن). All Rights Reserved.'}
+              © 2026 Mihrab Noor (مِحْرَاب النُّور). Crafted &amp; Developed by Abdessamad Enneguaz · تطوير وتصميم: عبد الصمد
             </p>
           </div>
           <a

@@ -1,6 +1,6 @@
 {
-  "appId": "com.najmquran.app",
-  "appName": "Najm Quran",
+  "appId": "com.mihrabnoor.app",
+  "appName": "Mihrab Noor",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {

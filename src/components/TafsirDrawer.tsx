@@ -20,6 +20,7 @@ import type {
 } from '../types/quran';
 import {toArabicDigits} from '../utils/quranLogic';
 import {formatAyahLoopProgress} from '../utils/audioLoopLogic';
+import {computeSheetDragOffset, evaluateSwipeDismiss} from '../utils/swipeSheetLogic';
 import {renderAyahShareCardPng, type AyahCardFormat} from '../utils/storyCardCanvas';
 import {
   fetchVerseFrenchTranslation,
@@ -123,14 +124,23 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
     shared?: boolean;
   } | null>(null);
 
-  const [dragOffsetY, setDragOffsetY] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartYRef = useRef<number | null>(null);
+  const sheetRef = useRef<HTMLDivElement | null>(null);
+  const dragStateRef = useRef<{
+    active: boolean;
+    startY: number;
+    startTimeMs: number;
+    offsetY: number;
+  }>({active: false, startY: 0, startTimeMs: 0, offsetY: 0});
 
   useEffect(() => {
     setCardPreview(null);
-    setDragOffsetY(0);
     setSingleFrText(null);
+    dragStateRef.current.active = false;
+    dragStateRef.current.offsetY = 0;
+    if (sheetRef.current) {
+      sheetRef.current.style.transition = '';
+      sheetRef.current.style.transform = '';
+    }
   }, [verse?.surah, verse?.ayah]);
 
   useEffect(() => {
@@ -218,7 +228,7 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
             await navigator.share({
               files: [file],
               title: `${surahDisplay} ${verse.surah}:${verse.ayah}`,
-              text: `${surahDisplay} (${verse.surah}:${verse.ayah}) · Najm Quran`,
+              text: `${surahDisplay} (${verse.surah}:${verse.ayah}) · Mihrab Noor`,
             });
             sharedViaSheet = true;
           }
@@ -251,8 +261,15 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('button, a, input, select')) return;
-    dragStartYRef.current = e.clientY;
-    setIsDragging(true);
+    dragStateRef.current = {
+      active: true,
+      startY: e.clientY,
+      startTimeMs: performance.now(),
+      offsetY: 0,
+    };
+    if (sheetRef.current) {
+      sheetRef.current.style.transition = 'none';
+    }
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {
@@ -261,25 +278,29 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDragging || dragStartYRef.current === null) return;
-    const delta = Math.max(0, e.clientY - dragStartYRef.current);
-    setDragOffsetY(delta);
+    if (!dragStateRef.current.active || !sheetRef.current) return;
+    const clamped = computeSheetDragOffset(e.clientY - dragStateRef.current.startY);
+    dragStateRef.current.offsetY = clamped;
+    sheetRef.current.style.transform = `translate3d(0, ${clamped}px, 0)`;
   };
 
   const handlePointerUp = () => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    dragStartYRef.current = null;
-    if (dragOffsetY > 95) {
+    if (!dragStateRef.current.active) return;
+    dragStateRef.current.active = false;
+    const elapsedMs = performance.now() - dragStateRef.current.startTimeMs;
+    const res = evaluateSwipeDismiss(dragStateRef.current.offsetY, elapsedMs);
+    dragStateRef.current.offsetY = 0;
+    if (res.shouldDismiss) {
       onClose();
-    } else {
-      setDragOffsetY(0);
+    } else if (sheetRef.current) {
+      sheetRef.current.style.transition = 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)';
+      sheetRef.current.style.transform = 'translate3d(0, 0, 0)';
     }
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/55 backdrop-blur-sm p-0 md:p-6"
+      className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/55 p-0 md:p-6"
       role="dialog"
       aria-modal="true"
       data-testid="verse-bottom-sheet"
@@ -287,12 +308,8 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
       onClick={onClose}
     >
       <div
-        className={`w-full max-w-2xl max-h-[88vh] flex flex-col rounded-t-3xl md:rounded-3xl border border-amber-500/22 bg-[#FDFBF7] dark:bg-[#1B1410] shadow-2xl overflow-hidden ${
-          isDragging ? '' : 'transition-transform duration-200 ease-out'
-        }`}
-        style={{
-          transform: dragOffsetY > 0 ? `translateY(${dragOffsetY}px)` : undefined,
-        }}
+        ref={sheetRef}
+        className="w-full max-w-2xl max-h-[88vh] flex flex-col rounded-t-3xl md:rounded-3xl border border-amber-500/22 bg-[#FDFBF7] dark:bg-[#1B1410] shadow-2xl overflow-hidden will-change-transform"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Interactive Draggable Handle + Header */}

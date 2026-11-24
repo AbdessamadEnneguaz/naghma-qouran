@@ -49,7 +49,7 @@ export function buildMediaSessionMetadataPayload({
   return {
     title,
     artist,
-    album: 'Najm Quran · نَجم القرآن',
+    album: 'Mihrab Noor · مِحْرَاب النُّور',
     artwork: [
       {src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png'},
       {src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png'},

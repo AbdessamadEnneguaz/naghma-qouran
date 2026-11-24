@@ -28,7 +28,7 @@ function wrapLines(
 
 /**
  * Renders a 1080x1920 (Story 9:16) or 1080x1080 (Post 1:1) Warm Desert-Gold
- * Ayah Image Card PNG client-side on an HTML5 canvas with Najm Quran watermark.
+ * Ayah Image Card PNG client-side on an HTML5 canvas with Mihrab Noor watermark.
  */
 export async function renderAyahShareCardPng(options: {
   surah: number;
@@ -204,11 +204,11 @@ export async function renderAyahShareCardPng(options: {
     }
   }
 
-  // 6. Required Brand Watermark ("Najm Quran · نَجم القرآن")
+  // 6. Required Brand Watermark ("Mihrab Noor · مِحْرَاب النُّور")
   ctx.direction = 'ltr';
   ctx.fillStyle = '#92400E';
   ctx.font = '700 30px "Scheherazade New", serif';
-  ctx.fillText('Najm Quran · نَجم القرآن', W / 2, H - (format === 'square' ? 110 : 145));
+  ctx.fillText('Mihrab Noor · مِحْرَاب النُّور', W / 2, H - (format === 'square' ? 110 : 145));
 
   ctx.fillStyle = 'rgba(74, 51, 38, 0.68)';
   ctx.font = '500 19px "Plus Jakarta Sans", sans-serif';
@@ -227,7 +227,7 @@ export async function renderAyahShareCardPng(options: {
 
   const dataUrl = canvas.toDataURL('image/png');
   const suffix = format === 'square' ? '-square' : '';
-  const filename = `najm-ayah-${options.surah}-${options.ayah}${suffix}.png`;
+  const filename = `mihrab-ayah-${options.surah}-${options.ayah}${suffix}.png`;
   return {blob, dataUrl, filename};
 }
 

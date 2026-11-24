@@ -10,15 +10,15 @@ import {
 } from './apkHelpers';
 
 test('formatApkSizeMb formats exact byte size cleanly', () => {
-  assert.equal(formatApkSizeMb(DEFAULT_APK_SIZE_BYTES), '6.4 MB');
+  assert.equal(formatApkSizeMb(DEFAULT_APK_SIZE_BYTES), '11.1 MB');
   assert.equal(formatApkSizeMb(10 * 1024 * 1024), '10.0 MB');
-  assert.equal(formatApkSizeMb(0), '6.4 MB');
-  assert.equal(formatApkSizeMb(-100), '6.4 MB');
+  assert.equal(formatApkSizeMb(0), '11.1 MB');
+  assert.equal(formatApkSizeMb(-100), '11.1 MB');
 });
 
 test('isLocalApkPath distinguishes local bundled APK paths from external URLs', () => {
-  assert.equal(isLocalApkPath('/najm-quran.apk'), true);
-  assert.equal(isLocalApkPath('https://example.com/najm-quran.apk'), false);
+  assert.equal(isLocalApkPath('/mihrab-noor.apk'), true);
+  assert.equal(isLocalApkPath('https://example.com/mihrab-noor.apk'), false);
 });
 
 test('resolveVersionJsonUrl resolves local /version.json for web and remote OTA URL for bundled Capacitor', () => {

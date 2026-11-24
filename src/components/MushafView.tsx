@@ -9,6 +9,7 @@ import {
   Maximize2,
   Play,
   Share2,
+  SlidersHorizontal,
 } from 'lucide-react';
 import type {
   BookmarkEntry,
@@ -33,6 +34,7 @@ import {
   syncActiveVerseDomHighlight,
 } from '../utils/verseHighlightDom';
 import {SurahCartoucheBanner} from './OrnamentalSvg';
+import {MushafSettingsSheet} from './MushafSettingsSheet';
 import type {AppLang, Translations} from '../i18n/translations';
 
 const AyahMedallion: React.FC<{
@@ -197,6 +199,7 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
   onDownloadSurah,
 }) => {
   const [browseTab, setBrowseTab] = useState<ReaderBrowseTab>('quran');
+  const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
   const [surahQuery, setSurahQuery] = useState('');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [sharedKey, setSharedKey] = useState<string | null>(null);
@@ -359,9 +362,13 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
   };
 
   const handleCanvasTap = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (browseTab !== 'quran') return;
+    if (browseTab !== 'quran' || settingsSheetOpen) return;
     const target = e.target as HTMLElement;
-    if (target.closest('button, [role="button"], select, input, a, [role="region"]')) {
+    if (
+      target.closest(
+        'button, [role="button"], select, input, a, [role="region"], [role="dialog"]'
+      )
+    ) {
       return;
     }
     onToggleFocusMode();
@@ -380,7 +387,7 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
     const text = getVerseTextByRiwayat(verse, settings.riwayat, warshTexts);
     const sMeta = surahMap.get(verse.surah);
     const tr = translations?.[verse.index];
-    return `${text} ﴿${toArabicDigits(verse.ayah)}﴾${tr ? `\n"${tr}"` : ''}\n[${sMeta?.nameEn || verse.surah} ${verse.surah}:${verse.ayah} · Najm Quran]`;
+    return `${text} ﴿${toArabicDigits(verse.ayah)}﴾${tr ? `\n"${tr}"` : ''}\n[${sMeta?.nameEn || verse.surah} ${verse.surah}:${verse.ayah} · Mihrab Noor]`;
   };
 
   const handleCopyVerse = async (verse: QuranVerse) => {
@@ -400,7 +407,7 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
     try {
       if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
         await navigator.share({
-          title: `Najm Quran ${verse.surah}:${verse.ayah}`,
+          title: `Mihrab Noor ${verse.surah}:${verse.ayah}`,
           text: payload,
         });
       } else {
@@ -474,42 +481,8 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
             ))}
           </div>
 
-          {/* Right Compact Controls: Page Counter, Riwayat Switch, Offline Download */}
-          <div className="flex items-center gap-1.5">
-            <select
-              aria-label={t.surahWord}
-              value={headerSurahMeta?.id || currentSurahId}
-              onChange={(e) => {
-                onChangeSurah(Number(e.target.value));
-                setBrowseTab('quran');
-              }}
-              className="hidden sm:block max-w-[165px] rounded-full border border-amber-500/20 bg-white/80 dark:bg-[#221914] px-3 py-1.5 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] focus:outline-none focus:ring-2 focus:ring-[#D97706] truncate"
-            >
-              {surahs.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {lang === 'ar'
-                    ? `${toArabicDigits(s.id)}. ${s.nameAr.replace('سُورَةُ ', '')}`
-                    : `${s.id}. ${s.nameEn}`}
-                </option>
-              ))}
-            </select>
-
-            <button
-              type="button"
-              onClick={() =>
-                onUpdateSettings({riwayat: settings.riwayat === 'hafs' ? 'warsh' : 'hafs'})
-              }
-              className="px-3 py-1.5 rounded-full border border-amber-500/20 bg-white/80 dark:bg-[#221914] text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] whitespace-nowrap"
-            >
-              {settings.riwayat === 'hafs'
-                ? lang === 'ar'
-                  ? 'حفص'
-                  : 'Hafs'
-                : lang === 'ar'
-                  ? 'ورش'
-                  : 'Warsh'}
-            </button>
-
+          {/* Right Decluttered Controls: Touch-Friendly Settings Sheet Trigger + Offline Download */}
+          <div className="flex items-center gap-2">
             {headerSurahMeta && (
               <button
                 type="button"
@@ -517,21 +490,32 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                 disabled={isDownloadingThisSurah}
                 title={isSurahDownloaded ? t.offlineReady : t.downloadSurahOffline}
                 aria-label={isSurahDownloaded ? t.offlineReady : t.downloadSurahOffline}
-                className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors ${
+                className={`min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full border transition-colors ${
                   isSurahDownloaded
                     ? 'border-[#D97706]/40 bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
-                    : 'border-amber-500/20 bg-white/80 dark:bg-[#221914] text-[#6E5649] dark:text-[#D6C7B8] hover:text-[#D97706]'
+                    : 'border-amber-500/20 bg-white/85 dark:bg-[#221914] text-[#6E5649] dark:text-[#D6C7B8] hover:text-[#D97706]'
                 }`}
               >
                 {isDownloadingThisSurah ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : isSurahDownloaded ? (
-                  <Check className="h-3.5 w-3.5" />
+                  <Check className="h-4 w-4" />
                 ) : (
-                  <Download className="h-3.5 w-3.5" />
+                  <Download className="h-4 w-4" />
                 )}
               </button>
             )}
+
+            <button
+              type="button"
+              data-testid="mushaf-settings-trigger"
+              onClick={() => setSettingsSheetOpen(true)}
+              aria-label={t.settingsBtn}
+              className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 rounded-full border border-amber-500/25 bg-white/90 dark:bg-[#221914] text-xs sm:text-sm font-bold text-[#B45309] dark:text-[#FBBF24] hover:border-[#D97706] shadow-sm transition-colors whitespace-nowrap"
+            >
+              <SlidersHorizontal className="h-4 w-4 shrink-0" />
+              <span>{t.settingsBtn}</span>
+            </button>
           </div>
         </div>
 
@@ -1112,6 +1096,15 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
           <span>{t.exitFocus}</span>
         </button>
       )}
+
+      <MushafSettingsSheet
+        isOpen={settingsSheetOpen}
+        lang={lang}
+        t={t}
+        settings={settings}
+        onUpdateSettings={onUpdateSettings}
+        onClose={() => setSettingsSheetOpen(false)}
+      />
     </div>
   );
 };

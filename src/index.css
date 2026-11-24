@@ -19,7 +19,12 @@
     overscroll-behavior-y: contain;
     overflow-x: hidden;
     background-image: linear-gradient(180deg, #FDFBF7 0%, #FAF5EE 100%);
-    background-attachment: fixed;
+  }
+
+  @media (min-width: 768px) {
+    body {
+      background-attachment: fixed;
+    }
   }
 
   html.dark body {

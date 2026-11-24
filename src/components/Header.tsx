@@ -56,10 +56,10 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="text-base font-bold tracking-tight text-[#2D231E] dark:text-[#FAF5EE]">
             {lang === 'ar' ? (
               <span className="font-quran-scheherazade text-xl text-[#B45309] dark:text-[#FBBF24]">
-                نَجم القرآن
+                مِحْرَاب النُّور
               </span>
             ) : (
-              'Najm Quran'
+              'Mihrab Noor'
             )}
           </span>
         </button>
