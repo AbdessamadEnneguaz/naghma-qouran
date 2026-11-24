@@ -23,9 +23,12 @@ interface KhatmaPageProps {
   onMarkTodayComplete: () => void;
   onResetPlan: (days: number) => void;
   onToggleReminder: (enable: boolean) => Promise<NotificationPermission | 'unsupported'>;
+  onToggleFridayKahf: (enable: boolean) => Promise<NotificationPermission | 'unsupported'>;
   onChangeReminderTime: (time: string) => void;
   onSendTestReminder: () => Promise<unknown>;
+  onSendTestKahf: () => Promise<unknown>;
   onOpenMushafPage: (page: number) => void;
+  onOpenKahfSurah: () => void;
 }
 
 const GOAL_PRESETS = [7, 15, 30];
@@ -41,9 +44,12 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
   onMarkTodayComplete,
   onResetPlan,
   onToggleReminder,
+  onToggleFridayKahf,
   onChangeReminderTime,
   onSendTestReminder,
+  onSendTestKahf,
   onOpenMushafPage,
+  onOpenKahfSurah,
 }) => {
   const [customDays, setCustomDays] = useState(String(plan.goalDays));
   const [pagesInput, setPagesInput] = useState('4');
@@ -132,7 +138,9 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
               ? t.todayWirdDone
               : lang === 'ar'
                 ? `وِرد اليوم: صفحات ${numFmt(schedule.todayStartPage)} – ${numFmt(schedule.todayEndPage)} (${numFmt(schedule.todayRemainingPages)} صفحة متبقية)`
-                : `Today's Wird: Pages ${schedule.todayStartPage}–${schedule.todayEndPage} (${schedule.todayRemainingPages} pages left)`}
+                : lang === 'fr'
+                  ? `Lecture du jour : pages ${schedule.todayStartPage}–${schedule.todayEndPage} (${schedule.todayRemainingPages} restantes)`
+                  : `Today's Wird: Pages ${schedule.todayStartPage}–${schedule.todayEndPage} (${schedule.todayRemainingPages} pages left)`}
           </h2>
 
           <div className="flex flex-wrap items-center gap-2.5 pt-1">
@@ -328,6 +336,65 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
             {permission === 'denied' ? t.notificationBlockedHint : testSentMsg}
           </p>
         )}
+      </section>
+
+      {/* Friday Surah Al-Kahf Reminder Settings */}
+      <section
+        data-testid="friday-kahf-section"
+        className="rounded-3xl border border-amber-500/14 bg-white/80 dark:bg-[#211914] p-5 space-y-3.5 shadow-sm"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            {plan.fridayKahfEnabled ? (
+              <Bell className="h-5 w-5 text-[#D97706]" />
+            ) : (
+              <BellOff className="h-5 w-5 text-[#6E5649] dark:text-[#D6C7B8]" />
+            )}
+            <div>
+              <h2 className="text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE]">
+                {t.fridayKahfTitle}
+              </h2>
+              <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8]">{t.fridayKahfDesc}</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            role="switch"
+            data-testid="friday-kahf-switch"
+            aria-checked={Boolean(plan.fridayKahfEnabled)}
+            onClick={() => void onToggleFridayKahf(!plan.fridayKahfEnabled)}
+            className={`px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${
+              plan.fridayKahfEnabled
+                ? 'border-[#D97706] bg-[#D97706] text-white'
+                : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] text-[#2D231E] dark:text-[#FAF5EE]'
+            }`}
+          >
+            {plan.fridayKahfEnabled ? t.reminderEnabledLabel : t.enableReminderBtn}
+          </button>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-amber-500/12">
+          <button
+            type="button"
+            data-testid="open-kahf-btn"
+            onClick={onOpenKahfSurah}
+            className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/12 border border-amber-500/25 px-4 py-2 text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] hover:border-[#D97706] transition-colors"
+          >
+            <BookOpen className="h-3.5 w-3.5" />
+            <span>{t.openKahfBtn}</span>
+          </button>
+
+          <button
+            type="button"
+            data-testid="test-kahf-btn"
+            onClick={() => void onSendTestKahf()}
+            className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 px-4 py-2 text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] hover:bg-amber-500/10 transition-colors"
+          >
+            <Send className="h-3.5 w-3.5" />
+            <span>{t.testKahfBtn}</span>
+          </button>
+        </div>
       </section>
     </div>
   );

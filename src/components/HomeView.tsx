@@ -2,8 +2,10 @@ import React, {useEffect, useMemo, useState} from 'react';
 import {
   BellRing,
   BookHeart,
+  BookOpen,
   ChevronRight,
   Download,
+  Flame,
   Lightbulb,
   Search,
   Sparkles,
@@ -12,10 +14,12 @@ import type {
   BookmarkEntry,
   LastReadState,
   OfflineSurahRecord,
+  ReadingStats,
   Riwayat,
   SurahMeta,
 } from '../types/quran';
 import type {KhatmaScheduleSummary} from '../utils/khatmaLogic';
+import {getEffectiveReadingStats} from '../utils/readingStreakLogic';
 import {computeDailyPrayerSchedule} from '../utils/prayerTimes';
 import {QIBLA_CITIES, type QiblaCity} from '../utils/qiblaLogic';
 import {getDefaultAdhkarPeriod} from '../data/adhkarData';
@@ -32,6 +36,7 @@ interface HomeViewProps {
   offlineRecords: OfflineSurahRecord[];
   riwayat: Riwayat;
   khatmaSchedule: KhatmaScheduleSummary;
+  readingStats: ReadingStats;
   talqeenPauseSeconds: 3 | 5 | 8;
   isInstalled: boolean;
   onChangeRiwayat: (riwayat: Riwayat) => void;
@@ -72,6 +77,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   offlineRecords,
   riwayat,
   khatmaSchedule,
+  readingStats,
   talqeenPauseSeconds,
   isInstalled,
   onChangeRiwayat,
@@ -86,6 +92,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onLaunchTalqeen,
   onOpenHeartGuide,
 }) => {
+  const effectiveStats = useMemo(
+    () => getEffectiveReadingStats(readingStats),
+    [readingStats]
+  );
   const [pageJumpInput, setPageJumpInput] = useState('');
   const [selectedCity, setSelectedCity] = useState<QiblaCity>(getStoredCity);
   const [now, setNow] = useState<Date>(() => new Date());
@@ -173,7 +183,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </p>
           </div>
 
-          {lang === 'en' && (
+          {lang !== 'ar' && (
             <span
               dir="rtl"
               className="font-quran-scheherazade text-3xl sm:text-4xl text-[#B45309] dark:text-[#FBBF24] self-start sm:self-center leading-none"
@@ -273,6 +283,52 @@ export const HomeView: React.FC<HomeViewProps> = ({
               {t.goBtn}
             </button>
           </form>
+        </div>
+      </section>
+
+      {/* Reading Streak & Pages Read Strip */}
+      <section
+        aria-label={t.readingStreakTitle}
+        data-testid="home-reading-streak"
+        className="rounded-3xl border border-amber-500/14 bg-white/85 dark:bg-[#211914]/90 px-4 py-3.5 sm:px-6 sm:py-4 shadow-sm flex flex-wrap items-center justify-between gap-3"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="h-10 w-10 rounded-2xl bg-amber-500/14 text-[#D97706] dark:text-[#FBBF24] flex items-center justify-center shrink-0">
+            <Flame className="h-5 w-5" />
+          </span>
+          <div className="min-w-0">
+            <div className="text-xs font-semibold text-[#6E5649] dark:text-[#D6C7B8]">
+              {t.readingStreakTitle}
+            </div>
+            <div className="text-base sm:text-lg font-bold text-[#2D231E] dark:text-[#FAF5EE] tabular-nums">
+              {numFmt(effectiveStats.currentStreakDays)} {t.streakDaysUnit}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-5 sm:gap-7 tabular-nums">
+          <div>
+            <div className="text-[11px] font-medium text-[#6E5649] dark:text-[#D6C7B8]">
+              {t.pagesTodayLabel}
+            </div>
+            <div className="text-sm sm:text-base font-bold text-[#B45309] dark:text-[#FBBF24]">
+              {numFmt(effectiveStats.todayPagesRead)} {t.pageShort}
+            </div>
+          </div>
+
+          <div className="h-7 w-px bg-amber-500/18" aria-hidden="true" />
+
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-[#D97706] shrink-0 hidden sm:block" />
+            <div>
+              <div className="text-[11px] font-medium text-[#6E5649] dark:text-[#D6C7B8]">
+                {t.totalPagesReadLabel}
+              </div>
+              <div className="text-sm sm:text-base font-bold text-[#2D231E] dark:text-[#FAF5EE]">
+                {numFmt(effectiveStats.totalPagesRead)}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -459,7 +515,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
       <section className="space-y-3">
         <div className="flex items-center justify-between px-1">
           <h2 className="text-sm font-bold text-[#4E3629] dark:text-[#E5D5C3]">
-            {lang === 'ar' ? 'سور مختارة' : 'Al-Quran · Quick Surahs'}
+            {lang === 'ar'
+              ? 'سور مختارة'
+              : lang === 'fr'
+                ? 'Coran · Sourates choisies'
+                : 'Al-Quran · Quick Surahs'}
           </h2>
           <button
             type="button"

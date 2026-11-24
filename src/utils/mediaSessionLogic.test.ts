@@ -32,7 +32,7 @@ test('buildMediaSessionMetadataPayload formats Arabic and English titles with ar
   });
   assert.equal(enPayload.title, 'Surah Ibrahim - Ayah 7');
   assert.equal(enPayload.artist, luhaidan.nameEn);
-  assert.equal(enPayload.album, 'Najm Quran · نَغمة القرآن');
+  assert.equal(enPayload.album, 'Najm Quran · نَجم القرآن');
   assert.deepEqual(
     enPayload.artwork.map((a) => a.src),
     ['/pwa-192x192.png', '/pwa-512x512.png']
@@ -47,6 +47,16 @@ test('buildMediaSessionMetadataPayload formats Arabic and English titles with ar
   });
   assert.equal(arPayload.title, 'سورة إبراهيم - الآية ٧');
   assert.equal(arPayload.artist, luhaidan.nameAr);
+
+  const frPayload = buildMediaSessionMetadataPayload({
+    surah: 14,
+    ayah: 7,
+    surahMeta: ibrahim,
+    reciter: luhaidan,
+    lang: 'fr',
+  });
+  assert.equal(frPayload.title, 'Sourate Ibrahim - Verset 7');
+  assert.equal(frPayload.artist, luhaidan.nameEn);
 });
 
 test('computeSafePositionState validates duration and clamps position cleanly', () => {

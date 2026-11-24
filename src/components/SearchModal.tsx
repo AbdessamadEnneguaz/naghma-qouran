@@ -1,7 +1,12 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {ArrowLeft, ArrowRight, Search, X} from 'lucide-react';
 import type {QuranVerse, SearchResult, SurahMeta} from '../types/quran';
-import {searchQuran, toArabicDigits} from '../utils/quranLogic';
+import {
+  highlightArabicWords,
+  highlightLatinQuery,
+  searchQuran,
+  toArabicDigits,
+} from '../utils/quranLogic';
 import type {AppLang, Translations} from '../i18n/translations';
 
 interface SearchModalProps {
@@ -11,6 +16,7 @@ interface SearchModalProps {
   verses: QuranVerse[];
   surahs: SurahMeta[];
   translations: string[] | null;
+  frenchTexts?: string[] | null;
   onClose: () => void;
   onSelectResult: (result: SearchResult) => void;
 }
@@ -22,6 +28,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   verses,
   surahs,
   translations,
+  frenchTexts,
   onClose,
   onSelectResult,
 }) => {
@@ -36,22 +43,39 @@ export const SearchModal: React.FC<SearchModalProps> = ({
 
   const results = useMemo(() => {
     if (!query.trim()) return [];
-    return searchQuran(verses, surahs, query, translations || undefined, 40);
-  }, [verses, surahs, query, translations]);
+    const primaryTr = lang === 'fr' && frenchTexts ? frenchTexts : translations || undefined;
+    const secondaryTr = lang === 'fr' ? translations || undefined : frenchTexts || undefined;
+    return searchQuran(verses, surahs, query, primaryTr, 40, secondaryTr);
+  }, [verses, surahs, query, translations, frenchTexts, lang]);
 
   if (!isOpen) return null;
 
+  const numFmt = (n: number) => (lang === 'ar' ? toArabicDigits(n) : String(n));
+
   const suggestions = [
     {
-      label: lang === 'ar' ? '2:255 (آية الكرسي)' : '2:255 (Ayat al-Kursi)',
+      label:
+        lang === 'ar'
+          ? '2:255 (آية الكرسي)'
+          : lang === 'fr'
+            ? '2:255 (Ayat al-Kursi)'
+            : '2:255 (Ayat al-Kursi)',
       query: '2:255',
     },
     {
-      label: lang === 'ar' ? 'p:604 (الصفحة الأخيرة)' : 'p:604 (Last Page)',
+      label:
+        lang === 'ar'
+          ? 'p:604 (الصفحة الأخيرة)'
+          : lang === 'fr'
+            ? 'p:604 (Dernière page)'
+            : 'p:604 (Last Page)',
       query: 'p:604',
     },
     {label: 'الرحمن', query: 'الرحمن'},
-    {label: 'الحمد لله', query: 'الحمد لله'},
+    {
+      label: lang === 'ar' ? 'الحمد لله' : lang === 'fr' ? 'mercy / الحمد لله' : 'mercy',
+      query: lang === 'ar' ? 'الحمد لله' : 'mercy',
+    },
   ];
 
   const DirArrow = lang === 'ar' ? ArrowLeft : ArrowRight;
@@ -61,6 +85,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       className="fixed inset-0 z-50 flex items-start justify-center bg-black/55 backdrop-blur-sm p-3 sm:p-6 pt-10 sm:pt-16"
       role="dialog"
       aria-modal="true"
+      data-testid="search-modal"
       aria-label={t.searchBtn}
       onClick={onClose}
     >
@@ -72,6 +97,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
           <Search className="h-5 w-5 text-[#D97706] shrink-0" />
           <input
             ref={inputRef}
+            data-testid="search-modal-input"
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -91,7 +117,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close Search"
+            aria-label={t.closeWord}
             className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-full text-[#6E5649] dark:text-[#D6C7B8] hover:bg-amber-500/10"
           >
             <X className="h-4.5 w-4.5" />
@@ -117,9 +143,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8]">
-                {t.searchFooterNote}
-              </p>
+              <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8]">{t.searchFooterNote}</p>
             </div>
           ) : results.length === 0 ? (
             <div className="py-12 text-center text-sm text-[#6E5649] dark:text-[#D6C7B8]">
@@ -128,49 +152,82 @@ export const SearchModal: React.FC<SearchModalProps> = ({
           ) : (
             <div className="space-y-2">
               <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
-                {lang === 'ar' ? toArabicDigits(results.length) : results.length} {t.matchesFound}
+                {numFmt(results.length)} {t.matchesFound}
               </p>
-              {results.map((item, idx) => (
-                <button
-                  key={`${item.type}-${item.surah}-${item.ayah}-${idx}`}
-                  type="button"
-                  onClick={() => {
-                    onSelectResult(item);
-                    onClose();
-                  }}
-                  className="w-full text-start rounded-2xl border border-amber-500/14 bg-white/80 dark:bg-[#241B15] p-3.5 hover:border-[#D97706] transition-colors space-y-1.5"
-                >
-                  <div className="flex items-center justify-between text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] tabular-nums">
-                    <span>
-                      {lang === 'ar' ? item.surahNameAr : item.surahNameEn} ·{' '}
-                      {lang === 'ar'
-                        ? `${toArabicDigits(item.surah)}:${toArabicDigits(item.ayah)}`
-                        : `${item.surah}:${item.ayah}`}{' '}
-                      · {t.pageWord} {lang === 'ar' ? toArabicDigits(item.page) : item.page}
-                    </span>
-                    <span className="font-quran-scheherazade text-base">
-                      {item.surahNameAr}
-                    </span>
-                  </div>
-                  <p
-                    dir="rtl"
-                    className="font-quran-amiri text-xl leading-[2.0] tracking-normal text-[#2D231E] dark:text-[#FAF5EE]"
+              {results.map((item, idx) => {
+                const arSegments = highlightArabicWords(item.text, query);
+                const trSegments = item.translation
+                  ? highlightLatinQuery(item.translation, query)
+                  : [];
+
+                return (
+                  <button
+                    key={`${item.type}-${item.surah}-${item.ayah}-${idx}`}
+                    type="button"
+                    data-testid={`search-result-${item.surah}-${item.ayah}`}
+                    onClick={() => {
+                      onSelectResult(item);
+                      onClose();
+                    }}
+                    className="w-full text-start rounded-2xl border border-amber-500/14 bg-white/80 dark:bg-[#241B15] p-3.5 hover:border-[#D97706] transition-colors space-y-1.5"
                   >
-                    {item.text}{' '}
-                    <span className="text-[#B45309] dark:text-[#FBBF24]">
-                      ﴿{toArabicDigits(item.ayah)}﴾
-                    </span>
-                  </p>
-                  {item.translation && (
+                    <div className="flex items-center justify-between gap-2 text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] tabular-nums">
+                      <span className="truncate">
+                        {lang === 'ar' ? item.surahNameAr : item.surahNameEn} ·{' '}
+                        {lang === 'ar'
+                          ? `${toArabicDigits(item.surah)}:${toArabicDigits(item.ayah)}`
+                          : `${item.surah}:${item.ayah}`}{' '}
+                        · {t.pageWord} {numFmt(item.page)} · {t.juzWord}{' '}
+                        {numFmt(item.juz || 1)}
+                      </span>
+                      <span className="font-quran-scheherazade text-base shrink-0">
+                        {item.surahNameAr}
+                      </span>
+                    </div>
+
                     <p
-                      dir="ltr"
-                      className="text-xs text-[#6E5649] dark:text-[#D6C7B8] line-clamp-2"
+                      dir="rtl"
+                      className="font-quran-amiri text-xl leading-[2.0] tracking-normal text-[#2D231E] dark:text-[#FAF5EE]"
                     >
-                      {item.translation}
+                      {arSegments.map((seg, sIdx) => (
+                        <React.Fragment key={sIdx}>
+                          {seg.highlighted ? (
+                            <mark className="bg-[#FDE68A]/90 dark:bg-amber-400/35 text-inherit rounded px-0.5">
+                              {seg.text}
+                            </mark>
+                          ) : (
+                            seg.text
+                          )}
+                          {sIdx < arSegments.length - 1 ? ' ' : ''}
+                        </React.Fragment>
+                      ))}{' '}
+                      <span className="text-[#B45309] dark:text-[#FBBF24]">
+                        ﴿{toArabicDigits(item.ayah)}﴾
+                      </span>
                     </p>
-                  )}
-                </button>
-              ))}
+
+                    {trSegments.length > 0 && (
+                      <p
+                        dir="ltr"
+                        className="text-xs text-[#6E5649] dark:text-[#D6C7B8] line-clamp-2"
+                      >
+                        {trSegments.map((seg, sIdx) =>
+                          seg.highlighted ? (
+                            <mark
+                              key={sIdx}
+                              className="bg-[#FDE68A]/90 dark:bg-amber-400/35 text-[#2D231E] dark:text-[#FAF5EE] rounded px-0.5 font-semibold"
+                            >
+                              {seg.text}
+                            </mark>
+                          ) : (
+                            <React.Fragment key={sIdx}>{seg.text}</React.Fragment>
+                          )
+                        )}
+                      </p>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>

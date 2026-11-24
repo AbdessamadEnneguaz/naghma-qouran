@@ -15,6 +15,7 @@ let allVersesMemCache: QuranVerse[] | null = null;
 let warshMemPromise: Promise<string[]> | null = null;
 let tafsirMemPromise: Promise<string[]> | null = null;
 let translationEnMemPromise: Promise<string[]> | null = null;
+let translationFrMemPromise: Promise<string[]> | null = null;
 
 function hydratePageRows(
   rows: Array<{index: number; row: CompactHafsRow}>,
@@ -316,6 +317,56 @@ export async function loadEnglishTranslation(): Promise<string[]> {
   } catch (err) {
     translationEnMemPromise = null;
     throw err;
+  }
+}
+
+export async function loadFrenchTranslation(): Promise<string[]> {
+  if (translationFrMemPromise) return translationFrMemPromise;
+  translationFrMemPromise = (async () => {
+    const cached = await getCachedQuranAsset<string[]>('translation_fr');
+    if (cached && cached.length === 6236) return cached;
+    const res = await fetch('https://api.alquran.cloud/v1/quran/fr.hamidullah');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = (await res.json()) as {
+      data?: {surahs?: Array<{ayahs?: Array<{text?: string}>}>};
+    };
+    const flattened: string[] = [];
+    for (const s of json.data?.surahs || []) {
+      for (const a of s.ayahs || []) {
+        flattened.push(a.text || '');
+      }
+    }
+    if (flattened.length !== 6236) {
+      throw new Error('Unexpected French Quran translation payload');
+    }
+    await setCachedQuranAsset('translation_fr', flattened);
+    return flattened;
+  })();
+  try {
+    return await translationFrMemPromise;
+  } catch (err) {
+    translationFrMemPromise = null;
+    throw err;
+  }
+}
+
+export async function fetchVerseFrenchTranslation(
+  surah: number,
+  ayah: number
+): Promise<string | null> {
+  const key = `translation_fr_ayah:${surah}:${ayah}`;
+  const cached = await getCachedQuranAsset<string>(key);
+  if (cached) return cached;
+  try {
+    const res = await fetch(`https://api.alquran.cloud/v1/ayah/${surah}:${ayah}/fr.hamidullah`);
+    if (!res.ok) return null;
+    const json = (await res.json()) as {data?: {text?: string}};
+    const text = json.data?.text?.trim();
+    if (!text) return null;
+    await setCachedQuranAsset(key, text);
+    return text;
+  } catch {
+    return null;
   }
 }
 

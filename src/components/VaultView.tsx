@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useMemo, useState} from 'react';
 import {
   Bookmark,
   CheckCircle2,
@@ -6,17 +6,17 @@ import {
   HardDrive,
   Loader2,
   Smartphone,
-  Sparkles,
   Trash2,
 } from 'lucide-react';
 import type {
+  BookmarkCategory,
   BookmarkEntry,
   OfflineSurahRecord,
   Reciter,
   SurahMeta,
 } from '../types/quran';
 import {RECITERS} from '../data/reciters';
-import {formatBytes, toArabicDigits} from '../utils/quranLogic';
+import {formatBytes, getBookmarkCategory, toArabicDigits} from '../utils/quranLogic';
 import type {AppLang, Translations} from '../i18n/translations';
 
 interface VaultViewProps {
@@ -41,6 +41,24 @@ interface VaultViewProps {
 
 const RECOMMENDED_SURAH_IDS = [1, 18, 36, 55, 67, 112, 113, 114];
 
+const BOOKMARK_CAT_STYLES: Record<
+  BookmarkCategory,
+  {dotClass: string; badgeClass: string}
+> = {
+  wird: {
+    dotClass: 'bg-[#D97706]',
+    badgeClass: 'text-[#B45309] dark:text-[#FBBF24]',
+  },
+  memorization: {
+    dotClass: 'bg-[#059669]',
+    badgeClass: 'text-[#059669] dark:text-[#34D399]',
+  },
+  favorites: {
+    dotClass: 'bg-[#E11D48]',
+    badgeClass: 'text-[#E11D48] dark:text-[#FB7185]',
+  },
+};
+
 export const VaultView: React.FC<VaultViewProps> = ({
   lang,
   t,
@@ -59,7 +77,20 @@ export const VaultView: React.FC<VaultViewProps> = ({
   onClearAudioCache,
   onOpenInstall,
 }) => {
+  const [bmFilter, setBmFilter] = useState<'all' | BookmarkCategory>('all');
   const totalAudioBytes = offlineRecords.reduce((acc, r) => acc + r.bytes, 0);
+
+  const filteredBookmarks = useMemo(() => {
+    if (bmFilter === 'all') return bookmarks;
+    return bookmarks.filter((bm) => getBookmarkCategory(bm) === bmFilter);
+  }, [bookmarks, bmFilter]);
+
+  const getCategoryLabel = (cat: BookmarkCategory) =>
+    cat === 'wird'
+      ? t.catWird
+      : cat === 'memorization'
+        ? t.catMemorization
+        : t.catFavorites;
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 pt-6 pb-8 space-y-8">
@@ -117,14 +148,47 @@ export const VaultView: React.FC<VaultViewProps> = ({
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-bold text-[#2D231E] dark:text-[#FAF5EE] flex items-center gap-2 tabular-nums">
-          <Bookmark className="h-4 w-4 text-[#D97706]" />
-          <span>
-            {t.tabBookmarks} ({bookmarks.length})
-          </span>
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-bold text-[#2D231E] dark:text-[#FAF5EE] flex items-center gap-2 tabular-nums">
+            <Bookmark className="h-4 w-4 text-[#D97706]" />
+            <span>
+              {t.tabBookmarks} ({bookmarks.length})
+            </span>
+          </h2>
 
-        {bookmarks.length === 0 ? (
+          {bookmarks.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setBmFilter('all')}
+                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                  bmFilter === 'all'
+                    ? 'border-[#D97706] bg-[#D97706] text-white'
+                    : 'border-amber-500/20 bg-white dark:bg-[#211914] text-[#6E5649] dark:text-[#D6C7B8]'
+                }`}
+              >
+                {t.filterAll}
+              </button>
+              {(['wird', 'memorization', 'favorites'] as const).map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setBmFilter(cat)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                    bmFilter === cat
+                      ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
+                      : 'border-amber-500/20 bg-white dark:bg-[#211914] text-[#6E5649] dark:text-[#D6C7B8]'
+                  }`}
+                >
+                  <span className={`h-2 w-2 rounded-full ${BOOKMARK_CAT_STYLES[cat].dotClass}`} />
+                  <span>{getCategoryLabel(cat)}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {filteredBookmarks.length === 0 ? (
           <div className="rounded-3xl border border-amber-500/14 bg-white/75 dark:bg-[#211914] p-8 text-center space-y-1.5 shadow-sm">
             <p className="text-sm font-medium text-[#2D231E] dark:text-[#FAF5EE]">
               {t.noBookmarksTitle}
@@ -135,43 +199,52 @@ export const VaultView: React.FC<VaultViewProps> = ({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {bookmarks.map((bm) => (
-              <div
-                key={bm.id}
-                className="rounded-3xl border border-amber-500/14 bg-white/80 dark:bg-[#211914] p-4 flex items-start justify-between gap-3 shadow-sm"
-              >
-                <button
-                  type="button"
-                  onClick={() => onOpenSurah(bm.surah, bm.ayah)}
-                  className="text-start flex-1 min-w-0 space-y-1.5"
+            {filteredBookmarks.map((bm) => {
+              const cat = getBookmarkCategory(bm);
+              const style = BOOKMARK_CAT_STYLES[cat];
+              return (
+                <div
+                  key={bm.id}
+                  data-testid={`vault-bookmark-${bm.id}`}
+                  className="rounded-3xl border border-amber-500/14 bg-white/80 dark:bg-[#211914] p-4 flex items-start justify-between gap-3 shadow-sm"
                 >
-                  <div className="flex items-center gap-2 text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] tabular-nums">
-                    <Sparkles className="h-3.5 w-3.5 shrink-0" />
-                    <span>
-                      {lang === 'ar' ? bm.surahNameAr : bm.surahNameEn} ·{' '}
-                      {lang === 'ar'
-                        ? `${toArabicDigits(bm.surah)}:${toArabicDigits(bm.ayah)}`
-                        : `${bm.surah}:${bm.ayah}`}{' '}
-                      · {t.pageWord} {lang === 'ar' ? toArabicDigits(bm.page) : bm.page}
-                    </span>
-                  </div>
-                  <p
-                    dir="rtl"
-                    className="font-quran-amiri text-xl leading-[2.1] text-[#2D231E] dark:text-[#FAF5EE] line-clamp-2"
+                  <button
+                    type="button"
+                    onClick={() => onOpenSurah(bm.surah, bm.ayah)}
+                    className="text-start flex-1 min-w-0 space-y-1.5"
                   >
-                    {bm.snippet}
-                  </p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onRemoveBookmark(bm.id)}
-                  aria-label={`Remove bookmark ${bm.surah}:${bm.ayah}`}
-                  className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-full text-[#6E5649] dark:text-[#D6C7B8] hover:text-rose-500"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-semibold tabular-nums">
+                      <span className={`inline-flex items-center gap-1.5 ${style.badgeClass}`}>
+                        <span className={`h-2 w-2 rounded-full shrink-0 ${style.dotClass}`} />
+                        <span>{getCategoryLabel(cat)}</span>
+                      </span>
+                      <span aria-hidden="true" className="text-[#6E5649]/50">·</span>
+                      <span className="text-[#B45309] dark:text-[#FBBF24]">
+                        {lang === 'ar' ? bm.surahNameAr : bm.surahNameEn} ·{' '}
+                        {lang === 'ar'
+                          ? `${toArabicDigits(bm.surah)}:${toArabicDigits(bm.ayah)}`
+                          : `${bm.surah}:${bm.ayah}`}{' '}
+                        · {t.pageWord} {lang === 'ar' ? toArabicDigits(bm.page) : bm.page}
+                      </span>
+                    </div>
+                    <p
+                      dir="rtl"
+                      className="font-quran-amiri text-xl leading-[2.1] text-[#2D231E] dark:text-[#FAF5EE] line-clamp-2"
+                    >
+                      {bm.snippet}
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveBookmark(bm.id)}
+                    aria-label={`Remove bookmark ${bm.surah}:${bm.ayah}`}
+                    className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-full text-[#6E5649] dark:text-[#D6C7B8] hover:text-rose-500"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </section>

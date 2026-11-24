@@ -1,20 +1,14 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
   Bookmark,
-  BookOpenText,
   Check,
   ChevronLeft,
   ChevronRight,
-  Copy,
   Download,
-  Eye,
-  EyeOff,
-  Image as ImageIcon,
   Loader2,
   Maximize2,
   Play,
   Share2,
-  X,
 } from 'lucide-react';
 import type {
   BookmarkEntry,
@@ -31,7 +25,6 @@ import {
   toArabicDigits,
   tokenizeVerseWords,
 } from '../utils/quranLogic';
-import {renderHeartStoryCardPng} from '../utils/storyCardCanvas';
 import {getVerseTextByRiwayat} from '../services/quranLoader';
 import {
   ACTIVE_VERSE_ATTR,
@@ -205,10 +198,8 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
 }) => {
   const [browseTab, setBrowseTab] = useState<ReaderBrowseTab>('quran');
   const [surahQuery, setSurahQuery] = useState('');
-  const [actionMenuVerse, setActionMenuVerse] = useState<QuranVerse | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [sharedKey, setSharedKey] = useState<string | null>(null);
-  const [storySavedKey, setStorySavedKey] = useState<string | null>(null);
   const [pageJumpInput, setPageJumpInput] = useState(String(currentPage));
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
@@ -382,7 +373,7 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
       onToggleRevealAyah(ayahKey);
       return;
     }
-    setActionMenuVerse(verse);
+    onOpenTafsir(verse);
   };
 
   const formatVersePayload = (verse: QuranVerse) => {
@@ -429,50 +420,6 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
     }
   };
 
-  const handleStoryCardExport = async (verse: QuranVerse) => {
-    const key = `${verse.surah}:${verse.ayah}`;
-    const sMeta = surahMap.get(verse.surah);
-    const rawText = getVerseTextByRiwayat(verse, settings.riwayat, warshTexts);
-    const arabicText =
-      settings.riwayat === 'hafs'
-        ? stripLeadingBismillah(rawText, verse.surah, verse.ayah)
-        : rawText;
-    try {
-      const {dataUrl, filename} = await renderHeartStoryCardPng(
-        {
-          id: key,
-          mood: 'calm',
-          surah: verse.surah,
-          ayah: verse.ayah,
-          page: verse.page,
-          surahNameAr: sMeta?.nameAr.replace('سُورَةُ ', '') || '',
-          surahNameEn: sMeta?.nameEn || `Surah ${verse.surah}`,
-          arabic: arabicText,
-          translationEn:
-            translations?.[verse.index] ||
-            `${sMeta?.nameEn || 'Quran'} (${verse.surah}:${verse.ayah})`,
-          reflectionEn: `Madani Mushaf · Page ${verse.page}`,
-          reflectionAr: `مصحف المدينة المنورة · صفحة ${toArabicDigits(verse.page)}`,
-        },
-        lang
-      );
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setStorySavedKey(key);
-      setTimeout(() => setStorySavedKey(null), 2000);
-    } catch {
-      // ignore canvas failure
-    }
-  };
-
-  const actionKey = actionMenuVerse
-    ? `${actionMenuVerse.surah}:${actionMenuVerse.ayah}`
-    : null;
-  const isActionVerseBookmarked = !!actionKey && bookmarkIds.has(actionKey);
   const numFmt = (n: number) => (lang === 'ar' ? toArabicDigits(n) : String(n));
 
   return (
@@ -866,10 +813,7 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                               isPlaying &&
                               playingSurah === verse.surah &&
                               playingAyah === verse.ayah;
-                            const isSelected =
-                              selectedAyahKey === ayahKey ||
-                              actionKey === ayahKey ||
-                              isActiveAudio;
+                            const isSelected = selectedAyahKey === ayahKey || isActiveAudio;
                             const isBookmarked = bookmarkIds.has(ayahKey);
                             const isRevealed = !hifzMode || revealedAyahKeys.has(ayahKey);
                             const rawText = getVerseTextByRiwayat(
@@ -1035,8 +979,7 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                               playingSurah === verse.surah &&
                               playingAyah === verse.ayah &&
                               isPlaying;
-                            const isSelected =
-                              selectedAyahKey === ayahKey || actionKey === ayahKey;
+                            const isSelected = selectedAyahKey === ayahKey || isActiveAudio;
                             const isBookmarked = bookmarkIds.has(ayahKey);
                             const isRevealed = !hifzMode || revealedAyahKeys.has(ayahKey);
                             const rawText = getVerseTextByRiwayat(
@@ -1168,130 +1111,6 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
           <Maximize2 className="h-3.5 w-3.5 text-[#D97706]" />
           <span>{t.exitFocus}</span>
         </button>
-      )}
-
-      {/* Tap-Ayah Floating Action Menu (Play, Tafsir, Bookmark, Story Card, Share, Copy) */}
-      {actionMenuVerse && (
-        <div
-          role="region"
-          data-testid="ayah-action-popover"
-          aria-label={`Actions for Ayah ${actionMenuVerse.surah}:${actionMenuVerse.ayah}`}
-          className="fixed bottom-[calc(9.1rem+env(safe-area-inset-bottom,0px))] md:bottom-[82px] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-2xl rounded-full border border-amber-500/30 bg-white/98 dark:bg-[#221914]/98 md:backdrop-blur-md px-3.5 py-2 shadow-xl flex items-center justify-between gap-2"
-        >
-          <span className="text-xs font-bold text-[#B45309] dark:text-[#FBBF24] tabular-nums px-1 whitespace-nowrap">
-            {actionMenuVerse.surah}:{actionMenuVerse.ayah}
-          </span>
-
-          <div className="flex items-center gap-1 overflow-x-auto">
-            <button
-              type="button"
-              onClick={() => {
-                onPlayAyah(actionMenuVerse.surah, actionMenuVerse.ayah);
-                setActionMenuVerse(null);
-              }}
-              className="inline-flex items-center gap-1 rounded-full bg-[#D97706] px-3 py-1.5 text-xs font-semibold text-white whitespace-nowrap hover:bg-[#B45309]"
-            >
-              <Play className="h-3.5 w-3.5 fill-current" />
-              <span>{t.playFromHere}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                const target = actionMenuVerse;
-                setActionMenuVerse(null);
-                onOpenTafsir(target);
-              }}
-              className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 px-2.5 py-1.5 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] whitespace-nowrap"
-            >
-              <BookOpenText className="h-3.5 w-3.5 text-[#B45309] dark:text-[#FBBF24]" />
-              <span>{t.tafsir}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onToggleBookmark(actionMenuVerse)}
-              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
-                isActionVerseBookmarked
-                  ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
-                  : 'border-amber-500/20 text-[#2D231E] dark:text-[#FAF5EE]'
-              }`}
-            >
-              <Bookmark
-                className={`h-3.5 w-3.5 ${isActionVerseBookmarked ? 'fill-current' : ''}`}
-              />
-              <span className="hidden sm:inline">
-                {isActionVerseBookmarked ? t.bookmarked : t.bookmark}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => void handleStoryCardExport(actionMenuVerse)}
-              title={t.saveStoryCardBtn}
-              className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 px-2.5 py-1.5 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] whitespace-nowrap"
-            >
-              {storySavedKey === actionKey ? (
-                <Check className="h-3.5 w-3.5 text-[#D97706]" />
-              ) : (
-                <ImageIcon className="h-3.5 w-3.5 text-[#B45309] dark:text-[#FBBF24]" />
-              )}
-              <span className="hidden sm:inline">{t.saveStoryCardBtn}</span>
-            </button>
-
-            {hifzMode && actionKey && (
-              <button
-                type="button"
-                onClick={() => {
-                  onToggleRevealAyah(actionKey);
-                  setActionMenuVerse(null);
-                }}
-                className="inline-flex items-center gap-1 rounded-full border border-amber-500/25 px-2.5 py-1.5 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] whitespace-nowrap"
-              >
-                {revealedAyahKeys.has(actionKey) ? (
-                  <EyeOff className="h-3.5 w-3.5" />
-                ) : (
-                  <Eye className="h-3.5 w-3.5" />
-                )}
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={() => void handleShareVerse(actionMenuVerse)}
-              title={t.shareWord}
-              className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 px-2.5 py-1.5 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] whitespace-nowrap"
-            >
-              {sharedKey === actionKey ? (
-                <Check className="h-3.5 w-3.5 text-[#D97706]" />
-              ) : (
-                <Share2 className="h-3.5 w-3.5 text-[#B45309] dark:text-[#FBBF24]" />
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => void handleCopyVerse(actionMenuVerse)}
-              title={t.copy}
-              className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 px-2.5 py-1.5 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] whitespace-nowrap"
-            >
-              {copiedKey === actionKey ? (
-                <Check className="h-3.5 w-3.5 text-[#D97706]" />
-              ) : (
-                <Copy className="h-3.5 w-3.5" />
-              )}
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setActionMenuVerse(null)}
-            aria-label="Close Ayah action menu"
-            className="min-h-[30px] min-w-[30px] flex items-center justify-center rounded-full text-[#6E5649] dark:text-[#D6C7B8] hover:text-[#2D231E]"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
       )}
     </div>
   );

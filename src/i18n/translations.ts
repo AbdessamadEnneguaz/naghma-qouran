@@ -1,4 +1,4 @@
-export type AppLang = 'en' | 'ar';
+export type AppLang = 'en' | 'ar' | 'fr';
 
 export interface Translations {
   appName: string;
@@ -22,7 +22,7 @@ export interface Translations {
   themeToLight: string;
   themeToDark: string;
   offlineBanner: string;
-  // Home & Hero
+  // Home & Hero & Reading Streak
   lastReadLabel: string;
   continueReading: string;
   beginRecitation: string;
@@ -38,6 +38,10 @@ export interface Translations {
   jumpPlaceholder: string;
   goBtn: string;
   quickOpen: string;
+  readingStreakTitle: string;
+  streakDaysUnit: string;
+  pagesTodayLabel: string;
+  totalPagesReadLabel: string;
   tabSurahs: string;
   tabJuz: string;
   tabBookmarks: string;
@@ -55,6 +59,11 @@ export interface Translations {
   noBookmarksDesc: string;
   noSurahMatch: string;
   offlineTag: string;
+  // Bookmark Categories
+  bookmarkCategoryLabel: string;
+  catWird: string;
+  catMemorization: string;
+  catFavorites: string;
   // Prayer Times & Smart Features
   prayerTimesTitle: string;
   remainingTimeLabel: string;
@@ -97,7 +106,7 @@ export interface Translations {
   nextSurah: string;
   prevSurah: string;
   surahWord: string;
-  // Tap-Ayah Floating Menu & Inline Actions
+  // Tap-Ayah & Verse Sheet Actions
   playFromHere: string;
   bookmark: string;
   bookmarked: string;
@@ -125,12 +134,18 @@ export interface Translations {
   wakeLockActive: string;
   wakeLockOff: string;
   wakeLockDesc: string;
-  // Tafsir Drawer
+  // Verse Bottom Sheet (Tafsir / EN / FR / Hifz Loop / Share Card)
   tafsirMuyassarTab: string;
   englishTranslationTab: string;
+  frenchTranslationTab: string;
   listenAyah: string;
   loadingTafsir: string;
   loadingTranslation: string;
+  loadingFrenchTranslation: string;
+  hifzRepeatLabel: string;
+  shareCardBtn: string;
+  cardFormatStory: string;
+  cardFormatSquare: string;
   // Search Modal
   searchPlaceholder: string;
   clear: string;
@@ -138,7 +153,7 @@ export interface Translations {
   searchFooterNote: string;
   noSearchMatch: string;
   matchesFound: string;
-  // Vault View (Bookmarks + Offline + Install)
+  // Vault View
   vaultTitle: string;
   vaultSubtitle: string;
   quranTextStoredTitle: string;
@@ -173,7 +188,7 @@ export interface Translations {
   apkStep1: string;
   apkStep2: string;
   apkStep3: string;
-  // Tarteel Hifz, Voice Recite & Focus Mode
+  // Hifz, Voice Recite & Focus Mode
   hifzMode: string;
   hifzActiveBanner: string;
   hifzHintLabel: string;
@@ -204,7 +219,7 @@ export interface Translations {
   bentoTalqeenSubtitle: string;
   bentoHeartTitle: string;
   bentoHeartSubtitle: string;
-  // Khatma Planner & Notifications
+  // Khatma & Notifications (Daily Wird + Friday Al-Kahf)
   khatmaTitle: string;
   khatmaSubtitle: string;
   khatmaGoalDuration: string;
@@ -230,6 +245,10 @@ export interface Translations {
   sendTestReminderBtn: string;
   testReminderSent: string;
   notificationBlockedHint: string;
+  fridayKahfTitle: string;
+  fridayKahfDesc: string;
+  openKahfBtn: string;
+  testKahfBtn: string;
   // Adhkar & Tasbih
   adhkarTitle: string;
   adhkarSabah: string;
@@ -240,7 +259,7 @@ export interface Translations {
   tapToCountHint: string;
   dhikrCompletedHint: string;
   allAdhkarDone: string;
-  // Talqeen Memorization Mode
+  // Talqeen
   talqeenTitle: string;
   talqeenDesc: string;
   talqeenEnabled: string;
@@ -258,6 +277,15 @@ export interface Translations {
   storyCardReadyTitle: string;
   storyCardReadyDesc: string;
   downloadPngAgain: string;
+  // First-Launch Onboarding
+  onboardingTitle: string;
+  onboardingSubtitle: string;
+  onboardingStep1: string;
+  onboardingStep2: string;
+  onboardingStep3: string;
+  onboardingNext: string;
+  onboardingSkip: string;
+  onboardingStart: string;
 }
 
 export const TRANSLATIONS: Record<AppLang, Translations> = {
@@ -279,7 +307,7 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     mobileLangLabel: 'Language',
     browseAllSurahsBtn: 'Browse Surahs',
     allJuzFilter: "All Juz'",
-    langToggleLabel: 'عربي',
+    langToggleLabel: 'FR',
     themeToLight: 'Switch to Warm Sand light mode',
     themeToDark: 'Switch to Warm Espresso dark mode',
     offlineBanner: 'Offline Mode — Reading from local IndexedDB Quran Vault',
@@ -298,6 +326,10 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     jumpPlaceholder: 'Page 1–604',
     goBtn: 'Go',
     quickOpen: 'Quick Open:',
+    readingStreakTitle: 'Reading Streak',
+    streakDaysUnit: 'days',
+    pagesTodayLabel: 'Today',
+    totalPagesReadLabel: 'Pages Read',
     tabSurahs: '114 Surahs',
     tabJuz: "30 Juz'",
     tabBookmarks: 'Bookmarks',
@@ -315,6 +347,10 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     noBookmarksDesc: 'Tap any Ayah while reading to bookmark it offline.',
     noSurahMatch: 'No Surahs matched your filter.',
     offlineTag: 'Offline',
+    bookmarkCategoryLabel: 'Category',
+    catWird: 'Daily Wird',
+    catMemorization: 'Memorization',
+    catFavorites: 'Favorites',
     prayerTimesTitle: 'Prayer Times',
     remainingTimeLabel: 'Remaining Time',
     smartFeaturesTitle: 'Smart Features',
@@ -380,11 +416,17 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     wakeLockActive: 'Screen Awake: On',
     wakeLockOff: 'Screen Awake: Off',
     wakeLockDesc: 'Prevents screen sleep during long recitation sessions',
-    tafsirMuyassarTab: 'التفسير الميسر (Al-Muyassar)',
-    englishTranslationTab: 'English Translation',
+    tafsirMuyassarTab: 'التفسير الميسر',
+    englishTranslationTab: 'English',
+    frenchTranslationTab: 'Français',
     listenAyah: 'Listen Ayah',
     loadingTafsir: 'Loading Tafsir Al-Muyassar...',
     loadingTranslation: 'Loading English translation...',
+    loadingFrenchTranslation: 'Loading French translation...',
+    hifzRepeatLabel: 'Hifz Loop',
+    shareCardBtn: 'Share Image Card',
+    cardFormatStory: '9:16 Story',
+    cardFormatSquare: '1:1 Post',
     searchPlaceholder: 'Search Arabic (no tashkeel needed), English, 2:255, or p:604...',
     clear: 'Clear',
     searchShortcutsTitle: 'Instant Offline Search & Jump Shortcuts',
@@ -415,7 +457,7 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     downloadPageHeading: 'Najm Quran for Android',
     downloadPageSubheading:
       'Carry the complete 604-page Madani Mushaf, Hafs & Warsh narrations, Prayer Times, Qibla compass, and Adhkar offline on Android.',
-    downloadVersionMeta: 'v2.5.0 · Free · 6.0 MB · Live OTA Updates',
+    downloadVersionMeta: 'v2.5.0 · Free · 6.4 MB · Live OTA Updates',
     downloadHighlightsTitle: 'Built for Serene Daily Recitation',
     downloadHighlight1: '604-Page Madani Mushaf with zero-gap Hafs & Warsh audio',
     downloadHighlight2: 'Accurate Qibla Compass & astronomical Prayer Times',
@@ -481,6 +523,10 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     sendTestReminderBtn: 'Send Test Reminder',
     testReminderSent: 'Reminder preview triggered!',
     notificationBlockedHint: 'Browser notifications are blocked in settings — in-app toast preview displayed.',
+    fridayKahfTitle: 'Friday Surah Al-Kahf Reminder',
+    fridayKahfDesc: 'Weekly Friday morning reminder to recite Surah Al-Kahf',
+    openKahfBtn: 'Read Al-Kahf',
+    testKahfBtn: 'Preview Al-Kahf Alert',
     adhkarTitle: 'Adhkar & Interactive Tasbih',
     adhkarSabah: 'Morning',
     adhkarMasaa: 'Evening',
@@ -506,6 +552,14 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     storyCardReadyTitle: 'Desert Gold Story Card Exported',
     storyCardReadyDesc: '1080×1920 PNG saved locally for WhatsApp & Instagram',
     downloadPngAgain: 'Download PNG',
+    onboardingTitle: 'Welcome to Najm Quran',
+    onboardingSubtitle: 'Personalize your serene Quran workspace in three quick steps',
+    onboardingStep1: 'Choose App Language',
+    onboardingStep2: 'Choose Quran Narration',
+    onboardingStep3: 'Pick Favorite Reciter',
+    onboardingNext: 'Continue',
+    onboardingSkip: 'Skip',
+    onboardingStart: 'Start Reading',
   },
   ar: {
     appName: 'نَجم القرآن',
@@ -544,6 +598,10 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     jumpPlaceholder: 'صفحة ١–٦٠٤',
     goBtn: 'انتقال',
     quickOpen: 'وصول سريع:',
+    readingStreakTitle: 'سلسلة القراءة',
+    streakDaysUnit: 'يوم',
+    pagesTodayLabel: 'اليوم',
+    totalPagesReadLabel: 'إجمالي الصفحات',
     tabSurahs: 'السور (١١٤)',
     tabJuz: 'الأجزاء (٣٠)',
     tabBookmarks: 'العلامات',
@@ -561,6 +619,10 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     noBookmarksDesc: 'اضغط على أي آية أثناء القراءة لحفظها والعودة إليها لاحقاً.',
     noSurahMatch: 'لا توجد سورة مطابقة للبحث.',
     offlineTag: 'محفوظة',
+    bookmarkCategoryLabel: 'تصنيف العلامة',
+    catWird: 'الورد اليومي',
+    catMemorization: 'الحفظ',
+    catFavorites: 'المفضلة',
     prayerTimesTitle: 'مواقيت الصلاة',
     remainingTimeLabel: 'الوقت المتبقي',
     smartFeaturesTitle: 'الأدوات الذكية',
@@ -627,10 +689,16 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     wakeLockOff: 'الشاشة مضاءة: متوقف',
     wakeLockDesc: 'يمنع انطفاء الشاشة تلقائياً أثناء القراءة والتلاوة',
     tafsirMuyassarTab: 'التفسير الميسر',
-    englishTranslationTab: 'الترجمة الإنجليزية',
+    englishTranslationTab: 'English',
+    frenchTranslationTab: 'Français',
     listenAyah: 'سماع الآية',
     loadingTafsir: 'جارٍ تحميل التفسير الميسر...',
-    loadingTranslation: 'جارٍ تحميل الترجمة...',
+    loadingTranslation: 'جارٍ تحميل الترجمة الإنجليزية...',
+    loadingFrenchTranslation: 'جارٍ تحميل الترجمة الفرنسية...',
+    hifzRepeatLabel: 'تكرار الحفظ',
+    shareCardBtn: 'بطاقة صورة للمشاركة',
+    cardFormatStory: 'قصة ٩:١٦',
+    cardFormatSquare: 'مربع ١:١',
     searchPlaceholder: 'ابحث في الآيات (بدون تشكيل) أو اكتب 2:255 أو p:604...',
     clear: 'مسح',
     searchShortcutsTitle: 'اختصارات البحث والانتقال الفوري',
@@ -661,7 +729,7 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     downloadPageHeading: 'نَجم القرآن لأجهزة أندرويد',
     downloadPageSubheading:
       'احمل مصحف المدينة (٦٠٤ صفحة) بروايتي حفص وورش ومواقيت الصلاة وبوصلة القبلة والأذكار دون اتصال.',
-    downloadVersionMeta: 'v2.5.0 · مجاني · 6.0 MB · تحديث تلقائي مباشر',
+    downloadVersionMeta: 'v2.5.0 · مجاني · 6.4 MB · تحديث تلقائي مباشر',
     downloadHighlightsTitle: 'تجربة خاشعة ومتكاملة دون إنترنت',
     downloadHighlight1: 'مصحف المدينة المنورة (٦٠٤ صفحة) مع تلاوة متصلة بلا تقطع',
     downloadHighlight2: 'بوصلة القبلة الدقيقة ومواقيت الصلاة الفلكية',
@@ -727,6 +795,10 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     sendTestReminderBtn: 'إرسال إشعار تجريبي',
     testReminderSent: 'تم إرسال التذكير!',
     notificationBlockedHint: 'إشعارات المتصفح محظورة حالياً — تم عرض معاينة الإشعار داخل التطبيق.',
+    fridayKahfTitle: 'تذكير سورة الكهف يوم الجمعة',
+    fridayKahfDesc: 'تنبيه أسبوعي كل صباح جمعة لقراءة سورة الكهف',
+    openKahfBtn: 'قراءة سورة الكهف',
+    testKahfBtn: 'معاينة تنبيه الجمعة',
     adhkarTitle: 'الأذكار والتسبيح التفاعلي',
     adhkarSabah: 'الصباح',
     adhkarMasaa: 'المساء',
@@ -752,5 +824,285 @@ export const TRANSLATIONS: Record<AppLang, Translations> = {
     storyCardReadyTitle: 'تم تصميم بطاقة القصة الذهبية',
     storyCardReadyDesc: 'بطاقة PNG عالية الدقة جاهزة للمشاركة على واتساب وإنستغرام',
     downloadPngAgain: 'تنزيل الصورة مجدداً',
+    onboardingTitle: 'مرحباً بك في نَجم القرآن',
+    onboardingSubtitle: 'خصّص تجربة قراءة المصحف الشريف في ثلاث خطوات سريعة',
+    onboardingStep1: 'اختر لغة التطبيق',
+    onboardingStep2: 'اختر الرواية المعتمدة',
+    onboardingStep3: 'اختر القارئ المفضل',
+    onboardingNext: 'التالي',
+    onboardingSkip: 'تخطي',
+    onboardingStart: 'ابدأ القراءة',
+  },
+  fr: {
+    appName: 'Najm Quran',
+    navHome: 'Accueil',
+    navSurahs: 'Sourates',
+    navMushaf: 'Coran',
+    navQibla: 'Qibla',
+    navAdhkar: 'Tasbih',
+    navKhatma: 'Khatma',
+    navVault: 'Coffre',
+    navPrivacy: 'Confidentialité',
+    navMore: 'Plus',
+    footerCraftedBy: 'Conçu et développé par Abdessamad Enneguaz · تطوير وتصميم: عبد الصمد',
+    footerCopyright: '© 2026 Najm Quran (نَجم القرآن). Tous droits réservés.',
+    mobileMenuTitle: 'Menu Najm',
+    mobileThemeLabel: 'Apparence',
+    mobileLangLabel: 'Langue',
+    browseAllSurahsBtn: 'Parcourir les sourates',
+    allJuzFilter: 'Tous les Juz',
+    langToggleLabel: 'عربي',
+    themeToLight: 'Passer au mode Sable Chaud',
+    themeToDark: 'Passer au mode Expresso Nuit',
+    offlineBanner: 'Mode hors ligne — Lecture depuis la base locale IndexedDB',
+    lastReadLabel: 'Dernière lecture',
+    continueReading: 'Dernière lecture',
+    beginRecitation: 'Dernière lecture',
+    resumePage: 'Reprendre la lecture',
+    openMushafPage1: 'Ouvrir le Coran',
+    dailyWird: 'Wird du jour · Al-Kahf',
+    searchBtn: 'Rechercher',
+    narrationLabel: 'Lecture · الرواية',
+    hafsLabel: "Hafs 'an 'Asim · حفص",
+    warshLabel: "Warsh 'an Nafi' · ورش",
+    surahsCached: 'Sourates en cache',
+    jumpToPageLabel: 'Aller à la page du Moushaf (1 – 604)',
+    jumpPlaceholder: 'Page 1–604',
+    goBtn: 'Aller',
+    quickOpen: 'Accès rapide :',
+    readingStreakTitle: 'Série de lecture',
+    streakDaysUnit: 'jours',
+    pagesTodayLabel: "Aujourd'hui",
+    totalPagesReadLabel: 'Pages lues',
+    tabSurahs: '114 Sourates',
+    tabJuz: '30 Juz',
+    tabBookmarks: 'Favoris',
+    filterSurahPlaceholder: 'Filtrer par nom ou numéro...',
+    filterAll: 'Tout',
+    filterMeccan: 'Mecquoise',
+    filterMedinan: 'Médinoise',
+    meccan: 'Mecquoise',
+    medinan: 'Médinoise',
+    ayahsWord: 'Versets',
+    pageShort: 'p.',
+    juzWord: 'Juz',
+    startsAtPage: 'Commence page',
+    noBookmarksTitle: 'Aucun marque-page enregistré',
+    noBookmarksDesc: 'Touchez un verset pendant la lecture pour le sauvegarder hors ligne.',
+    noSurahMatch: 'Aucune sourate ne correspond à votre filtre.',
+    offlineTag: 'Hors ligne',
+    bookmarkCategoryLabel: 'Catégorie',
+    catWird: 'Wird quotidien',
+    catMemorization: 'Mémorisation',
+    catFavorites: 'Favoris',
+    prayerTimesTitle: 'Horaires de Prière',
+    remainingTimeLabel: 'Temps restant',
+    smartFeaturesTitle: 'Outils Spirituels',
+    featureReminder: 'Rappels',
+    featureMemorize: 'Mémoriser',
+    featureRuqyah: 'Sérénité',
+    featureDuaQa: 'Adhkar',
+    qiblaTitle: 'Boussole Qibla',
+    qiblaAngleLabel: "Angle vers la Qibla",
+    useGpsBtn: 'Utiliser GPS',
+    selectCityLabel: 'Ville',
+    compassCalibrationHint: 'Tournez la boussole ou activez les capteurs',
+    modeQuran: 'Coran',
+    modeSurah: 'Sourate',
+    modeJuz: 'Juz',
+    modePage: 'Page',
+    backToSurahs: 'Retour aux sourates',
+    mushafPageMode: 'Page Moushaf',
+    surahViewMode: 'Vue Sourate',
+    downloadSurahOffline: 'Télécharger hors ligne',
+    offlineShort: 'Hors ligne',
+    offlineReady: 'Disponible hors ligne',
+    displaySettings: "Réglages d'affichage",
+    arabicFontSize: 'Taille du texte arabe',
+    lineSpacing: 'Interligne',
+    uthmaniTypeface: 'Calligraphie Uthmani',
+    englishTranslation: 'Traduction',
+    translationVisible: 'Traduction : Visible',
+    translationHidden: 'Traduction : Masquée',
+    madaniMushaf: 'Moushaf de Médine',
+    pageWord: 'Page',
+    ofWord: 'sur',
+    versesWord: 'Versets',
+    playSurah: 'Écouter la sourate',
+    nextPage: 'Page suivante',
+    prevPage: 'Page préc.',
+    nextSurah: 'Sourate suiv.',
+    prevSurah: 'Sourate préc.',
+    surahWord: 'Sourate',
+    playFromHere: 'Écouter',
+    bookmark: 'Marquer',
+    bookmarked: 'Enregistré',
+    tafsir: 'Tafsir',
+    copy: 'Copier',
+    copied: 'Copié',
+    shareWord: 'Partager',
+    fullSurah: 'Sourate complète',
+    repeatOff: 'Répétition : Non',
+    repeatAyah: 'Répéter Verset',
+    repeatSurah: 'Répéter Sourate',
+    repeatShort: 'Répéter',
+    reciterLabel: 'Récitateur (Warsh & Hafs)',
+    sleepTimerOff: 'Minuteur : Arrêt',
+    minutesUnit: 'min',
+    endOfSurah: 'Fin de sourate',
+    elapsed: 'Écoulé',
+    duration: 'Durée',
+    warshGroup: "Warsh 'an Nafi' (ورش عن نافع)",
+    hafsGroup: "Hafs 'an 'Asim (حفص عن عاصم)",
+    audioSyncOffsetLabel: 'Décalage de synchro des versets',
+    resetOffsetLabel: 'Réinitialiser',
+    wakeLockLabel: 'Garder écran allumé',
+    wakeLockActive: 'Écran actif : Oui',
+    wakeLockOff: 'Écran actif : Non',
+    wakeLockDesc: 'Empêche la mise en veille pendant la lecture',
+    tafsirMuyassarTab: 'التفسير الميسر',
+    englishTranslationTab: 'English',
+    frenchTranslationTab: 'Français',
+    listenAyah: 'Écouter le verset',
+    loadingTafsir: 'Chargement du Tafsir Al-Muyassar...',
+    loadingTranslation: 'Chargement de la traduction anglaise...',
+    loadingFrenchTranslation: 'Chargement de la traduction française...',
+    hifzRepeatLabel: 'Boucle Hifz',
+    shareCardBtn: 'Partager en image',
+    cardFormatStory: 'Story 9:16',
+    cardFormatSquare: 'Carré 1:1',
+    searchPlaceholder: 'Rechercher en arabe (sans harakat), français, anglais, 2:255 ou p:604...',
+    clear: 'Effacer',
+    searchShortcutsTitle: 'Recherche rapide & raccourcis',
+    searchFooterNote: 'Fonctionne 100% hors ligne sur les 6 236 versets.',
+    noSearchMatch: 'Aucun verset ou sourate trouvé.',
+    matchesFound: 'résultats',
+    vaultTitle: 'Marque-pages & Coffre Hors Ligne',
+    vaultSubtitle: 'Gérez vos versets sauvegardés, récitations audio et installation',
+    quranTextStoredTitle: 'Coran complet (604 pages) stocké hors ligne',
+    quranTextStoredDesc: '114 Sourates · 6 236 Versets · Hafs, Warsh et Tafsir en cache IndexedDB',
+    audioCachedLabel: 'Audio en cache',
+    totalStorageLabel: 'Stockage App',
+    quickDownloadFor: 'Téléchargement rapide pour',
+    saveBtn: 'Sauver',
+    savedBtn: 'Sauvé',
+    savedAudioTitle: 'Audio hors ligne sauvegardé',
+    clearAllAudio: 'Tout effacer',
+    noAudioSavedDesc: 'Aucune récitation enregistrée pour le moment.',
+    installAppTitle: 'Installer Najm Quran (APK & PWA)',
+    installAppDesc: "Installez Najm Quran comme application autonome hors ligne sur Android, iOS ou PC.",
+    installNowBtn: 'Installer App Web',
+    installedStandalone: 'Najm Quran fonctionne en mode application autonome.',
+    downloadApkBtn: 'Télécharger APK',
+    downloadApkHeroCta: 'Télécharger APK Android',
+    downloadApkTitle: 'Application Android (APK)',
+    downloadApkDesc: 'Téléchargez l’APK Android pour lire, écouter et consulter les prières hors ligne.',
+    downloadApkCta: 'Télécharger najm-quran.apk',
+    downloadPageHeading: 'Najm Quran pour Android',
+    downloadPageSubheading:
+      'Emportez le Moushaf de Médine complet (604 pages), Hafs & Warsh, horaires de prière et boussole Qibla hors ligne.',
+    downloadVersionMeta: 'v2.5.0 · Gratuit · 6.4 Mo · Mises à jour OTA en direct',
+    downloadHighlightsTitle: 'Conçu pour une récitation sereine',
+    downloadHighlight1: 'Moushaf complet de 604 pages avec audio Hafs & Warsh sans coupure',
+    downloadHighlight2: 'Boussole Qibla précise & horaires de prière astronomiques',
+    downloadHighlight3: 'Adhkar du matin, du soir et après la prière avec compteur Tasbih',
+    downloadHighlight4: 'Planificateur de Khatma adaptatif avec rappels quotidiens',
+    downloadAndroidStudioTitle: 'Prêt pour Capacitor & Android Studio',
+    downloadAndroidStudioDesc:
+      'Configuré avec capacitor.config.json (com.najmquran.app) pour compiler votre APK signé.',
+    apkStep1: '1. Appuyez sur Télécharger najm-quran.apk pour enregistrer le fichier.',
+    apkStep2: '2. Ouvrez le fichier téléchargé et autorisez l’installation si demandé.',
+    apkStep3: '3. Appuyez sur Installer et lancez Najm Quran depuis votre écran.',
+    hifzMode: 'Masque Hifz',
+    hifzActiveBanner: 'Mode Hifz · Touchez un verset masqué pour le révéler ou réciter à voix haute',
+    hifzHintLabel: '1er Mot',
+    revealAll: 'Tout révéler',
+    hideAll: 'Tout masquer',
+    micRecite: 'Réciter',
+    micListening: 'Écoute (ar-SA)... Récitez à voix haute',
+    micStop: 'Arrêter micro',
+    micUnsupported: 'La reconnaissance vocale n’est pas prise en charge sur ce navigateur.',
+    micPermissionDenied: 'Permission microphone refusée ou indisponible.',
+    micMatchedWords: 'trouvés',
+    micSkippedHint: 'Mot sauté ou différent — vérifiez le mot souligné',
+    focusModeHint: 'Touchez la page pour quitter le mode focus',
+    exitFocus: 'Quitter Focus',
+    settingsBtn: 'Réglages',
+    playReciter: 'Lire',
+    pauseReciter: 'Pause',
+    closeWord: 'Fermer',
+    prevWord: 'Préc.',
+    nextWord: 'Suiv.',
+    bentoSectionTitle: 'Espace Spirituel Quotidien',
+    bentoKhatmaTitle: 'Planificateur Khatma',
+    bentoKhatmaSubtitle: 'Objectif quotidien adaptatif',
+    bentoAdhkarTitle: 'Adhkar & Tasbih',
+    bentoAdhkarSubtitle: 'Compteur et invocations',
+    bentoTalqeenTitle: 'Mémorisation Talqeen',
+    bentoTalqeenSubtitle: 'Écouter et répéter avec pause',
+    bentoHeartTitle: 'Versets pour le Cœur',
+    bentoHeartSubtitle: 'Guide spirituel & cartes image',
+    khatmaTitle: 'Planificateur Adaptatif de Khatma',
+    khatmaSubtitle: 'Recalcule automatiquement les pages quotidiennes restantes',
+    khatmaGoalDuration: 'Durée de la Khatma',
+    daysUnit: 'jours',
+    customDaysLabel: 'Jours personnalisés',
+    applyBtn: 'Valider',
+    daysRemainingLabel: 'jours restants',
+    paceAhead: 'En avance',
+    paceOnTrack: 'Dans les temps',
+    paceAdaptiveCatchup: 'Rythme recalculé',
+    khatmaCompletedLabel: 'Khatma terminée',
+    todayWirdDone: 'Alhamdulillah ! Votre lecture du jour est complète.',
+    openTodayPagesBtn: 'Ouvrir la page du jour',
+    markTodayDoneBtn: 'Marquer terminé',
+    logCustomPagesLabel: 'Enregistrer des pages lues',
+    addPagesBtn: 'Ajouter',
+    resetKhatmaBtn: 'Réinitialiser le plan',
+    dailyReminderTitle: 'Rappel Quotidien de Khatma',
+    dailyReminderDesc: 'Notifications via navigateur & Service Worker PWA',
+    enableReminderBtn: 'Activer le rappel',
+    reminderEnabledLabel: 'Rappel actif',
+    reminderTimeLabel: 'Heure souhaitée',
+    sendTestReminderBtn: 'Tester le rappel',
+    testReminderSent: 'Aperçu du rappel affiché !',
+    notificationBlockedHint: 'Les notifications système sont bloquées — aperçu affiché dans l’app.',
+    fridayKahfTitle: 'Rappel du Vendredi — Sourate Al-Kahf',
+    fridayKahfDesc: 'Notification hebdomadaire chaque vendredi matin pour lire Al-Kahf',
+    openKahfBtn: 'Lire Al-Kahf',
+    testKahfBtn: 'Tester Al-Kahf',
+    adhkarTitle: 'Adhkar & Tasbih Interactif',
+    adhkarSabah: 'Matin',
+    adhkarMasaa: 'Soir',
+    adhkarPostPrayer: 'Après Prière',
+    completedWord: 'complétés',
+    resetAdhkarBtn: 'Réinitialiser la catégorie',
+    tapToCountHint: 'Touchez la carte pour compter',
+    dhikrCompletedHint: 'Terminé — touchez pour continuer',
+    allAdhkarDone: 'Tous les Adhkar complétés',
+    talqeenTitle: 'Mode Talqeen (Écouter & Répéter)',
+    talqeenDesc: 'Répète une plage de versets avec une pause configurable',
+    talqeenEnabled: 'Talqeen : Activé',
+    talqeenOff: 'Talqeen : Désactivé',
+    talqeenRangeLabel: 'Plage de versets',
+    talqeenToWord: 'à',
+    talqeenPauseLabel: 'Pause',
+    talqeenPromptPrefix: 'Répétez à voix haute · Prochain dans',
+    talqeenSkipPause: 'Passer',
+    talqeenSwitchAyahNote: 'Choisissez un récitateur verset par verset pour activer les pauses Talqeen.',
+    heartGuideTitle: 'Versets pour votre Cœur & Ruqyah',
+    saveStoryCardBtn: 'Image Story',
+    openInMushafBtn: 'Ouvrir dans le Moushaf',
+    storyCardReadyTitle: 'Carte Dorée Exportée',
+    storyCardReadyDesc: 'Image PNG prête à être partagée sur WhatsApp & Instagram',
+    downloadPngAgain: 'Télécharger PNG',
+    onboardingTitle: 'Bienvenue sur Najm Quran',
+    onboardingSubtitle: 'Configurez votre espace coranique en 3 étapes rapides',
+    onboardingStep1: 'Choisissez la langue',
+    onboardingStep2: 'Choisissez la lecture (Riwayah)',
+    onboardingStep3: 'Récitateur favori',
+    onboardingNext: 'Continuer',
+    onboardingSkip: 'Passer',
+    onboardingStart: 'Commencer la lecture',
   },
 };

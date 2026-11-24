@@ -8,6 +8,7 @@ import {
   formatHizbLabel,
   getAyahAudioCandidates,
   getAyahAudioUrl,
+  getBookmarkCategory,
   getGlobalAyahNumber,
   getNextAyah,
   getNextSurahAyah,
@@ -17,6 +18,8 @@ import {
   getUpcomingAyahs,
   getUpcomingSurahAyahTargets,
   getUpcomingSurahs,
+  highlightArabicWords,
+  highlightLatinQuery,
   normalizeSpeechWord,
   parseSearchQuery,
   resolveActiveContextTarget,
@@ -302,4 +305,44 @@ test('O(1) Surah/Ayah navigation helpers traverse cross-Surah boundaries without
   ]);
   assert.deepEqual(getUpcomingSurahAyahTargets(114, 5, 3), [{surah: 114, ayah: 6}]);
 });
+
+test('highlightArabicWords preserves whole words without breaking ligatures and searchQuran populates juz', () => {
+  const segs = highlightArabicWords('ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَٰلَمِينَ', 'الحمد');
+  assert.equal(segs.length, 4);
+  assert.equal(segs[0].highlighted, true);
+  assert.equal(segs[0].text, 'ٱلْحَمْدُ');
+  assert.equal(segs[1].highlighted, false);
+
+  const latinSegs = highlightLatinQuery('In the name of Allah, the Compassionate', 'allah');
+  assert.ok(latinSegs.some((s) => s.highlighted && s.text.toLowerCase() === 'allah'));
+
+  assert.equal(
+    getBookmarkCategory({
+      id: '1:1',
+      surah: 1,
+      ayah: 1,
+      page: 1,
+      surahNameAr: '',
+      surahNameEn: '',
+      snippet: '',
+      createdAt: 0,
+    }),
+    'favorites'
+  );
+  assert.equal(
+    getBookmarkCategory({
+      id: '2:255',
+      surah: 2,
+      ayah: 255,
+      page: 42,
+      surahNameAr: '',
+      surahNameEn: '',
+      snippet: '',
+      createdAt: 0,
+      category: 'memorization',
+    }),
+    'memorization'
+  );
+});
+
 

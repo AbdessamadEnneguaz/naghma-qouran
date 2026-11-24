@@ -23,6 +23,7 @@ interface MobileMenuDrawerProps {
   onOpenHeartGuide: () => void;
   onToggleTheme: () => void;
   onToggleLang: () => void;
+  onSelectLang?: (lang: AppLang) => void;
   onCheckUpdates: () => void;
   onApplyUpdate: () => void;
 }
@@ -43,6 +44,7 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
   onOpenHeartGuide,
   onToggleTheme,
   onToggleLang,
+  onSelectLang,
   onCheckUpdates,
   onApplyUpdate,
 }) => {
@@ -238,21 +240,47 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
         </div>
 
         {/* Footer Controls */}
-        <div className="p-4 border-t border-amber-500/12 grid grid-cols-2 gap-2.5">
-          <button
-            type="button"
-            onClick={onToggleTheme}
-            className="rounded-2xl border border-amber-500/20 bg-white/80 dark:bg-[#241B15] py-2.5 px-3 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE]"
-          >
-            {theme === 'dark' ? (lang === 'ar' ? 'الوضع النهاري' : 'Light Mode') : (lang === 'ar' ? 'الوضع الليلي' : 'Dark Mode')}
-          </button>
+        <div className="p-4 border-t border-amber-500/12 space-y-2.5">
+          <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl border border-amber-500/18 bg-white/80 dark:bg-[#241B15]">
+            {(
+              [
+                {id: 'ar', label: 'عربي'},
+                {id: 'en', label: 'EN'},
+                {id: 'fr', label: 'FR'},
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                data-testid={`drawer-lang-${opt.id}`}
+                onClick={() => (onSelectLang ? onSelectLang(opt.id) : onToggleLang())}
+                className={`py-2 rounded-xl text-xs font-bold transition-colors ${
+                  lang === opt.id
+                    ? 'bg-[#D97706] text-white'
+                    : 'text-[#6E5649] dark:text-[#D6C7B8]'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
 
           <button
             type="button"
-            onClick={onToggleLang}
-            className="rounded-2xl border border-amber-500/20 bg-white/80 dark:bg-[#241B15] py-2.5 px-3 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE]"
+            onClick={onToggleTheme}
+            className="w-full rounded-2xl border border-amber-500/20 bg-white/80 dark:bg-[#241B15] py-2.5 px-3 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE]"
           >
-            {t.langToggleLabel}
+            {theme === 'dark'
+              ? lang === 'ar'
+                ? 'الوضع النهاري'
+                : lang === 'fr'
+                  ? 'Mode Jour'
+                  : 'Light Mode'
+              : lang === 'ar'
+                ? 'الوضع الليلي'
+                : lang === 'fr'
+                  ? 'Mode Nuit'
+                  : 'Dark Mode'}
           </button>
         </div>
       </div>

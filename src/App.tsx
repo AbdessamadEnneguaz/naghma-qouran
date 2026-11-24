@@ -1,11 +1,13 @@
 import {Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {AlertCircle, Bell, Loader2, RefreshCw, WifiOff, X} from 'lucide-react';
 import type {
+  BookmarkCategory,
   BookmarkEntry,
   LastReadState,
   OfflineSurahRecord,
   QuranVerse,
   ReaderSettings,
+  ReadingStats,
   Reciter,
   SearchResult,
   SurahMeta,
@@ -20,10 +22,12 @@ import {
   getStorageEstimate,
   loadBookmarks,
   loadLastRead,
+  loadReadingStats,
   loadReciterSyncOffset,
   loadSettings,
   saveBookmarks,
   saveLastRead,
+  saveReadingStats,
   saveReciterSyncOffset,
   saveSettings,
 } from './services/indexedDbVault';
@@ -32,6 +36,7 @@ import {
   getVerseTextByRiwayat,
   loadAllHafsVerses,
   loadEnglishTranslation,
+  loadFrenchTranslation,
   loadPageVerses,
   loadStartupQuranBundle,
   loadTafsirMuyassar,
@@ -40,12 +45,14 @@ import {
 } from './services/quranLoader';
 import {
   clampPage,
+  getBookmarkCategory,
   normalizeSpeechWord,
   resolveActiveContextTarget,
   stripLeadingBismillah,
   tokenizeVerseWords,
   type PageWordTarget,
 } from './utils/quranLogic';
+import {createDefaultReadingStats, recordPageRead} from './utils/readingStreakLogic';
 import {
   parseRouteFromLocation,
   routeToPath,
@@ -102,6 +109,9 @@ const InstallModal = lazy(() =>
 const HeartGuideModal = lazy(() =>
   import('./components/HeartGuideModal').then((m) => ({default: m.HeartGuideModal}))
 );
+const OnboardingModal = lazy(() =>
+  import('./components/OnboardingModal').then((m) => ({default: m.OnboardingModal}))
+);
 
 const DEFAULT_SETTINGS: ReaderSettings = {
   theme: 'light',
@@ -116,13 +126,25 @@ const DEFAULT_SETTINGS: ReaderSettings = {
   audioSyncOffsetSec: 0,
 };
 
+const ONBOARDING_STORAGE_KEY = 'najm_onboarding_done';
+
+function getInitialShowOnboarding(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    if (new URLSearchParams(window.location.search).has('autostart')) return false;
+    return localStorage.getItem(ONBOARDING_STORAGE_KEY) !== '1';
+  } catch {
+    return false;
+  }
+}
+
 function getInitialLang(): AppLang {
   try {
     const saved =
       localStorage.getItem('najm_lang') ||
       localStorage.getItem('naghma_lang') ||
       localStorage.getItem('noor_lang');
-    if (saved === 'ar' || saved === 'en') return saved;
+    if (saved === 'ar' || saved === 'en' || saved === 'fr') return saved;
   } catch {
     // ignore storage access issues
   }
@@ -149,6 +171,7 @@ export default function App() {
   const [warshTexts, setWarshTexts] = useState<string[] | null>(null);
   const [tafsirTexts, setTafsirTexts] = useState<string[] | null>(null);
   const [translations, setTranslations] = useState<string[] | null>(null);
+  const [frenchTexts, setFrenchTexts] = useState<string[] | null>(null);
 
   const [lang, setLang] = useState<AppLang>(getInitialLang);
   const [settings, setSettings] = useState<ReaderSettings>(DEFAULT_SETTINGS);
@@ -156,6 +179,9 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [currentSurahId, setCurrentSurahId] = useState<number>(1);
   const [lastRead, setLastRead] = useState<LastReadState | null>(null);
+  const [readingStats, setReadingStats] = useState<ReadingStats>(() =>
+    createDefaultReadingStats()
+  );
   const [bookmarks, setBookmarks] = useState<BookmarkEntry[]>([]);
   const [selectedVerse, setSelectedVerse] = useState<QuranVerse | null>(null);
   const [highlightedAyahKey, setHighlightedAyahKey] = useState<string | null>(null);
@@ -165,6 +191,7 @@ export default function App() {
   const [hifzFirstWordHint, setHifzFirstWordHint] = useState(false);
   const [revealedAyahKeys, setRevealedAyahKeys] = useState<Set<string>>(() => new Set());
 
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(getInitialShowOnboarding);
   const [showSearch, setShowSearch] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [showHeartModal, setShowHeartModal] = useState(false);
@@ -266,10 +293,11 @@ export default function App() {
 
     async function init() {
       try {
-        const [savedSettings, savedLastRead, savedBookmarks] = await Promise.all([
+        const [savedSettings, savedLastRead, savedBookmarks, savedStats] = await Promise.all([
           loadSettings(),
           loadLastRead(),
           loadBookmarks(),
+          loadReadingStats(),
         ]);
 
         const initialPage = clampPage(savedLastRead?.page || 1);
@@ -289,6 +317,9 @@ export default function App() {
         setSurahs(startup.surahs);
         setPageVerses(startup.initialPageVerses);
         setBookmarks(savedBookmarks);
+        if (savedStats) {
+          setReadingStats(savedStats);
+        }
 
         if (savedLastRead) {
           setLastRead(savedLastRead);
@@ -389,6 +420,20 @@ export default function App() {
     };
   }, [selectedVerse, tafsirTexts, translations]);
 
+  const ensureFrenchTranslationLoaded = useCallback(() => {
+    if (frenchTexts) return;
+    void loadFrenchTranslation()
+      .then((fr) => setFrenchTexts(fr))
+      .catch(() => {});
+  }, [frenchTexts]);
+
+  // Lazy-load French translation when interface is switched to French
+  useEffect(() => {
+    if (lang === 'fr' && !frenchTexts) {
+      ensureFrenchTranslationLoaded();
+    }
+  }, [lang, frenchTexts, ensureFrenchTranslationLoaded]);
+
   // Lazy-load full 6,236 search corpus + translations only when Search modal opens
   useEffect(() => {
     if (!showSearch) return;
@@ -407,10 +452,17 @@ export default function App() {
         })
         .catch(() => {});
     }
+    if (lang === 'fr' && !frenchTexts) {
+      void loadFrenchTranslation()
+        .then((fr) => {
+          if (!cancelled) setFrenchTexts(fr);
+        })
+        .catch(() => {});
+    }
     return () => {
       cancelled = true;
     };
-  }, [showSearch, searchVerses.length, translations]);
+  }, [showSearch, searchVerses.length, translations, lang, frenchTexts]);
 
   // Apply Dark / Light theme class and native colorScheme to <html>
   useEffect(() => {
@@ -469,6 +521,14 @@ export default function App() {
     });
   }, []);
 
+  const recordPageStat = useCallback((page: number) => {
+    setReadingStats((prev) => {
+      const next = recordPageRead(prev, page);
+      void saveReadingStats(next);
+      return next;
+    });
+  }, []);
+
   const persistLastRead = useCallback(
     (surah: number, ayah: number, page: number, mode = settings.readerMode) => {
       const next: LastReadState = {
@@ -483,6 +543,19 @@ export default function App() {
     },
     [settings.readerMode]
   );
+
+  const completeOnboarding = useCallback(() => {
+    try {
+      localStorage.setItem(ONBOARDING_STORAGE_KEY, '1');
+    } catch {
+      // ignore storage errors
+    }
+    setShowOnboarding(false);
+  }, []);
+
+  const cycleLang = useCallback(() => {
+    setLang((prev) => (prev === 'en' ? 'fr' : prev === 'fr' ? 'ar' : 'en'));
+  }, []);
 
   const loadPageIntoView = useCallback(async (page: number): Promise<QuranVerse[]> => {
     const clamped = clampPage(page);
@@ -580,6 +653,7 @@ export default function App() {
     (page: number) => {
       const clamped = clampPage(page);
       setCurrentPage(clamped);
+      recordPageStat(clamped);
       updateSettings({readerMode: 'mushaf'});
       navigateToRoute('mushaf');
 
@@ -599,7 +673,7 @@ export default function App() {
         }
       });
     },
-    [loadPageIntoView, persistLastRead, updateSettings, navigateToRoute]
+    [loadPageIntoView, persistLastRead, recordPageStat, updateSettings, navigateToRoute]
   );
 
   const openSurah = useCallback(
@@ -611,6 +685,7 @@ export default function App() {
       if (ayah <= 1) {
         setCurrentPage(optimisticPage);
         setHighlightedAyahKey(`${surahId}:1`);
+        recordPageStat(optimisticPage);
         persistLastRead(surahId, 1, optimisticPage, 'mushaf');
         void loadPageIntoView(optimisticPage);
       } else {
@@ -619,6 +694,7 @@ export default function App() {
           setCurrentPage(located.page);
           setPageVerses(located.pageVerses);
           setHighlightedAyahKey(`${located.verse.surah}:${located.verse.ayah}`);
+          recordPageStat(located.page);
           persistLastRead(located.verse.surah, located.verse.ayah, located.page, 'mushaf');
         });
       }
@@ -626,7 +702,7 @@ export default function App() {
       updateSettings({readerMode: 'mushaf'});
       navigateToRoute('mushaf');
     },
-    [surahs, loadPageIntoView, persistLastRead, updateSettings, navigateToRoute]
+    [surahs, loadPageIntoView, persistLastRead, recordPageStat, updateSettings, navigateToRoute]
   );
 
   const handleSearchResult = useCallback(
@@ -635,16 +711,17 @@ export default function App() {
       setCurrentSurahId(res.surah);
       setCurrentPage(clamped);
       setHighlightedAyahKey(`${res.surah}:${res.ayah}`);
+      recordPageStat(clamped);
       persistLastRead(res.surah, res.ayah, clamped, 'mushaf');
       void loadPageIntoView(clamped);
       updateSettings({readerMode: 'mushaf'});
       navigateToRoute('mushaf');
     },
-    [loadPageIntoView, persistLastRead, updateSettings, navigateToRoute]
+    [loadPageIntoView, persistLastRead, recordPageStat, updateSettings, navigateToRoute]
   );
 
   const handleToggleBookmark = useCallback(
-    (verse: QuranVerse) => {
+    (verse: QuranVerse, category: BookmarkCategory = 'favorites') => {
       const id = `${verse.surah}:${verse.ayah}`;
       setBookmarks((prev) => {
         const exists = prev.some((b) => b.id === id);
@@ -662,6 +739,38 @@ export default function App() {
             surahNameAr: sMeta?.nameAr || '',
             surahNameEn: sMeta?.nameEn || `Surah ${verse.surah}`,
             snippet,
+            category,
+            createdAt: Date.now(),
+          };
+          next = [entry, ...prev];
+        }
+        void saveBookmarks(next);
+        return next;
+      });
+    },
+    [surahs, settings.riwayat, warshTexts]
+  );
+
+  const handleSetBookmarkCategory = useCallback(
+    (verse: QuranVerse, category: BookmarkCategory) => {
+      const id = `${verse.surah}:${verse.ayah}`;
+      setBookmarks((prev) => {
+        const existingIdx = prev.findIndex((b) => b.id === id);
+        let next: BookmarkEntry[];
+        if (existingIdx !== -1) {
+          next = prev.map((b, idx) => (idx === existingIdx ? {...b, category} : b));
+        } else {
+          const sMeta = surahs.find((s) => s.id === verse.surah);
+          const snippet = getVerseTextByRiwayat(verse, settings.riwayat, warshTexts);
+          const entry: BookmarkEntry = {
+            id,
+            surah: verse.surah,
+            ayah: verse.ayah,
+            page: verse.page,
+            surahNameAr: sMeta?.nameAr || '',
+            surahNameEn: sMeta?.nameEn || `Surah ${verse.surah}`,
+            snippet,
+            category,
             createdAt: Date.now(),
           };
           next = [entry, ...prev];
@@ -817,7 +926,7 @@ export default function App() {
         hidden={isMushafFocus}
         isInstalled={isInstalled}
         onNavigate={navigateToRoute}
-        onToggleLang={() => setLang((prev) => (prev === 'en' ? 'ar' : 'en'))}
+        onToggleLang={cycleLang}
         onToggleTheme={() => updateSettings({theme: settings.theme === 'dark' ? 'light' : 'dark'})}
       />
 
@@ -860,18 +969,31 @@ export default function App() {
         <div
           role="status"
           aria-live="polite"
+          data-testid="khatma-toast"
           className="fixed top-16 end-3 sm:end-6 z-50 w-[calc(100%-1.5rem)] max-w-sm rounded-3xl border border-amber-500/30 bg-white/98 dark:bg-[#211914]/98 md:backdrop-blur-md p-3.5 shadow-2xl flex items-start gap-3"
         >
           <div className="h-8 w-8 rounded-2xl bg-amber-500/15 text-[#D97706] flex items-center justify-center shrink-0">
             <Bell className="h-4 w-4" />
           </div>
-          <div className="min-w-0 flex-1 space-y-0.5">
+          <div className="min-w-0 flex-1 space-y-1">
             <p className="text-xs font-bold text-[#2D231E] dark:text-[#FAF5EE]">
               {khatma.toastPreview.title}
             </p>
             <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8] leading-relaxed">
               {khatma.toastPreview.body}
             </p>
+            {khatma.toastPreview.action === 'kahf' && (
+              <button
+                type="button"
+                onClick={() => {
+                  khatma.dismissToast();
+                  openSurah(18, 1);
+                }}
+                className="mt-1 inline-flex items-center rounded-full bg-[#D97706] px-3 py-1 text-[11px] font-semibold text-white hover:bg-[#B45309]"
+              >
+                {t.openKahfBtn}
+              </button>
+            )}
           </div>
           <button
             type="button"
@@ -895,6 +1017,7 @@ export default function App() {
             offlineRecords={offlineRecords}
             riwayat={settings.riwayat}
             khatmaSchedule={khatma.schedule}
+            readingStats={readingStats}
             talqeenPauseSeconds={player.talqeen.pauseSeconds}
             isInstalled={isInstalled}
             onChangeRiwayat={(riwayat) => updateSettings({riwayat})}
@@ -957,9 +1080,12 @@ export default function App() {
               onMarkTodayComplete={khatma.markTodayComplete}
               onResetPlan={khatma.resetPlan}
               onToggleReminder={khatma.toggleReminder}
+              onToggleFridayKahf={khatma.toggleFridayKahf}
               onChangeReminderTime={khatma.setReminderTime}
               onSendTestReminder={khatma.sendReminderNow}
+              onSendTestKahf={khatma.sendFridayKahfNow}
               onOpenMushafPage={openPage}
+              onOpenKahfSurah={() => openSurah(18, 1)}
             />
           )}
 
@@ -1164,30 +1290,48 @@ export default function App() {
         onToggleTheme={() =>
           updateSettings({theme: settings.theme === 'dark' ? 'light' : 'dark'})
         }
-        onToggleLang={() => setLang((prev) => (prev === 'en' ? 'ar' : 'en'))}
+        onToggleLang={cycleLang}
+        onSelectLang={(nextLang) => setLang(nextLang)}
         onCheckUpdates={() => void updater.checkForUpdates(true)}
         onApplyUpdate={() => void updater.applyUpdateNow()}
       />
 
       <Suspense fallback={null}>
-        {selectedVerse && (
-          <TafsirDrawer
-            lang={lang}
-            t={t}
-            verse={selectedVerse}
-            surahMeta={surahs.find((s) => s.id === selectedVerse.surah)}
-            riwayat={settings.riwayat}
-            warshTexts={warshTexts}
-            tafsirTexts={tafsirTexts}
-            translations={translations}
-            isBookmarked={bookmarks.some(
-              (b) => b.id === `${selectedVerse.surah}:${selectedVerse.ayah}`
-            )}
-            onClose={() => setSelectedVerse(null)}
-            onPlayAyah={(s, a) => void player.playVerse(s, a)}
-            onToggleBookmark={handleToggleBookmark}
-          />
-        )}
+        {selectedVerse && (() => {
+          const existingBm = bookmarks.find(
+            (b) => b.id === `${selectedVerse.surah}:${selectedVerse.ayah}`
+          );
+          return (
+            <TafsirDrawer
+              lang={lang}
+              t={t}
+              verse={selectedVerse}
+              surahMeta={surahs.find((s) => s.id === selectedVerse.surah)}
+              riwayat={settings.riwayat}
+              warshTexts={warshTexts}
+              tafsirTexts={tafsirTexts}
+              translations={translations}
+              frenchTexts={frenchTexts}
+              isBookmarked={Boolean(existingBm)}
+              bookmarkCategory={existingBm ? getBookmarkCategory(existingBm) : undefined}
+              isPlayingThisVerse={
+                player.isPlaying &&
+                player.activeSurah === selectedVerse.surah &&
+                player.activeAyah === selectedVerse.ayah
+              }
+              hifzRepeatTarget={player.hifzRepeatTarget}
+              hifzRepeatDone={player.hifzRepeatDone}
+              onClose={() => setSelectedVerse(null)}
+              onRequestFrenchTranslation={ensureFrenchTranslationLoaded}
+              onPlayAyahWithRepeat={(s, a, repeat) =>
+                void player.playVerseWithRepeat(s, a, repeat)
+              }
+              onSelectHifzRepeat={player.setHifzRepeatTarget}
+              onSetBookmarkCategory={handleSetBookmarkCategory}
+              onToggleBookmark={handleToggleBookmark}
+            />
+          );
+        })()}
 
         {showSearch && (
           <SearchModal
@@ -1197,6 +1341,7 @@ export default function App() {
             verses={searchVerses.length > 0 ? searchVerses : pageVerses}
             surahs={surahs}
             translations={translations}
+            frenchTexts={frenchTexts}
             onClose={() => setShowSearch(false)}
             onSelectResult={handleSearchResult}
           />
@@ -1223,6 +1368,20 @@ export default function App() {
             onClose={() => setShowHeartModal(false)}
             onPlayAyah={(s, a) => void player.playVerse(s, a)}
             onOpenSurah={openSurah}
+          />
+        )}
+
+        {showOnboarding && (
+          <OnboardingModal
+            isOpen={showOnboarding}
+            lang={lang}
+            t={t}
+            riwayat={settings.riwayat}
+            reciterId={settings.reciterId}
+            onChangeLang={(nextLang) => setLang(nextLang)}
+            onChangeRiwayat={(riwayat) => updateSettings({riwayat})}
+            onChangeReciter={(reciterId) => updateSettings({reciterId})}
+            onComplete={completeOnboarding}
           />
         )}
       </Suspense>

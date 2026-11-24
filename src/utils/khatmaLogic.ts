@@ -40,6 +40,8 @@ export function createDefaultKhatmaPlan(
     reminderEnabled: false,
     reminderTime: '20:00',
     lastNotifiedDateISO: null,
+    fridayKahfEnabled: false,
+    lastFridayKahfNotifiedISO: null,
   };
 }
 
@@ -189,29 +191,76 @@ export function logKhatmaPages(
 
 export function buildKhatmaNotificationText(
   summary: KhatmaScheduleSummary,
-  lang: 'en' | 'ar'
+  lang: 'en' | 'ar' | 'fr'
 ): {title: string; body: string} {
   if (summary.pagesRemaining === 0) {
-    return lang === 'ar'
-      ? {
-          title: 'نَغمة القرآن · مبارك إتمام الختمة',
-          body: 'أتممت قراءة المصحف الشريف كاملاً (٦٠٤ صفحة). تقبل الله طاعتك.',
-        }
-      : {
-          title: 'Naghma Quran · Khatma Completed',
-          body: 'Alhamdulillah! You have completed all 604 pages of your Khatma.',
-        };
+    if (lang === 'ar') {
+      return {
+        title: 'نَجم القرآن · مبارك إتمام الختمة',
+        body: 'أتممت قراءة المصحف الشريف كاملاً (٦٠٤ صفحة). تقبل الله طاعتك.',
+      };
+    }
+    if (lang === 'fr') {
+      return {
+        title: 'Najm Quran · Khatma terminée',
+        body: 'Alhamdulillah ! Vous avez complété les 604 pages de votre Khatma.',
+      };
+    }
+    return {
+      title: 'Najm Quran · Khatma Completed',
+      body: 'Alhamdulillah! You have completed all 604 pages of your Khatma.',
+    };
   }
 
   const remainingToday = Math.max(1, summary.todayRemainingPages || summary.adaptiveDailyTarget);
   if (lang === 'ar') {
     return {
-      title: 'نَغمة القرآن · تذكير الختمة اليومية',
+      title: 'نَجم القرآن · تذكير الختمة اليومية',
       body: `وِردك اليومي: بقي لك ${remainingToday} صفحات لإتمام هدف اليوم · باقي ${summary.daysRemaining} يوماً على الختمة`,
     };
   }
+  if (lang === 'fr') {
+    return {
+      title: 'Najm Quran · Rappel quotidien Khatma',
+      body: `Lecture du jour : ${remainingToday} pages restantes (p. ${summary.todayStartPage}–${summary.todayEndPage}) · ${summary.daysRemaining} jours restants`,
+    };
+  }
   return {
-    title: 'Naghma Quran · Daily Khatma Reminder',
+    title: 'Najm Quran · Daily Khatma Reminder',
     body: `Daily Khatma: ${remainingToday} pages left today (p. ${summary.todayStartPage}–${summary.todayEndPage}) · ${summary.daysRemaining} days remaining`,
   };
 }
+
+export function shouldTriggerFridayKahfReminder(
+  now: Date,
+  enabled: boolean,
+  lastNotifiedISO: string | null | undefined
+): boolean {
+  if (!enabled) return false;
+  if (now.getDay() !== 5) return false;
+  if (now.getHours() < 8) return false;
+  return lastNotifiedISO !== getLocalDateISO(now);
+}
+
+export function buildFridayKahfNotificationText(lang: 'en' | 'ar' | 'fr'): {
+  title: string;
+  body: string;
+} {
+  if (lang === 'ar') {
+    return {
+      title: 'نَجم القرآن · نور الجمعة — سورة الكهف',
+      body: 'تذكير يوم الجمعة المبارك: اقرأ سورة الكهف ليضيء لك من النور ما بين الجمعتين.',
+    };
+  }
+  if (lang === 'fr') {
+    return {
+      title: 'Najm Quran · Rappel du Vendredi — Sourate Al-Kahf',
+      body: 'Béni soit votre vendredi ! Prenez un moment pour réciter la sourate Al-Kahf.',
+    };
+  }
+  return {
+    title: 'Najm Quran · Friday Noor — Surah Al-Kahf',
+    body: 'Jumu’ah Mubarak! Read Surah Al-Kahf today to illuminate your Friday with peace and barakah.',
+  };
+}
+

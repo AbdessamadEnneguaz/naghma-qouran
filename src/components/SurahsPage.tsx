@@ -1,7 +1,12 @@
 import React, {useMemo, useState} from 'react';
 import {Play, Search, Trash2} from 'lucide-react';
-import type {BookmarkEntry, OfflineSurahRecord, SurahMeta} from '../types/quran';
-import {stripTashkeel, toArabicDigits} from '../utils/quranLogic';
+import type {
+  BookmarkCategory,
+  BookmarkEntry,
+  OfflineSurahRecord,
+  SurahMeta,
+} from '../types/quran';
+import {getBookmarkCategory, stripTashkeel, toArabicDigits} from '../utils/quranLogic';
 import type {AppLang, Translations} from '../i18n/translations';
 
 interface SurahsPageProps {
@@ -28,6 +33,24 @@ function getSurahApproxJuz(startPage: number): number {
   return 1;
 }
 
+const BM_CAT_STYLES: Record<
+  BookmarkCategory,
+  {dotClass: string; badgeClass: string}
+> = {
+  wird: {
+    dotClass: 'bg-[#D97706]',
+    badgeClass: 'text-[#B45309] dark:text-[#FBBF24]',
+  },
+  memorization: {
+    dotClass: 'bg-[#059669]',
+    badgeClass: 'text-[#059669] dark:text-[#34D399]',
+  },
+  favorites: {
+    dotClass: 'bg-[#E11D48]',
+    badgeClass: 'text-[#E11D48] dark:text-[#FB7185]',
+  },
+};
+
 export const SurahsPage: React.FC<SurahsPageProps> = ({
   lang,
   t,
@@ -43,6 +66,19 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
   const [revelationFilter, setRevelationFilter] = useState<'all' | 'Meccan' | 'Medinan'>('all');
   const [juzFilter, setJuzFilter] = useState<number>(0);
   const [directoryView, setDirectoryView] = useState<'surahs' | 'juz' | 'bookmarks'>('surahs');
+  const [bmFilter, setBmFilter] = useState<'all' | BookmarkCategory>('all');
+
+  const filteredBookmarks = useMemo(() => {
+    if (bmFilter === 'all') return bookmarks;
+    return bookmarks.filter((bm) => getBookmarkCategory(bm) === bmFilter);
+  }, [bookmarks, bmFilter]);
+
+  const getCategoryLabel = (cat: BookmarkCategory) =>
+    cat === 'wird'
+      ? t.catWird
+      : cat === 'memorization'
+        ? t.catMemorization
+        : t.catFavorites;
 
   const offlineSurahIds = useMemo(
     () => new Set(offlineRecords.map((r) => r.surah)),
@@ -78,12 +114,19 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-amber-500/15 pb-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#2D231E] dark:text-[#FAF5EE]">
-            {t.navSurahs} · {lang === 'ar' ? 'الفهرس الكامل' : 'Complete Directory'}
+            {t.navSurahs} ·{' '}
+            {lang === 'ar'
+              ? 'الفهرس الكامل'
+              : lang === 'fr'
+                ? 'Répertoire complet'
+                : 'Complete Directory'}
           </h1>
           <p className="text-xs sm:text-sm text-[#6E5649] dark:text-[#D6C7B8] mt-0.5 tabular-nums">
             {lang === 'ar'
               ? '١١٤ سورة · ٣٠ جزءاً · يفتح كل اختيار على صفحته الدقيقة في المصحف'
-              : "114 Surahs · 30 Juz' · Every Surah opens directly on its Madani Mushaf page"}
+              : lang === 'fr'
+                ? "114 sourates · 30 Juz' · Chaque choix s'ouvre directement à sa page du Moushaf"
+                : "114 Surahs · 30 Juz' · Every Surah opens directly on its Madani Mushaf page"}
           </p>
         </div>
 
@@ -292,7 +335,38 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
 
       {directoryView === 'bookmarks' && (
         <div className="space-y-3">
-          {bookmarks.length === 0 ? (
+          {bookmarks.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setBmFilter('all')}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                  bmFilter === 'all'
+                    ? 'border-[#D97706] bg-[#D97706] text-white'
+                    : 'border-amber-500/20 bg-white dark:bg-[#211914] text-[#6E5649] dark:text-[#D6C7B8]'
+                }`}
+              >
+                {t.filterAll}
+              </button>
+              {(['wird', 'memorization', 'favorites'] as const).map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setBmFilter(cat)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                    bmFilter === cat
+                      ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
+                      : 'border-amber-500/20 bg-white dark:bg-[#211914] text-[#6E5649] dark:text-[#D6C7B8]'
+                  }`}
+                >
+                  <span className={`h-2 w-2 rounded-full ${BM_CAT_STYLES[cat].dotClass}`} />
+                  <span>{getCategoryLabel(cat)}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {filteredBookmarks.length === 0 ? (
             <div className="rounded-3xl border border-amber-500/14 bg-white/75 dark:bg-[#211914] p-10 text-center space-y-2 shadow-sm">
               <p className="text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE]">
                 {t.noBookmarksTitle}
@@ -303,37 +377,48 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-              {bookmarks.map((bm) => (
-                <div
-                  key={bm.id}
-                  className="rounded-3xl border border-amber-500/14 bg-white/80 dark:bg-[#211914] p-4 shadow-sm flex items-start justify-between gap-3"
-                >
-                  <button
-                    type="button"
-                    onClick={() => onOpenSurah(bm.surah, bm.ayah)}
-                    className="text-start flex-1 min-w-0 space-y-1.5"
+              {filteredBookmarks.map((bm) => {
+                const cat = getBookmarkCategory(bm);
+                const style = BM_CAT_STYLES[cat];
+                return (
+                  <div
+                    key={bm.id}
+                    className="rounded-3xl border border-amber-500/14 bg-white/80 dark:bg-[#211914] p-4 shadow-sm flex items-start justify-between gap-3"
                   >
-                    <div className="text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] tabular-nums">
-                      {lang === 'ar' ? bm.surahNameAr : bm.surahNameEn} · {bm.surah}:{bm.ayah} ·{' '}
-                      {t.pageWord} {bm.page}
-                    </div>
-                    <p
-                      dir="rtl"
-                      className="font-quran-amiri text-xl leading-[2.1] text-[#2D231E] dark:text-[#FAF5EE] line-clamp-2"
+                    <button
+                      type="button"
+                      onClick={() => onOpenSurah(bm.surah, bm.ayah)}
+                      className="text-start flex-1 min-w-0 space-y-1.5"
                     >
-                      {bm.snippet}
-                    </p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onRemoveBookmark(bm.id)}
-                    aria-label={`Remove bookmark ${bm.surah}:${bm.ayah}`}
-                    className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full text-[#6E5649] dark:text-[#D6C7B8] hover:text-rose-500 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
+                      <div className="flex flex-wrap items-center gap-2 text-xs font-semibold tabular-nums">
+                        <span className={`inline-flex items-center gap-1.5 ${style.badgeClass}`}>
+                          <span className={`h-2 w-2 rounded-full shrink-0 ${style.dotClass}`} />
+                          <span>{getCategoryLabel(cat)}</span>
+                        </span>
+                        <span aria-hidden="true" className="text-[#6E5649]/50">·</span>
+                        <span className="text-[#B45309] dark:text-[#FBBF24]">
+                          {lang === 'ar' ? bm.surahNameAr : bm.surahNameEn} · {bm.surah}:{bm.ayah} ·{' '}
+                          {t.pageWord} {bm.page}
+                        </span>
+                      </div>
+                      <p
+                        dir="rtl"
+                        className="font-quran-amiri text-xl leading-[2.1] text-[#2D231E] dark:text-[#FAF5EE] line-clamp-2"
+                      >
+                        {bm.snippet}
+                      </p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onRemoveBookmark(bm.id)}
+                      aria-label={`Remove bookmark ${bm.surah}:${bm.ayah}`}
+                      className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full text-[#6E5649] dark:text-[#D6C7B8] hover:text-rose-500 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

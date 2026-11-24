@@ -4,6 +4,7 @@ import type {
   LastReadState,
   OfflineSurahRecord,
   ReaderSettings,
+  ReadingStats,
   Reciter,
   SurahMeta,
 } from '../types/quran';
@@ -262,6 +263,25 @@ export async function saveKhatmaPlan(plan: KhatmaPlan): Promise<void> {
     // ignore
   }
   await idbSet(STORE_USER, 'khatma_plan', plan);
+}
+
+export async function loadReadingStats(): Promise<ReadingStats | null> {
+  try {
+    const ls = localStorage.getItem('najm_reading_stats');
+    if (ls) return JSON.parse(ls) as ReadingStats;
+  } catch {
+    // ignore
+  }
+  return (await idbGet<ReadingStats>(STORE_USER, 'reading_stats')) || null;
+}
+
+export async function saveReadingStats(stats: ReadingStats): Promise<void> {
+  try {
+    localStorage.setItem('najm_reading_stats', JSON.stringify(stats));
+  } catch {
+    // ignore
+  }
+  await idbSet(STORE_USER, 'reading_stats', stats);
 }
 
 export async function loadAdhkarProgress(

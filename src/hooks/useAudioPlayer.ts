@@ -1,11 +1,17 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import type {
+  HifzRepeatCount,
   LoopMode,
   QuranVerse,
   Reciter,
   SurahMeta,
   TalqeenConfig,
 } from '../types/quran';
+import {
+  advanceAyahLoop,
+  createAyahLoopState,
+  type AyahLoopState,
+} from '../utils/audioLoopLogic';
 import {
   getAyahAudioCandidates,
   getGlobalAyahNumber,
@@ -41,13 +47,21 @@ export type ProgressListener = (currentTimeSec: number, durationSec: number) => 
 function getPlaybackErrorMessage(curLang: AppLang): string {
   const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
   if (isOffline) {
-    return curLang === 'ar'
-      ? 'أنت غير متصل بالإنترنت. نص المصحف متاح كاملاً للقراءة، وللاستماع دون اتصال احفظ السورة من المحفوظات.'
-      : 'You are offline. All 604 Mushaf pages remain readable, and any Surah downloaded in the Vault plays offline.';
+    if (curLang === 'ar') {
+      return 'أنت غير متصل بالإنترنت. نص المصحف متاح كاملاً للقراءة، وللاستماع دون اتصال احفظ السورة من المحفوظات.';
+    }
+    if (curLang === 'fr') {
+      return 'Vous êtes hors ligne. Les 604 pages du Moushaf restent lisibles et les sourates enregistrées fonctionnent hors connexion.';
+    }
+    return 'You are offline. All 604 Mushaf pages remain readable, and any Surah downloaded in the Vault plays offline.';
   }
-  return curLang === 'ar'
-    ? 'تعذر تشغيل الصوت حالياً. تحقق من الاتصال أو استخدم التلاوات المحفوظة.'
-    : 'Unable to stream audio. Check connection or use a downloaded Surah.';
+  if (curLang === 'ar') {
+    return 'تعذر تشغيل الصوت حالياً. تحقق من الاتصال أو استخدم التلاوات المحفوظة.';
+  }
+  if (curLang === 'fr') {
+    return 'Lecture audio impossible pour le moment. Vérifiez la connexion ou utilisez une sourate hors ligne.';
+  }
+  return 'Unable to stream audio. Check connection or use a downloaded Surah.';
 }
 
 interface UseAudioPlayerArgs {
@@ -135,6 +149,9 @@ export function useAudioPlayer({
     pauseSeconds: 5,
   });
   const [talqeenCountdown, setTalqeenCountdown] = useState<number | null>(null);
+  const [hifzRepeatTarget, setHifzRepeatTargetState] = useState<HifzRepeatCount>(1);
+  const [hifzRepeatDone, setHifzRepeatDone] = useState<number>(0);
+  const hifzLoopRef = useRef<AyahLoopState | null>(null);
 
   const clearTalqeenTimer = useCallback(() => {
     if (talqeenTimerRef.current !== null) {
@@ -158,6 +175,7 @@ export function useAudioPlayer({
     audioSyncOffsetSec,
     lang,
     talqeen,
+    hifzRepeatTarget,
   });
   stateRef.current = {
     activeSurah,
@@ -173,6 +191,7 @@ export function useAudioPlayer({
     audioSyncOffsetSec,
     lang,
     talqeen,
+    hifzRepeatTarget,
   };
 
   const subscribeProgress = useCallback((listener: ProgressListener) => {
@@ -776,6 +795,35 @@ export function useAudioPlayer({
               setTalqeenCountdown(remaining);
             }
           }, 1000);
+          return;
+        }
+
+        const activeLoop = hifzLoopRef.current;
+        if (
+          activeLoop &&
+          activeLoop.target !== 1 &&
+          activeLoop.surah === s &&
+          activeLoop.ayah === a &&
+          r.mode === 'ayah'
+        ) {
+          const {shouldRepeat, nextState} = advanceAyahLoop(activeLoop);
+          hifzLoopRef.current = nextState;
+          setHifzRepeatDone(nextState.completedLoops);
+          if (shouldRepeat) {
+            audio.currentTime = 0;
+            audio.playbackRate = speed;
+            autoplayIntendedRef.current = true;
+            void audio.play().catch(() => {
+              void loadAndPlay(s, a, true);
+            });
+            return;
+          }
+          hifzLoopRef.current = null;
+          setHifzRepeatDone(0);
+          autoplayIntendedRef.current = false;
+          stopAudioKeepAlive();
+          setIsPlaying(false);
+          emitProgress(0, Number.isFinite(audio.duration) ? audio.duration : 0, true);
           return;
         }
 
@@ -1473,6 +1521,47 @@ export function useAudioPlayer({
     seekTo,
   ]);
 
+  const setHifzRepeatTarget = useCallback((repeat: HifzRepeatCount) => {
+    setHifzRepeatTargetState(repeat);
+    setHifzRepeatDone(0);
+    if (repeat === 1) {
+      hifzLoopRef.current = null;
+    } else if (hifzLoopRef.current) {
+      hifzLoopRef.current = createAyahLoopState(
+        hifzLoopRef.current.surah,
+        hifzLoopRef.current.ayah,
+        repeat
+      );
+    }
+  }, []);
+
+  const playVerse = useCallback(
+    (surah: number, ayah: number) => {
+      hifzLoopRef.current = null;
+      setHifzRepeatDone(0);
+      return loadAndPlay(surah, ayah, true);
+    },
+    [loadAndPlay]
+  );
+
+  const playVerseWithRepeat = useCallback(
+    (surah: number, ayah: number, repeat?: HifzRepeatCount) => {
+      const effectiveTarget = repeat ?? stateRef.current.hifzRepeatTarget;
+      setHifzRepeatTargetState(effectiveTarget);
+      setHifzRepeatDone(0);
+      if (effectiveTarget !== 1) {
+        hifzLoopRef.current = createAyahLoopState(surah, ayah, effectiveTarget);
+        if (stateRef.current.reciter.mode !== 'ayah' && onFallbackReciter) {
+          onFallbackReciter(getFallbackAyahReciterId(stateRef.current.reciter.riwayat));
+        }
+      } else {
+        hifzLoopRef.current = null;
+      }
+      return loadAndPlay(surah, ayah, true);
+    },
+    [loadAndPlay, onFallbackReciter]
+  );
+
   return {
     activeSurah,
     activeAyah,
@@ -1487,8 +1576,12 @@ export function useAudioPlayer({
     duration,
     talqeen,
     talqeenCountdown,
+    hifzRepeatTarget,
+    hifzRepeatDone,
     subscribeProgress,
-    playVerse: (surah: number, ayah: number) => loadAndPlay(surah, ayah, true),
+    playVerse,
+    playVerseWithRepeat,
+    setHifzRepeatTarget,
     togglePlayPause,
     playNext,
     playPrev,

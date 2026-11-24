@@ -3,6 +3,8 @@ export type QuranFont = 'amiri' | 'scheherazade';
 export type ReaderMode = 'mushaf' | 'surah';
 export type ThemeMode = 'dark' | 'light';
 export type LoopMode = 'none' | 'ayah' | 'surah';
+export type BookmarkCategory = 'wird' | 'memorization' | 'favorites';
+export type HifzRepeatCount = 1 | 3 | 5 | 'inf';
 
 export interface SurahMeta {
   id: number;
@@ -53,6 +55,7 @@ export interface BookmarkEntry {
   surahNameEn: string;
   snippet: string;
   createdAt: number;
+  category?: BookmarkCategory;
 }
 
 export interface LastReadState {
@@ -90,6 +93,7 @@ export interface SearchResult {
   surah: number;
   ayah: number;
   page: number;
+  juz?: number;
   surahNameAr: string;
   surahNameEn: string;
   text: string;
@@ -107,6 +111,17 @@ export interface KhatmaPlan {
   reminderEnabled: boolean;
   reminderTime: string; // "HH:MM" 24h
   lastNotifiedDateISO: string | null;
+  fridayKahfEnabled?: boolean;
+  lastFridayKahfNotifiedISO?: string | null;
+}
+
+export interface ReadingStats {
+  currentStreakDays: number;
+  bestStreakDays: number;
+  lastReadDateISO: string | null;
+  totalPagesRead: number;
+  todayDateISO: string;
+  todayPagesList: number[];
 }
 
 export type AdhkarCategory = 'sabah' | 'masaa' | 'postPrayer';

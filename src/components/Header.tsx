@@ -105,8 +105,15 @@ export const Header: React.FC<HeaderProps> = ({
           )}
           <button
             type="button"
+            data-testid="header-lang-btn"
             onClick={onToggleLang}
-            aria-label={lang === 'en' ? 'Switch interface to Arabic' : 'Switch interface to English'}
+            aria-label={
+              lang === 'en'
+                ? 'Passer en français'
+                : lang === 'fr'
+                  ? 'التبديل إلى العربية'
+                  : 'Switch interface to English'
+            }
             className="h-8 px-2.5 rounded-full text-xs font-semibold text-[#6E5649] dark:text-[#D6C7B8] hover:bg-amber-500/10 transition-colors whitespace-nowrap shrink-0"
           >
             {t.langToggleLabel}

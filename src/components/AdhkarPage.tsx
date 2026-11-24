@@ -193,7 +193,7 @@ export const AdhkarPage: React.FC<AdhkarPageProps> = ({lang, t}) => {
               {currentItem.arabic}
             </p>
 
-            {lang === 'en' && (
+            {lang !== 'ar' && (
               <div className="space-y-1.5 border-t border-amber-500/12 pt-3.5">
                 <p className="text-xs italic text-[#B45309] dark:text-[#FBBF24]/90">
                   {currentItem.transliteration}

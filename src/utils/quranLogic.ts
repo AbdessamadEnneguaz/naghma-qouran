@@ -1,4 +1,11 @@
-import type {QuranVerse, Reciter, SearchResult, SurahMeta} from '../types/quran';
+import type {
+  BookmarkCategory,
+  BookmarkEntry,
+  QuranVerse,
+  Reciter,
+  SearchResult,
+  SurahMeta,
+} from '../types/quran';
 
 const ARABIC_DIACRITICS_REGEX = /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED\u0640]/g;
 
@@ -240,12 +247,69 @@ export function parseSearchQuery(query: string): ParsedQuery {
   };
 }
 
+export function getBookmarkCategory(entry: BookmarkEntry): BookmarkCategory {
+  return entry.category || 'favorites';
+}
+
+export interface HighlightSegment {
+  text: string;
+  highlighted: boolean;
+}
+
+/**
+ * Splits Arabic text into whole words and marks matching words without ever
+ * splitting inside an Arabic word so cursive ligatures remain unbroken.
+ */
+export function highlightArabicWords(arabicText: string, query: string): HighlightSegment[] {
+  const cleaned = arabicText.replace(/^\uFEFF/, '').trim();
+  if (!cleaned) return [];
+  const normQuery = stripTashkeel(query).toLowerCase();
+  if (!normQuery || normQuery.length < 2) {
+    return [{text: cleaned, highlighted: false}];
+  }
+  const queryTokens = normQuery.split(/\s+/).filter((t) => t.length >= 2);
+  if (queryTokens.length === 0) {
+    return [{text: cleaned, highlighted: false}];
+  }
+
+  const rawWords = cleaned.split(/\s+/);
+  return rawWords.map((word) => {
+    const normWord = stripTashkeel(
+      word.replace(/[\u06D6-\u06ED\u0610-\u061A\u0640\u06DD\u06DE\u06E9\uFD3E\uFD3F]/g, '')
+    ).toLowerCase();
+    const matched = queryTokens.some(
+      (qt) => normWord === qt || (qt.length >= 2 && normWord.includes(qt))
+    );
+    return {text: word, highlighted: matched};
+  });
+}
+
+export function highlightLatinQuery(text: string, query: string): HighlightSegment[] {
+  const trimmed = query.trim();
+  if (!trimmed || trimmed.length < 2) {
+    return [{text, highlighted: false}];
+  }
+  const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+  const parts = text.split(regex);
+  if (parts.length <= 1) {
+    return [{text, highlighted: false}];
+  }
+  return parts
+    .filter((p) => p.length > 0)
+    .map((part) => ({
+      text: part,
+      highlighted: part.toLowerCase() === trimmed.toLowerCase(),
+    }));
+}
+
 export function searchQuran(
   verses: QuranVerse[],
   surahs: SurahMeta[],
   query: string,
   translations?: string[],
-  limit = 40
+  limit = 40,
+  secondaryTranslations?: string[]
 ): SearchResult[] {
   const parsed = parseSearchQuery(query);
   if (parsed.kind === 'empty') return [];
@@ -264,6 +328,7 @@ export function searchQuran(
         surah: first.surah,
         ayah: first.ayah,
         page: parsed.page,
+        juz: first.juz,
         surahNameAr: sMeta?.nameAr || '',
         surahNameEn: sMeta?.nameEn || '',
         text: first.text,
@@ -282,10 +347,11 @@ export function searchQuran(
         surah: found.surah,
         ayah: found.ayah,
         page: found.page,
+        juz: found.juz,
         surahNameAr: sMeta?.nameAr || '',
         surahNameEn: sMeta?.nameEn || '',
         text: found.text,
-        translation: translations?.[found.index],
+        translation: translations?.[found.index] || secondaryTranslations?.[found.index],
       },
     ];
   }
@@ -300,6 +366,7 @@ export function searchQuran(
         surah: sMeta.id,
         ayah: 1,
         page: sMeta.startPage,
+        juz: sMeta.juzStart,
         surahNameAr: sMeta.nameAr,
         surahNameEn: sMeta.nameEn,
         text: first.text,
@@ -326,6 +393,7 @@ export function searchQuran(
         surah: s.id,
         ayah: 1,
         page: s.startPage,
+        juz: s.juzStart,
         surahNameAr: s.nameAr,
         surahNameEn: s.nameEn,
         text: first?.text || s.nameAr,
@@ -335,23 +403,27 @@ export function searchQuran(
     }
   }
 
-  // Match Verses (Arabic without tashkeel or English translation)
+  // Match Verses (Arabic without tashkeel or English/French translation)
   for (let i = 0; i < verses.length; i++) {
     const v = verses[i];
     const vNorm = v.searchNormalized ?? stripTashkeel(v.text);
-    const tr = translations?.[v.index];
-    const matchText = vNorm.includes(norm) || (tr ? tr.toLowerCase().includes(norm) : false);
-    if (matchText) {
+    const trPrimary = translations?.[v.index];
+    const trSecondary = secondaryTranslations?.[v.index];
+    const matchAr = vNorm.includes(norm);
+    const matchPrimary = trPrimary ? trPrimary.toLowerCase().includes(norm) : false;
+    const matchSecondary = trSecondary ? trSecondary.toLowerCase().includes(norm) : false;
+    if (matchAr || matchPrimary || matchSecondary) {
       const sMeta = surahMap.get(v.surah);
       results.push({
         type: 'verse',
         surah: v.surah,
         ayah: v.ayah,
         page: v.page,
+        juz: v.juz,
         surahNameAr: sMeta?.nameAr || '',
         surahNameEn: sMeta?.nameEn || '',
         text: v.text,
-        translation: tr,
+        translation: matchSecondary && !matchPrimary ? trSecondary : trPrimary || trSecondary,
       });
       if (results.length >= limit) break;
     }

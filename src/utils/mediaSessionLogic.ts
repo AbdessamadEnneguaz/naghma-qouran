@@ -40,14 +40,16 @@ export function buildMediaSessionMetadataPayload({
   const title =
     lang === 'ar'
       ? `سورة ${surahMeta?.nameAr || toArabicDigits(safeSurah)} - الآية ${toArabicDigits(safeAyah)}`
-      : `Surah ${surahMeta?.nameEn || safeSurah} - Ayah ${safeAyah}`;
+      : lang === 'fr'
+        ? `Sourate ${surahMeta?.nameEn || safeSurah} - Verset ${safeAyah}`
+        : `Surah ${surahMeta?.nameEn || safeSurah} - Ayah ${safeAyah}`;
 
   const artist = lang === 'ar' ? reciter.nameAr : reciter.nameEn;
 
   return {
     title,
     artist,
-    album: 'Najm Quran · نَغمة القرآن',
+    album: 'Najm Quran · نَجم القرآن',
     artwork: [
       {src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png'},
       {src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png'},
