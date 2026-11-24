@@ -38,16 +38,16 @@ const BM_CAT_STYLES: Record<
   {dotClass: string; badgeClass: string}
 > = {
   wird: {
-    dotClass: 'bg-[#D97706]',
-    badgeClass: 'text-[#B45309] dark:text-[#FBBF24]',
+    dotClass: 'bg-[#8C6D46] dark:bg-[#C5A46D]',
+    badgeClass: 'text-[#8C6D46] dark:text-[#C5A46D]',
   },
   memorization: {
-    dotClass: 'bg-[#059669]',
-    badgeClass: 'text-[#059669] dark:text-[#34D399]',
+    dotClass: 'bg-[#0F5132] dark:bg-[#34D399]',
+    badgeClass: 'text-[#0F5132] dark:text-[#34D399]',
   },
   favorites: {
-    dotClass: 'bg-[#E11D48]',
-    badgeClass: 'text-[#E11D48] dark:text-[#FB7185]',
+    dotClass: 'bg-[#6B6A66] dark:text-[#A1A1AA]',
+    badgeClass: 'text-[#6B6A66] dark:text-[#A1A1AA]',
   },
 };
 
@@ -111,9 +111,9 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 pt-6 sm:pt-8 pb-8 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-amber-500/15 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-[#E6E4DF] dark:border-[#222226] pb-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#2D231E] dark:text-[#FAF5EE]">
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#121212] dark:text-[#F4F4F5]">
             {t.navSurahs} ·{' '}
             {lang === 'ar'
               ? 'الفهرس الكامل'
@@ -121,7 +121,7 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
                 ? 'Répertoire complet'
                 : 'Complete Directory'}
           </h1>
-          <p className="text-xs sm:text-sm text-[#6E5649] dark:text-[#D6C7B8] mt-0.5 tabular-nums">
+          <p className="text-xs sm:text-sm text-[#6B6A66] dark:text-[#8E8E93] mt-0.5 tabular-nums">
             {lang === 'ar'
               ? '١١٤ سورة · ٣٠ جزءاً · يفتح كل اختيار على صفحته الدقيقة في المصحف'
               : lang === 'fr'
@@ -130,14 +130,14 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-1 p-1 rounded-full bg-amber-500/12 dark:bg-[#221914] border border-amber-500/15 self-start sm:self-auto">
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-[#EFECE4] dark:bg-[#16161A] border border-[#E6E4DF] dark:border-[#222226] self-start sm:self-auto">
           <button
             type="button"
             onClick={() => setDirectoryView('surahs')}
-            className={`px-3.5 py-1.5 rounded-full text-xs md:text-sm font-semibold whitespace-nowrap transition-colors ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold whitespace-nowrap transition-colors ${
               directoryView === 'surahs'
-                ? 'bg-white dark:bg-[#D97706] text-[#B45309] dark:text-white shadow-sm'
-                : 'text-[#6E5649] dark:text-[#D6C7B8] hover:text-[#2D231E]'
+                ? 'bg-white dark:bg-[#121215] text-[#0F5132] dark:text-[#C5A46D] shadow-sm'
+                : 'text-[#6B6A66] dark:text-[#8E8E93] hover:text-[#121212] dark:hover:text-[#F4F4F5]'
             }`}
           >
             {t.tabSurahs}
@@ -145,10 +145,10 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
           <button
             type="button"
             onClick={() => setDirectoryView('juz')}
-            className={`px-3.5 py-1.5 rounded-full text-xs md:text-sm font-semibold whitespace-nowrap transition-colors ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold whitespace-nowrap transition-colors ${
               directoryView === 'juz'
-                ? 'bg-white dark:bg-[#D97706] text-[#B45309] dark:text-white shadow-sm'
-                : 'text-[#6E5649] dark:text-[#D6C7B8] hover:text-[#2D231E]'
+                ? 'bg-white dark:bg-[#121215] text-[#0F5132] dark:text-[#C5A46D] shadow-sm'
+                : 'text-[#6B6A66] dark:text-[#8E8E93] hover:text-[#121212] dark:hover:text-[#F4F4F5]'
             }`}
           >
             {t.tabJuz}
@@ -156,10 +156,10 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
           <button
             type="button"
             onClick={() => setDirectoryView('bookmarks')}
-            className={`px-3.5 py-1.5 rounded-full text-xs md:text-sm font-semibold whitespace-nowrap transition-colors tabular-nums ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold whitespace-nowrap transition-colors tabular-nums ${
               directoryView === 'bookmarks'
-                ? 'bg-white dark:bg-[#D97706] text-[#B45309] dark:text-white shadow-sm'
-                : 'text-[#6E5649] dark:text-[#D6C7B8] hover:text-[#2D231E]'
+                ? 'bg-white dark:bg-[#121215] text-[#0F5132] dark:text-[#C5A46D] shadow-sm'
+                : 'text-[#6B6A66] dark:text-[#8E8E93] hover:text-[#121212] dark:hover:text-[#F4F4F5]'
             }`}
           >
             {t.tabBookmarks} ({numFmt(bookmarks.length)})
@@ -171,14 +171,17 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="relative flex-1 min-w-[220px] max-w-md">
-              <Search className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6E5649] dark:text-[#D6C7B8]" />
+              <Search
+                strokeWidth={1.5}
+                className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B6A66] dark:text-[#8E8E93]"
+              />
               <input
                 type="text"
                 value={filterText}
                 onChange={(e) => setFilterText(e.target.value)}
                 placeholder={t.filterSurahPlaceholder}
                 aria-label={t.filterSurahPlaceholder}
-                className="w-full rounded-full border border-amber-500/18 bg-white/85 dark:bg-[#211914] ps-10 pe-4 py-2.5 text-sm text-[#2D231E] dark:text-[#FAF5EE] placeholder:text-[#6E5649]/65 focus:outline-none focus:ring-2 focus:ring-[#D97706]"
+                className="w-full rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] ps-10 pe-4 py-2.5 text-sm text-[#121212] dark:text-[#F4F4F5] placeholder:text-[#6B6A66]/65 focus:outline-none focus:ring-1 focus:ring-[#0F5132] dark:focus:ring-[#C5A46D]"
               />
             </div>
 
@@ -187,7 +190,7 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
                 aria-label={t.juzWord}
                 value={juzFilter}
                 onChange={(e) => setJuzFilter(Number(e.target.value))}
-                className="rounded-full border border-amber-500/18 bg-white/85 dark:bg-[#211914] px-3.5 py-2 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] focus:outline-none focus:ring-2 focus:ring-[#D97706]"
+                className="rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] px-3.5 py-2 text-xs font-medium text-[#121212] dark:text-[#F4F4F5] focus:outline-none focus:ring-1 focus:ring-[#0F5132] dark:focus:ring-[#C5A46D]"
               >
                 <option value={0}>{t.allJuzFilter}</option>
                 {Array.from({length: 30}, (_, idx) => idx + 1).map((j) => (
@@ -197,16 +200,16 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
                 ))}
               </select>
 
-              <div className="flex items-center gap-1 p-1 rounded-full bg-amber-500/10 dark:bg-[#211914]">
+              <div className="flex items-center gap-1 p-1 rounded-xl bg-[#EFECE4] dark:bg-[#16161A] border border-[#E6E4DF] dark:border-[#222226]">
                 {(['all', 'Meccan', 'Medinan'] as const).map((rev) => (
                   <button
                     key={rev}
                     type="button"
                     onClick={() => setRevelationFilter(rev)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
                       revelationFilter === rev
-                        ? 'bg-[#D97706] text-white'
-                        : 'text-[#6E5649] dark:text-[#D6C7B8] hover:text-[#2D231E]'
+                        ? 'bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
+                        : 'text-[#6B6A66] dark:text-[#8E8E93] hover:text-[#121212] dark:hover:text-[#F4F4F5]'
                     }`}
                   >
                     {rev === 'all'
@@ -237,24 +240,24 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
                   role="button"
                   tabIndex={0}
                   data-testid={`surah-card-${surah.id}`}
-                  className="group text-start rounded-3xl border border-amber-500/12 bg-white/80 dark:bg-[#211914]/85 p-4 hover:border-amber-500/45 shadow-sm shadow-amber-500/5 transition-colors flex items-center justify-between gap-3 cursor-pointer"
+                  className="group text-start rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-4 hover:border-[#0F5132]/40 dark:hover:border-[#C5A46D]/45 transition-colors flex items-center justify-between gap-3 cursor-pointer"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className="h-9 w-9 rounded-full bg-amber-500/12 flex items-center justify-center text-xs font-bold text-[#B45309] dark:text-[#FBBF24] tabular-nums shrink-0">
+                    <span className="h-9 w-9 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] flex items-center justify-center text-xs font-semibold text-[#0F5132] dark:text-[#C5A46D] tabular-nums shrink-0">
                       {String(surah.id).padStart(2, '0')}
                     </span>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm text-[#2D231E] dark:text-[#FAF5EE] truncate group-hover:text-[#D97706] transition-colors">
+                        <span className="font-semibold text-sm text-[#121212] dark:text-[#F4F4F5] truncate group-hover:text-[#0F5132] dark:group-hover:text-[#C5A46D] transition-colors">
                           {lang === 'ar' ? surah.nameAr : surah.nameEn}
                         </span>
                         {isCached && (
-                          <span className="text-[11px] font-semibold text-[#D97706] dark:text-[#FBBF24]">
+                          <span className="text-[11px] font-semibold text-[#0F5132] dark:text-[#C5A46D]">
                             {t.offlineTag}
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8] truncate mt-0.5 tabular-nums">
+                      <p className="text-xs text-[#6B6A66] dark:text-[#8E8E93] truncate mt-0.5 tabular-nums">
                         {lang === 'ar'
                           ? `${revLabel} · ${toArabicDigits(surah.totalAyahs)} ${t.ayahsWord}`
                           : `${surah.meaningEn} · ${surah.totalAyahs} ${t.ayahsWord}`}
@@ -266,11 +269,11 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
                     <div className="text-end">
                       <div
                         dir="rtl"
-                        className="font-quran-scheherazade text-2xl font-semibold text-[#B45309] dark:text-[#FBBF24] leading-none"
+                        className="font-quran-scheherazade text-2xl font-semibold text-[#121212] dark:text-[#F4F4F5] leading-none"
                       >
                         {surah.nameAr.replace('سُورَةُ ', '')}
                       </div>
-                      <div className="text-[11px] text-[#6E5649] dark:text-[#D6C7B8] tabular-nums mt-1">
+                      <div className="text-[11px] text-[#6B6A66] dark:text-[#8E8E93] tabular-nums mt-1">
                         {t.pageShort} {numFmt(surah.startPage)}
                       </div>
                     </div>
@@ -284,9 +287,9 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
                           e.stopPropagation();
                           onPlaySurah(surah.id);
                         }}
-                        className="h-8 w-8 rounded-full border border-amber-500/25 bg-amber-500/10 text-[#B45309] dark:text-[#FBBF24] hover:bg-[#D97706] hover:text-white flex items-center justify-center transition-colors shrink-0"
+                        className="h-8 w-8 rounded-full border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#0F5132] dark:text-[#C5A46D] hover:bg-[#0F5132] hover:text-white dark:hover:bg-[#C5A46D] dark:hover:text-[#09090B] flex items-center justify-center transition-colors shrink-0"
                       >
-                        <Play className="h-3.5 w-3.5 fill-current ms-0.5" />
+                        <Play className="h-3.5 w-3.5 ms-0.5" strokeWidth={1.5} />
                       </button>
                     )}
                   </div>
@@ -294,7 +297,7 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
               );
             })}
             {filteredSurahs.length === 0 && (
-              <div className="col-span-full py-12 text-center text-sm text-[#6E5649] dark:text-[#D6C7B8]">
+              <div className="col-span-full py-12 text-center text-sm text-[#6B6A66] dark:text-[#8E8E93]">
                 {t.noSurahMatch}
               </div>
             )}
@@ -311,20 +314,20 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
                 key={juzNum}
                 type="button"
                 onClick={() => onOpenPage(startPage)}
-                className="rounded-3xl border border-amber-500/14 bg-white/80 dark:bg-[#211914] p-4 text-start hover:border-[#D97706] shadow-sm transition-colors space-y-1"
+                className="rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-4 text-start hover:border-[#0F5132]/40 dark:hover:border-[#C5A46D]/45 transition-colors space-y-1"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-[#2D231E] dark:text-[#FAF5EE] tabular-nums">
+                  <span className="text-sm font-semibold text-[#121212] dark:text-[#F4F4F5] tabular-nums">
                     {t.juzWord} {numFmt(juzNum)}
                   </span>
                   <span
                     dir="rtl"
-                    className="font-quran-scheherazade text-base text-[#B45309] dark:text-[#FBBF24]"
+                    className="font-quran-scheherazade text-base text-[#0F5132] dark:text-[#C5A46D]"
                   >
                     الجزء {toArabicDigits(juzNum)}
                   </span>
                 </div>
-                <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
+                <p className="text-xs text-[#6B6A66] dark:text-[#8E8E93] tabular-nums">
                   {t.startsAtPage} {numFmt(startPage)}
                 </p>
               </button>
@@ -340,10 +343,10 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
               <button
                 type="button"
                 onClick={() => setBmFilter('all')}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
                   bmFilter === 'all'
-                    ? 'border-[#D97706] bg-[#D97706] text-white'
-                    : 'border-amber-500/20 bg-white dark:bg-[#211914] text-[#6E5649] dark:text-[#D6C7B8]'
+                    ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
+                    : 'border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#6B6A66] dark:text-[#8E8E93]'
                 }`}
               >
                 {t.filterAll}
@@ -353,10 +356,10 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
                   key={cat}
                   type="button"
                   onClick={() => setBmFilter(cat)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
                     bmFilter === cat
-                      ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
-                      : 'border-amber-500/20 bg-white dark:bg-[#211914] text-[#6E5649] dark:text-[#D6C7B8]'
+                      ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132]/10 dark:bg-[#C5A46D]/15 text-[#0F5132] dark:text-[#C5A46D]'
+                      : 'border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#6B6A66] dark:text-[#8E8E93]'
                   }`}
                 >
                   <span className={`h-2 w-2 rounded-full ${BM_CAT_STYLES[cat].dotClass}`} />
@@ -367,11 +370,11 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
           )}
 
           {filteredBookmarks.length === 0 ? (
-            <div className="rounded-3xl border border-amber-500/14 bg-white/75 dark:bg-[#211914] p-10 text-center space-y-2 shadow-sm">
-              <p className="text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE]">
+            <div className="rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-10 text-center space-y-2">
+              <p className="text-sm font-semibold text-[#121212] dark:text-[#F4F4F5]">
                 {t.noBookmarksTitle}
               </p>
-              <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8]">
+              <p className="text-xs text-[#6B6A66] dark:text-[#8E8E93]">
                 {t.noBookmarksDesc}
               </p>
             </div>
@@ -383,7 +386,7 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
                 return (
                   <div
                     key={bm.id}
-                    className="rounded-3xl border border-amber-500/14 bg-white/80 dark:bg-[#211914] p-4 shadow-sm flex items-start justify-between gap-3"
+                    className="rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-4 flex items-start justify-between gap-3"
                   >
                     <button
                       type="button"
@@ -395,15 +398,15 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
                           <span className={`h-2 w-2 rounded-full shrink-0 ${style.dotClass}`} />
                           <span>{getCategoryLabel(cat)}</span>
                         </span>
-                        <span aria-hidden="true" className="text-[#6E5649]/50">·</span>
-                        <span className="text-[#B45309] dark:text-[#FBBF24]">
+                        <span aria-hidden="true" className="text-[#6B6A66]/50">·</span>
+                        <span className="text-[#0F5132] dark:text-[#C5A46D]">
                           {lang === 'ar' ? bm.surahNameAr : bm.surahNameEn} · {bm.surah}:{bm.ayah} ·{' '}
                           {t.pageWord} {bm.page}
                         </span>
                       </div>
                       <p
                         dir="rtl"
-                        className="font-quran-amiri text-xl leading-[2.1] text-[#2D231E] dark:text-[#FAF5EE] line-clamp-2"
+                        className="font-quran-amiri text-xl leading-[2.1] text-[#121212] dark:text-[#F4F4F5] line-clamp-2"
                       >
                         {bm.snippet}
                       </p>
@@ -412,9 +415,9 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
                       type="button"
                       onClick={() => onRemoveBookmark(bm.id)}
                       aria-label={`Remove bookmark ${bm.surah}:${bm.ayah}`}
-                      className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full text-[#6E5649] dark:text-[#D6C7B8] hover:text-rose-500 transition-colors"
+                      className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full text-[#6B6A66] dark:text-[#8E8E93] hover:text-rose-500 transition-colors"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" strokeWidth={1.5} />
                     </button>
                   </div>
                 );

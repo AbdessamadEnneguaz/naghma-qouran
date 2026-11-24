@@ -158,7 +158,7 @@ function getInitialRoute(): AppRoute {
 
 const RouteFallback = () => (
   <div className="py-20 flex items-center justify-center">
-    <Loader2 className="h-6 w-6 animate-spin text-[#D97706]" />
+    <Loader2 className="h-6 w-6 animate-spin text-[#0F5132] dark:text-[#C5A46D]" strokeWidth={1.5} />
   </div>
 );
 
@@ -481,7 +481,7 @@ export default function App() {
     }
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {
-      metaTheme.setAttribute('content', settings.theme === 'dark' ? '#17110D' : '#FDFBF7');
+      metaTheme.setAttribute('content', settings.theme === 'dark' ? '#09090B' : '#F9F8F6');
     }
   }, [settings.theme]);
 
@@ -878,13 +878,13 @@ export default function App() {
     return (
       <>
         <SplashScreen isDataReady={false} />
-        <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#17110D] flex flex-col items-center justify-center gap-4 p-6">
-          <Loader2 className="h-8 w-8 animate-spin text-[#D97706]" />
+        <div className="min-h-screen bg-[#F9F8F6] dark:bg-[#09090B] flex flex-col items-center justify-center gap-4 p-6">
+          <Loader2 className="h-8 w-8 animate-spin text-[#0F5132] dark:text-[#C5A46D]" strokeWidth={1.5} />
           <div className="text-center space-y-1">
-            <p className="font-quran-scheherazade text-2xl text-[#B45309] dark:text-[#FBBF24]">
+            <p className="font-quran-scheherazade text-2xl text-[#0F5132] dark:text-[#C5A46D]">
               مِحْرَاب النُّور · المصحف الشريف
             </p>
-            <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8]">
+            <p className="text-xs text-[#6B6A66] dark:text-[#8E8E93]">
               {lang === 'ar'
                 ? 'جارٍ تهيئة المصحف الشريف للعمل دون اتصال...'
                 : 'Preparing offline Quran vault in IndexedDB...'}
@@ -897,13 +897,13 @@ export default function App() {
 
   if (loadError) {
     return (
-      <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#17110D] flex flex-col items-center justify-center gap-3 p-6 text-center">
-        <AlertCircle className="h-8 w-8 text-rose-500" />
-        <p className="text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE]">{loadError}</p>
+      <div className="min-h-screen bg-[#F9F8F6] dark:bg-[#09090B] flex flex-col items-center justify-center gap-3 p-6 text-center">
+        <AlertCircle className="h-8 w-8 text-rose-500" strokeWidth={1.5} />
+        <p className="text-sm font-semibold text-[#121212] dark:text-[#F4F4F5]">{loadError}</p>
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="rounded-full bg-[#D97706] px-5 py-2 text-xs font-semibold text-white"
+          className="rounded-xl bg-[#0F5132] dark:bg-[#C5A46D] px-5 py-2 text-xs font-semibold text-white dark:text-[#09090B]"
         >
           {lang === 'ar' ? 'إعادة المحاولة' : 'Retry'}
         </button>
@@ -916,7 +916,7 @@ export default function App() {
     activeRoute !== 'mushaf' && !player.hasStarted && !player.isPlaying && !voice.isListening;
 
   return (
-    <div className="min-h-screen text-[#2D231E] dark:text-[#FAF5EE] transition-colors">
+    <div className="min-h-screen text-[#121212] dark:text-[#F4F4F5] transition-colors">
       <SplashScreen isDataReady={!loading} />
       <Header
         activeRoute={activeRoute}
@@ -934,7 +934,7 @@ export default function App() {
         <div
           role="status"
           data-testid="ota-update-banner"
-          className="bg-amber-500/14 border-b border-amber-500/25 px-4 py-2 text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] flex items-center justify-center gap-3"
+          className="bg-[#EFECE4] dark:bg-[#16161A] border-b border-[#E6E4DF] dark:border-[#222226] px-4 py-2 text-xs font-semibold text-[#0F5132] dark:text-[#C5A46D] flex items-center justify-center gap-3"
         >
           <span>
             {lang === 'ar' ? 'يتوفر تحديث جديد للتطبيق' : 'A new update is ready'}
@@ -942,9 +942,9 @@ export default function App() {
           <button
             type="button"
             onClick={() => void updater.applyUpdateNow()}
-            className="inline-flex items-center gap-1 rounded-full bg-[#D97706] px-3 py-1 text-[11px] font-bold text-white hover:opacity-90"
+            className="inline-flex items-center gap-1 rounded-lg bg-[#0F5132] dark:bg-[#C5A46D] px-3 py-1 text-[11px] font-semibold text-white dark:text-[#09090B] hover:opacity-90"
           >
-            <RefreshCw className="h-3 w-3" />
+            <RefreshCw className="h-3 w-3" strokeWidth={1.5} />
             <span>{lang === 'ar' ? 'تحديث الآن' : 'Update Now'}</span>
           </button>
           <button
@@ -953,14 +953,14 @@ export default function App() {
             aria-label={t.closeWord}
             className="p-0.5 rounded opacity-75 hover:opacity-100"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-3.5 w-3.5" strokeWidth={1.5} />
           </button>
         </div>
       )}
 
       {!isOnline && !isMushafFocus && (
-        <div className="bg-amber-500/12 border-b border-amber-500/20 px-4 py-1.5 text-center text-xs font-medium text-[#B45309] dark:text-[#FBBF24] flex items-center justify-center gap-2">
-          <WifiOff className="h-3.5 w-3.5" />
+        <div className="bg-[#EFECE4] dark:bg-[#16161A] border-b border-[#E6E4DF] dark:border-[#222226] px-4 py-1.5 text-center text-xs font-medium text-[#6B6A66] dark:text-[#8E8E93] flex items-center justify-center gap-2">
+          <WifiOff className="h-3.5 w-3.5" strokeWidth={1.5} />
           <span>{t.offlineBanner}</span>
         </div>
       )}
@@ -970,16 +970,16 @@ export default function App() {
           role="status"
           aria-live="polite"
           data-testid="khatma-toast"
-          className="fixed top-16 end-3 sm:end-6 z-50 w-[calc(100%-1.5rem)] max-w-sm rounded-3xl border border-amber-500/30 bg-white/98 dark:bg-[#211914]/98 md:backdrop-blur-md p-3.5 shadow-2xl flex items-start gap-3"
+          className="fixed top-16 end-3 sm:end-6 z-50 w-[calc(100%-1.5rem)] max-w-sm rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-3.5 shadow-2xl flex items-start gap-3"
         >
-          <div className="h-8 w-8 rounded-2xl bg-amber-500/15 text-[#D97706] flex items-center justify-center shrink-0">
-            <Bell className="h-4 w-4" />
+          <div className="h-8 w-8 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#0F5132] dark:text-[#C5A46D] flex items-center justify-center shrink-0">
+            <Bell className="h-4 w-4" strokeWidth={1.5} />
           </div>
           <div className="min-w-0 flex-1 space-y-1">
-            <p className="text-xs font-bold text-[#2D231E] dark:text-[#FAF5EE]">
+            <p className="text-xs font-semibold text-[#121212] dark:text-[#F4F4F5]">
               {khatma.toastPreview.title}
             </p>
-            <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8] leading-relaxed">
+            <p className="text-xs text-[#6B6A66] dark:text-[#8E8E93] leading-relaxed">
               {khatma.toastPreview.body}
             </p>
             {khatma.toastPreview.action === 'kahf' && (
@@ -989,7 +989,7 @@ export default function App() {
                   khatma.dismissToast();
                   openSurah(18, 1);
                 }}
-                className="mt-1 inline-flex items-center rounded-full bg-[#D97706] px-3 py-1 text-[11px] font-semibold text-white hover:bg-[#B45309]"
+                className="mt-1 inline-flex items-center rounded-lg bg-[#0F5132] dark:bg-[#C5A46D] px-3 py-1 text-[11px] font-semibold text-white dark:text-[#09090B]"
               >
                 {t.openKahfBtn}
               </button>
@@ -999,9 +999,9 @@ export default function App() {
             type="button"
             onClick={khatma.dismissToast}
             aria-label={t.closeWord}
-            className="p-1 rounded-full text-[#6E5649] hover:text-[#2D231E]"
+            className="p-1 rounded-full text-[#6B6A66] dark:text-[#8E8E93] hover:text-[#121212] dark:hover:text-[#F4F4F5]"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-3.5 w-3.5" strokeWidth={1.5} />
           </button>
         </div>
       )}

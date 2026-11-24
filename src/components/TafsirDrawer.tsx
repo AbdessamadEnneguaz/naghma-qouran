@@ -69,21 +69,21 @@ const BOOKMARK_CATEGORIES: Array<{
 }> = [
   {
     id: 'wird',
-    dotClass: 'bg-[#D97706]',
+    dotClass: 'bg-[#8C6D46] dark:bg-[#C5A46D]',
     activeClass:
-      'border-[#D97706] bg-amber-500/15 text-[#92400E] dark:text-[#FBBF24]',
+      'border-[#8C6D46] dark:border-[#C5A46D] bg-[#8C6D46]/10 dark:bg-[#C5A46D]/15 text-[#8C6D46] dark:text-[#C5A46D]',
   },
   {
     id: 'memorization',
-    dotClass: 'bg-[#059669]',
+    dotClass: 'bg-[#0F5132] dark:bg-[#34D399]',
     activeClass:
-      'border-[#059669] bg-emerald-500/15 text-[#065F46] dark:text-[#34D399]',
+      'border-[#0F5132] dark:border-[#34D399] bg-[#0F5132]/10 dark:bg-emerald-500/15 text-[#0F5132] dark:text-[#34D399]',
   },
   {
     id: 'favorites',
-    dotClass: 'bg-[#E11D48]',
+    dotClass: 'bg-[#121212] dark:bg-[#F4F4F5]',
     activeClass:
-      'border-[#E11D48] bg-rose-500/15 text-[#9F1239] dark:text-[#FB7185]',
+      'border-[#121212] dark:border-[#F4F4F5] bg-[#121212]/10 dark:bg-white/10 text-[#121212] dark:text-[#F4F4F5]',
   },
 ];
 
@@ -125,6 +125,7 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
   } | null>(null);
 
   const sheetRef = useRef<HTMLDivElement | null>(null);
+  const cardPreviewRef = useRef<HTMLDivElement | null>(null);
   const dragStateRef = useRef<{
     active: boolean;
     startY: number;
@@ -233,7 +234,7 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
             sharedViaSheet = true;
           }
         } catch {
-          // User cancelled or file-share unsupported; trigger clean PNG download fallback
+          // User cancelled or file-share unsupported
         }
       }
 
@@ -256,8 +257,6 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
       setGeneratingCard(false);
     }
   };
-
-  const cardPreviewRef = useRef<HTMLDivElement | null>(null);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('button, a, input, select')) return;
@@ -300,7 +299,7 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/55 p-0 md:p-6"
+      className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 p-0 md:p-6"
       role="dialog"
       aria-modal="true"
       data-testid="verse-bottom-sheet"
@@ -309,7 +308,7 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
     >
       <div
         ref={sheetRef}
-        className="w-full max-w-2xl max-h-[88vh] flex flex-col rounded-t-3xl md:rounded-3xl border border-amber-500/22 bg-[#FDFBF7] dark:bg-[#1B1410] shadow-2xl overflow-hidden will-change-transform"
+        className="w-full max-w-2xl max-h-[88vh] flex flex-col rounded-t-3xl md:rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] shadow-2xl overflow-hidden will-change-transform"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Interactive Draggable Handle + Header */}
@@ -321,17 +320,17 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
           onPointerCancel={handlePointerUp}
           className="touch-none select-none cursor-grab active:cursor-grabbing"
         >
-          <div className="w-12 h-1.5 bg-amber-600/35 dark:bg-amber-400/35 rounded-full mx-auto mt-3 mb-1" />
+          <div className="w-12 h-1 bg-[#D6D3CB] dark:bg-[#2F2F35] rounded-full mx-auto mt-3 mb-1" />
 
-          <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-amber-500/12">
+          <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-[#E6E4DF] dark:border-[#222226]">
             <div className="min-w-0">
-              <h3 className="text-base font-bold text-[#2D231E] dark:text-[#FAF5EE] truncate tabular-nums">
+              <h3 className="text-base font-semibold text-[#121212] dark:text-[#F4F4F5] truncate tabular-nums">
                 {surahDisplay} ·{' '}
                 {lang === 'ar'
                   ? `${toArabicDigits(verse.surah)}:${toArabicDigits(verse.ayah)}`
                   : `Ayah ${verse.surah}:${verse.ayah}`}
               </h3>
-              <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
+              <p className="text-xs text-[#6B6A66] dark:text-[#8E8E93] tabular-nums">
                 {t.pageWord} {lang === 'ar' ? toArabicDigits(verse.page) : verse.page} ·{' '}
                 {t.juzWord} {lang === 'ar' ? toArabicDigits(verse.juz) : verse.juz} ·{' '}
                 {riwayat === 'warsh' ? t.warshLabel : t.hafsLabel}
@@ -342,9 +341,9 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
               type="button"
               onClick={onClose}
               aria-label={t.closeWord}
-              className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full text-[#6E5649] dark:text-[#D6C7B8] hover:bg-amber-500/10 transition-colors"
+              className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full text-[#6B6A66] dark:text-[#8E8E93] hover:bg-[#F4F2ED] dark:hover:bg-[#1E1E22] transition-colors"
             >
-              <X className="h-5 w-5" />
+              <X className="h-5 w-5" strokeWidth={1.5} />
             </button>
           </div>
         </div>
@@ -353,19 +352,19 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
           {/* Arabic Uthmani Ayah Card */}
           <div
             dir="rtl"
-            className="rounded-3xl border border-amber-500/15 bg-white/85 dark:bg-[#241B15] p-4 sm:p-5 font-quran-amiri text-2xl sm:text-3xl leading-[2.2] tracking-normal text-[#2D231E] dark:text-[#FAF5EE]"
+            className="rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] p-4 sm:p-5 font-quran-amiri text-2xl sm:text-3xl leading-[2.2] tracking-normal text-[#121212] dark:text-[#F4F4F5]"
           >
             {arabicText}{' '}
-            <span className="text-[#B45309] dark:text-[#FBBF24]">
+            <span className="text-[#8C6D46] dark:text-[#C5A46D]">
               ﴿{toArabicDigits(verse.ayah)}﴾
             </span>
           </div>
 
-          {/* 3-Tab Commentary Switcher: Tafsir Al-Muyassar | English | Français */}
+          {/* 3-Tab Commentary Switcher */}
           <div
             role="tablist"
             aria-label="Commentary & Translation"
-            className="flex items-center gap-1 p-1 rounded-full bg-amber-500/12 dark:bg-[#241B15]"
+            className="flex items-center gap-1 p-1 rounded-xl bg-[#EFECE4] dark:bg-[#16161A] border border-[#E6E4DF] dark:border-[#222226]"
           >
             <button
               type="button"
@@ -373,10 +372,10 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
               data-testid="sheet-tab-tafsir"
               aria-selected={activeSection === 'tafsir'}
               onClick={() => setActiveSection('tafsir')}
-              className={`flex-1 py-2 px-2.5 rounded-full text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap ${
+              className={`flex-1 py-2 px-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap ${
                 activeSection === 'tafsir'
-                  ? 'bg-[#D97706] text-white'
-                  : 'text-[#6E5649] dark:text-[#D6C7B8]'
+                  ? 'bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
+                  : 'text-[#6B6A66] dark:text-[#8E8E93]'
               }`}
             >
               {t.tafsirMuyassarTab}
@@ -387,10 +386,10 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
               data-testid="sheet-tab-en"
               aria-selected={activeSection === 'en'}
               onClick={() => setActiveSection('en')}
-              className={`flex-1 py-2 px-2.5 rounded-full text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap ${
+              className={`flex-1 py-2 px-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap ${
                 activeSection === 'en'
-                  ? 'bg-[#D97706] text-white'
-                  : 'text-[#6E5649] dark:text-[#D6C7B8]'
+                  ? 'bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
+                  : 'text-[#6B6A66] dark:text-[#8E8E93]'
               }`}
             >
               {t.englishTranslationTab}
@@ -401,10 +400,10 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
               data-testid="sheet-tab-fr"
               aria-selected={activeSection === 'fr'}
               onClick={() => setActiveSection('fr')}
-              className={`flex-1 py-2 px-2.5 rounded-full text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap ${
+              className={`flex-1 py-2 px-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap ${
                 activeSection === 'fr'
-                  ? 'bg-[#D97706] text-white'
-                  : 'text-[#6E5649] dark:text-[#D6C7B8]'
+                  ? 'bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
+                  : 'text-[#6B6A66] dark:text-[#8E8E93]'
               }`}
             >
               {t.frenchTranslationTab}
@@ -418,24 +417,24 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
                 <p
                   dir="rtl"
                   data-testid="sheet-content-tafsir"
-                  className="font-quran-scheherazade text-xl sm:text-2xl leading-[2.0] tracking-normal text-[#2D231E] dark:text-[#FAF5EE]"
+                  className="font-quran-scheherazade text-xl sm:text-2xl leading-[2.0] tracking-normal text-[#121212] dark:text-[#F4F4F5]"
                 >
                   {tafsir}
                 </p>
               ) : (
-                <p className="text-sm text-[#6E5649] dark:text-[#D6C7B8]">{t.loadingTafsir}</p>
+                <p className="text-sm text-[#6B6A66] dark:text-[#8E8E93]">{t.loadingTafsir}</p>
               )
             ) : activeSection === 'en' ? (
               translationEn ? (
                 <p
                   dir="ltr"
                   data-testid="sheet-content-en"
-                  className="text-sm sm:text-base leading-relaxed text-[#2D231E] dark:text-[#FAF5EE]"
+                  className="text-sm sm:text-base leading-relaxed text-[#121212] dark:text-[#F4F4F5]"
                 >
                   {translationEn}
                 </p>
               ) : (
-                <p className="text-sm text-[#6E5649] dark:text-[#D6C7B8]">
+                <p className="text-sm text-[#6B6A66] dark:text-[#8E8E93]">
                   {t.loadingTranslation}
                 </p>
               )
@@ -443,27 +442,27 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
               <p
                 dir="ltr"
                 data-testid="sheet-content-fr"
-                className="text-sm sm:text-base leading-relaxed text-[#2D231E] dark:text-[#FAF5EE]"
+                className="text-sm sm:text-base leading-relaxed text-[#121212] dark:text-[#F4F4F5]"
               >
                 {translationFr}
               </p>
             ) : (
-              <p className="text-sm text-[#6E5649] dark:text-[#D6C7B8] flex items-center gap-2">
-                {loadingFr && <Loader2 className="h-4 w-4 animate-spin text-[#D97706]" />}
+              <p className="text-sm text-[#6B6A66] dark:text-[#8E8E93] flex items-center gap-2">
+                {loadingFr && <Loader2 className="h-4 w-4 animate-spin text-[#0F5132] dark:text-[#C5A46D]" strokeWidth={1.5} />}
                 <span>{t.loadingFrenchTranslation}</span>
               </p>
             )}
           </div>
 
-          {/* Hifz Loop Repeat Control Strip (1x, 3x, 5x, ∞) */}
-          <div className="rounded-2xl border border-amber-500/14 bg-white/75 dark:bg-[#241B15]/85 p-3.5 flex flex-wrap items-center justify-between gap-2.5">
-            <div className="flex items-center gap-2 text-xs font-semibold text-[#4E3629] dark:text-[#E5D5C3]">
-              <Repeat className="h-4 w-4 text-[#D97706]" />
+          {/* Hifz Loop Repeat Control Strip */}
+          <div className="rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] p-3.5 flex flex-wrap items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2 text-xs font-semibold text-[#121212] dark:text-[#F4F4F5]">
+              <Repeat className="h-4 w-4 text-[#0F5132] dark:text-[#C5A46D]" strokeWidth={1.5} />
               <span>{t.hifzRepeatLabel}</span>
               {isPlayingThisVerse && hifzRepeatTarget !== 1 && (
                 <span
                   data-testid="hifz-loop-progress"
-                  className="text-[#B45309] dark:text-[#FBBF24] font-bold tabular-nums"
+                  className="text-[#0F5132] dark:text-[#C5A46D] font-semibold tabular-nums"
                 >
                   · {formatAyahLoopProgress(hifzRepeatDone, hifzRepeatTarget)}
                 </span>
@@ -482,10 +481,10 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
                       onSelectHifzRepeat(opt.value);
                       onPlayAyahWithRepeat(verse.surah, verse.ayah, opt.value);
                     }}
-                    className={`min-w-[40px] px-3 py-1.5 rounded-full text-xs font-bold border tabular-nums transition-colors ${
+                    className={`min-w-[40px] px-3 py-1.5 rounded-lg text-xs font-semibold border tabular-nums transition-colors ${
                       active
-                        ? 'border-[#7C4A15] bg-[#7C4A15] text-white'
-                        : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] text-[#4E3629] dark:text-[#D6C7B8] hover:border-[#D97706]'
+                        ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
+                        : 'border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#121212] dark:text-[#F4F4F5]'
                     }`}
                   >
                     {opt.label}
@@ -495,9 +494,9 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
             </div>
           </div>
 
-          {/* Multi-Color Categorized Bookmark Selector */}
-          <div className="rounded-2xl border border-amber-500/14 bg-white/75 dark:bg-[#241B15]/85 p-3.5 space-y-2">
-            <div className="text-xs font-semibold text-[#4E3629] dark:text-[#E5D5C3]">
+          {/* Categorized Bookmark Selector */}
+          <div className="rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] p-3.5 space-y-2">
+            <div className="text-xs font-semibold text-[#121212] dark:text-[#F4F4F5]">
               {t.bookmarkCategoryLabel}
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -515,15 +514,15 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
                         onSetBookmarkCategory(verse, cat.id);
                       }
                     }}
-                    className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
+                    className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
                       isSelectedCat
                         ? cat.activeClass
-                        : 'border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] text-[#4E3629] dark:text-[#D6C7B8] hover:border-[#D97706]'
+                        : 'border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#6B6A66] dark:text-[#8E8E93]'
                     }`}
                   >
-                    <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${cat.dotClass}`} />
+                    <span className={`h-2 w-2 rounded-full shrink-0 ${cat.dotClass}`} />
                     <span>{getCategoryLabel(cat.id)}</span>
-                    {isSelectedCat && <Check className="h-3.5 w-3.5 shrink-0" />}
+                    {isSelectedCat && <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />}
                   </button>
                 );
               })}
@@ -531,9 +530,9 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
           </div>
 
           {/* 1-Click Shareable Ayah Image Card Strip */}
-          <div className="rounded-2xl border border-amber-500/14 bg-white/75 dark:bg-[#241B15]/85 p-3.5 space-y-3">
+          <div className="rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] p-3.5 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 p-1">
+              <div className="inline-flex items-center gap-1 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-1">
                 <button
                   type="button"
                   data-testid="card-format-story"
@@ -541,10 +540,10 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
                     setCardFormat('story');
                     setCardPreview(null);
                   }}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
                     cardFormat === 'story'
-                      ? 'bg-[#D97706] text-white'
-                      : 'text-[#6E5649] dark:text-[#D6C7B8]'
+                      ? 'bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
+                      : 'text-[#6B6A66] dark:text-[#8E8E93]'
                   }`}
                 >
                   {t.cardFormatStory}
@@ -556,10 +555,10 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
                     setCardFormat('square');
                     setCardPreview(null);
                   }}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
                     cardFormat === 'square'
-                      ? 'bg-[#D97706] text-white'
-                      : 'text-[#6E5649] dark:text-[#D6C7B8]'
+                      ? 'bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
+                      : 'text-[#6B6A66] dark:text-[#8E8E93]'
                   }`}
                 >
                   {t.cardFormatSquare}
@@ -571,12 +570,12 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
                 data-testid="sheet-share-card-btn"
                 onClick={() => void handleShareImageCard()}
                 disabled={generatingCard}
-                className="inline-flex items-center gap-2 rounded-full bg-[#B45309] hover:bg-[#92400E] px-4 py-2 text-xs font-semibold text-white transition-colors whitespace-nowrap disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#0F5132] dark:bg-[#C5A46D] hover:opacity-90 px-4 py-2 text-xs font-semibold text-white dark:text-[#09090B] transition-opacity whitespace-nowrap disabled:opacity-60"
               >
                 {generatingCard ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
                 ) : (
-                  <ImageIcon className="h-3.5 w-3.5" />
+                  <ImageIcon className="h-3.5 w-3.5" strokeWidth={1.5} />
                 )}
                 <span>{t.shareCardBtn}</span>
               </button>
@@ -586,19 +585,19 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
               <div
                 ref={cardPreviewRef}
                 data-testid="ayah-card-preview"
-                className="flex items-center justify-between gap-3 pt-2 border-t border-amber-500/12"
+                className="flex items-center justify-between gap-3 pt-2 border-t border-[#E6E4DF] dark:border-[#222226]"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <img
                     src={cardPreview.dataUrl}
                     alt={`${surahDisplay} ${verse.surah}:${verse.ayah}`}
-                    className="h-14 w-14 rounded-xl object-cover border border-amber-500/25 shrink-0"
+                    className="h-14 w-14 rounded-xl object-cover border border-[#E6E4DF] dark:border-[#222226] shrink-0"
                   />
                   <div className="min-w-0">
-                    <p className="text-xs font-bold text-[#2D231E] dark:text-[#FAF5EE] truncate">
+                    <p className="text-xs font-semibold text-[#121212] dark:text-[#F4F4F5] truncate">
                       {t.storyCardReadyTitle}
                     </p>
-                    <p className="text-[11px] text-[#6E5649] dark:text-[#D6C7B8] truncate">
+                    <p className="text-[11px] text-[#6B6A66] dark:text-[#8E8E93] truncate">
                       {cardPreview.filename}
                     </p>
                   </div>
@@ -606,9 +605,9 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
                 <a
                   href={cardPreview.dataUrl}
                   download={cardPreview.filename}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 px-3 py-1.5 text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] hover:border-[#D97706] shrink-0"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#E6E4DF] dark:border-[#222226] px-3 py-1.5 text-xs font-semibold text-[#0F5132] dark:text-[#C5A46D] shrink-0"
                 >
-                  <Download className="h-3.5 w-3.5" />
+                  <Download className="h-3.5 w-3.5" strokeWidth={1.5} />
                   <span>PNG</span>
                 </a>
               </div>
@@ -617,12 +616,12 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
         </div>
 
         {/* Sticky Action Footer */}
-        <div className="px-5 py-3.5 border-t border-amber-500/12 bg-[#FAF5EE] dark:bg-[#221914] flex flex-wrap items-center justify-between gap-2">
+        <div className="px-5 py-3.5 border-t border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#121215] flex flex-wrap items-center justify-between gap-2">
           <button
             type="button"
             data-testid="sheet-listen-btn"
             onClick={() => onPlayAyahWithRepeat(verse.surah, verse.ayah, hifzRepeatTarget)}
-            className="inline-flex items-center gap-2 rounded-full bg-[#D97706] hover:bg-[#B45309] px-5 py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#0F5132] dark:bg-[#C5A46D] hover:opacity-90 px-5 py-2.5 text-xs sm:text-sm font-semibold text-white dark:text-[#09090B] transition-opacity"
           >
             <Play className="h-4 w-4 fill-current" />
             <span>
@@ -638,13 +637,13 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
               type="button"
               data-testid="sheet-bookmark-btn"
               onClick={() => onToggleBookmark(verse, bookmarkCategory || 'favorites')}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-colors ${
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-colors ${
                 isBookmarked
-                  ? 'border-[#D97706] bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
-                  : 'border-amber-500/20 text-[#2D231E] dark:text-[#FAF5EE]'
+                  ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132]/10 dark:bg-[#C5A46D]/15 text-[#0F5132] dark:text-[#C5A46D]'
+                  : 'border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#18181C] text-[#121212] dark:text-[#F4F4F5]'
               }`}
             >
-              <Bookmark className={`h-4 w-4 ${isBookmarked ? 'fill-current' : ''}`} />
+              <Bookmark className="h-4 w-4" strokeWidth={1.5} />
               <span>{isBookmarked ? t.bookmarked : t.bookmark}</span>
             </button>
 
@@ -652,17 +651,21 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
               type="button"
               onClick={() => void handleShareImageCard()}
               aria-label={t.shareWord}
-              className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 px-3 py-2.5 text-xs sm:text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#18181C] px-3 py-2.5 text-xs sm:text-sm font-semibold text-[#121212] dark:text-[#F4F4F5] hover:border-[#0F5132] dark:hover:border-[#C5A46D] transition-colors"
             >
-              <Share2 className="h-4 w-4" />
+              <Share2 className="h-4 w-4" strokeWidth={1.5} />
             </button>
 
             <button
               type="button"
               onClick={handleCopy}
-              className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#18181C] px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#121212] dark:text-[#F4F4F5] hover:border-[#0F5132] dark:hover:border-[#C5A46D] transition-colors"
             >
-              {copied ? <Check className="h-4 w-4 text-[#D97706]" /> : <Copy className="h-4 w-4" />}
+              {copied ? (
+                <Check className="h-4 w-4 text-[#0F5132] dark:text-[#C5A46D]" strokeWidth={1.5} />
+              ) : (
+                <Copy className="h-4 w-4" strokeWidth={1.5} />
+              )}
               <span>{copied ? t.copied : t.copy}</span>
             </button>
           </div>

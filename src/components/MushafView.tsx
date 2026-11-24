@@ -44,8 +44,6 @@ const AyahMedallion: React.FC<{
 }> = ({ayah, isBookmarked, isSajda}) => {
   const digits = toArabicDigits(ayah);
   const svgFontSize = ayah >= 100 ? '9.5' : ayah >= 10 ? '11' : '13';
-  const strokeColor = isBookmarked ? '#EA580C' : '#B45309';
-  const fillTint = isBookmarked ? 'rgba(234, 88, 12, 0.14)' : 'rgba(217, 119, 6, 0.08)';
 
   return (
     <span
@@ -54,11 +52,17 @@ const AyahMedallion: React.FC<{
       aria-hidden="true"
     >
       {isSajda && (
-        <span className="text-[0.72em] text-[#D97706] me-0.5 leading-none">۩</span>
+        <span className="text-[0.72em] text-[#0F5132] dark:text-[#C5A46D] me-0.5 leading-none">
+          ۩
+        </span>
       )}
       <svg
         viewBox="0 0 36 36"
-        className="w-[1.28em] h-[1.28em] shrink-0 overflow-visible"
+        className={`w-[1.28em] h-[1.28em] shrink-0 overflow-visible ${
+          isBookmarked
+            ? 'text-[#0F5132] dark:text-[#C5A46D]'
+            : 'text-[#8C6D46] dark:text-[#C5A46D]'
+        }`}
       >
         <rect
           x="6.5"
@@ -66,9 +70,10 @@ const AyahMedallion: React.FC<{
           width="23"
           height="23"
           rx="4"
-          fill={fillTint}
-          stroke={strokeColor}
-          strokeWidth="1.45"
+          fill="currentColor"
+          fillOpacity={isBookmarked ? '0.14' : '0.07'}
+          stroke="currentColor"
+          strokeWidth="1.2"
         />
         <rect
           x="6.5"
@@ -77,8 +82,8 @@ const AyahMedallion: React.FC<{
           height="23"
           rx="4"
           fill="none"
-          stroke={strokeColor}
-          strokeWidth="1.2"
+          stroke="currentColor"
+          strokeWidth="1"
           transform="rotate(45 18 18)"
         />
         <circle
@@ -86,9 +91,9 @@ const AyahMedallion: React.FC<{
           cy="18"
           r="9.8"
           fill="none"
-          stroke={strokeColor}
-          strokeWidth="0.8"
-          strokeOpacity="0.55"
+          stroke="currentColor"
+          strokeWidth="0.7"
+          strokeOpacity="0.5"
         />
         <text
           x="18"
@@ -98,8 +103,8 @@ const AyahMedallion: React.FC<{
           fill="currentColor"
           className={
             isBookmarked
-              ? 'text-[#EA580C] dark:text-[#FB923C]'
-              : 'text-[#92400E] dark:text-[#FBBF24]'
+              ? 'text-[#0F5132] dark:text-[#C5A46D]'
+              : 'text-[#121212] dark:text-[#F4F4F5]'
           }
           style={{
             fontFamily: 'var(--font-quran-scheherazade)',
@@ -201,7 +206,6 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
   const [browseTab, setBrowseTab] = useState<ReaderBrowseTab>('quran');
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
   const [surahQuery, setSurahQuery] = useState('');
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [sharedKey, setSharedKey] = useState<string | null>(null);
   const [pageJumpInput, setPageJumpInput] = useState(String(currentPage));
   const touchStartX = useRef<number | null>(null);
@@ -390,17 +394,6 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
     return `${text} ﴿${toArabicDigits(verse.ayah)}﴾${tr ? `\n"${tr}"` : ''}\n[${sMeta?.nameEn || verse.surah} ${verse.surah}:${verse.ayah} · Mihrab Noor]`;
   };
 
-  const handleCopyVerse = async (verse: QuranVerse) => {
-    try {
-      await navigator.clipboard.writeText(formatVersePayload(verse));
-      const key = `${verse.surah}:${verse.ayah}`;
-      setCopiedKey(key);
-      setTimeout(() => setCopiedKey(null), 1800);
-    } catch {
-      // ignore clipboard restriction
-    }
-  };
-
   const handleShareVerse = async (verse: QuranVerse) => {
     const key = `${verse.surah}:${verse.ayah}`;
     const payload = formatVersePayload(verse);
@@ -416,7 +409,6 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
       setSharedKey(key);
       setTimeout(() => setSharedKey(null), 1800);
     } catch {
-      // Fallback copy if share cancelled
       try {
         await navigator.clipboard.writeText(payload);
         setSharedKey(key);
@@ -453,7 +445,7 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
             role="tablist"
             aria-label="Mushaf Browse Modes"
             data-testid="mushaf-browse-toggle"
-            className="inline-flex items-center rounded-full bg-amber-500/12 dark:bg-[#241B15] border border-amber-500/15 p-1"
+            className="inline-flex items-center rounded-xl bg-[#EFECE4] dark:bg-[#16161A] border border-[#E6E4DF] dark:border-[#222226] p-1"
           >
             {(
               [
@@ -470,10 +462,10 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                 data-testid={`mushaf-tab-${tab.id}`}
                 aria-selected={browseTab === tab.id}
                 onClick={() => setBrowseTab(tab.id)}
-                className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
+                className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
                   browseTab === tab.id
-                    ? 'bg-white dark:bg-[#D97706] text-[#B45309] dark:text-white shadow-sm'
-                    : 'text-[#6E5649] dark:text-[#D6C7B8] hover:text-[#2D231E] dark:hover:text-[#FAF5EE]'
+                    ? 'bg-white dark:bg-[#121215] text-[#0F5132] dark:text-[#C5A46D] shadow-sm border border-[#E6E4DF] dark:border-[#222226]'
+                    : 'text-[#6B6A66] dark:text-[#8E8E93] hover:text-[#121212] dark:hover:text-[#F4F4F5]'
                 }`}
               >
                 {tab.label}
@@ -490,18 +482,18 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                 disabled={isDownloadingThisSurah}
                 title={isSurahDownloaded ? t.offlineReady : t.downloadSurahOffline}
                 aria-label={isSurahDownloaded ? t.offlineReady : t.downloadSurahOffline}
-                className={`min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full border transition-colors ${
+                className={`min-h-[42px] min-w-[42px] flex items-center justify-center rounded-xl border transition-colors ${
                   isSurahDownloaded
-                    ? 'border-[#D97706]/40 bg-amber-500/15 text-[#B45309] dark:text-[#FBBF24]'
-                    : 'border-amber-500/20 bg-white/85 dark:bg-[#221914] text-[#6E5649] dark:text-[#D6C7B8] hover:text-[#D97706]'
+                    ? 'border-[#0F5132]/35 dark:border-[#C5A46D]/40 bg-[#0F5132]/8 dark:bg-[#C5A46D]/12 text-[#0F5132] dark:text-[#C5A46D]'
+                    : 'border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#6B6A66] dark:text-[#8E8E93] hover:text-[#121212] dark:hover:text-[#F4F4F5]'
                 }`}
               >
                 {isDownloadingThisSurah ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5} />
                 ) : isSurahDownloaded ? (
-                  <Check className="h-4 w-4" />
+                  <Check className="h-4 w-4" strokeWidth={1.5} />
                 ) : (
-                  <Download className="h-4 w-4" />
+                  <Download className="h-4 w-4" strokeWidth={1.5} />
                 )}
               </button>
             )}
@@ -511,9 +503,9 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
               data-testid="mushaf-settings-trigger"
               onClick={() => setSettingsSheetOpen(true)}
               aria-label={t.settingsBtn}
-              className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 rounded-full border border-amber-500/25 bg-white/90 dark:bg-[#221914] text-xs sm:text-sm font-bold text-[#B45309] dark:text-[#FBBF24] hover:border-[#D97706] shadow-sm transition-colors whitespace-nowrap"
+              className="min-h-[42px] inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-xs sm:text-sm font-semibold text-[#121212] dark:text-[#F4F4F5] hover:border-[#0F5132]/40 dark:hover:border-[#C5A46D]/40 transition-colors whitespace-nowrap"
             >
-              <SlidersHorizontal className="h-4 w-4 shrink-0" />
+              <SlidersHorizontal className="h-4 w-4 shrink-0 text-[#0F5132] dark:text-[#C5A46D]" strokeWidth={1.5} />
               <span>{t.settingsBtn}</span>
             </button>
           </div>
@@ -521,18 +513,18 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
 
         {/* Hifz Mode Active Strip */}
         {hifzMode && browseTab === 'quran' && (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-3.5 py-2 text-xs">
-            <span className="font-semibold text-[#B45309] dark:text-[#FBBF24]">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#0F5132]/25 dark:border-[#C5A46D]/30 bg-white dark:bg-[#121215] px-3.5 py-2 text-xs">
+            <span className="font-semibold text-[#0F5132] dark:text-[#C5A46D]">
               {t.hifzActiveBanner}
             </span>
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={onToggleFirstWordHint}
-                className={`px-2.5 py-1 rounded-full font-semibold transition-colors ${
+                className={`px-2.5 py-1 rounded-lg font-semibold transition-colors ${
                   hifzFirstWordHint
-                    ? 'bg-[#D97706] text-white'
-                    : 'bg-white/75 dark:bg-[#221914] text-[#2D231E] dark:text-[#FAF5EE]'
+                    ? 'bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
+                    : 'bg-[#F4F2ED] dark:bg-[#1A1A1E] text-[#121212] dark:text-[#F4F4F5]'
                 }`}
               >
                 {t.hifzHintLabel}
@@ -544,7 +536,7 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                     ? onMaskAllOnPage()
                     : onRevealAllOnPage(pageAyahKeys)
                 }
-                className="px-2.5 py-1 rounded-full bg-white/75 dark:bg-[#221914] font-semibold text-[#2D231E] dark:text-[#FAF5EE]"
+                className="px-2.5 py-1 rounded-lg bg-[#F4F2ED] dark:bg-[#1A1A1E] font-semibold text-[#121212] dark:text-[#F4F4F5]"
               >
                 {revealedAyahKeys.size >= pageAyahKeys.length ? t.hideAll : t.revealAll}
               </button>
@@ -562,9 +554,9 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
             onChange={(e) => setSurahQuery(e.target.value)}
             placeholder={t.filterSurahPlaceholder}
             aria-label={t.filterSurahPlaceholder}
-            className="w-full rounded-2xl border border-amber-500/18 bg-white/80 dark:bg-[#211914] px-4 py-2.5 text-sm text-[#2D231E] dark:text-[#FAF5EE] focus:outline-none focus:ring-2 focus:ring-[#D97706]"
+            className="w-full rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] px-4 py-2.5 text-sm text-[#121212] dark:text-[#F4F4F5] focus:outline-none focus:ring-1 focus:ring-[#0F5132] dark:focus:ring-[#C5A46D]"
           />
-          <div className="rounded-3xl border border-amber-500/12 bg-white/75 dark:bg-[#211914]/85 divide-y divide-amber-500/10 overflow-hidden shadow-sm">
+          <div className="rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] divide-y divide-[#E6E4DF] dark:divide-[#222226] overflow-hidden">
             {filteredSurahs.map((s) => (
               <button
                 key={s.id}
@@ -573,24 +565,24 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                   onChangeSurah(s.id);
                   setBrowseTab('quran');
                 }}
-                className="w-full px-4 py-3 text-start hover:bg-amber-500/8 transition-colors flex items-center justify-between gap-3"
+                className="w-full px-4 py-3 text-start hover:bg-[#F9F8F6] dark:hover:bg-[#18181C] transition-colors flex items-center justify-between gap-3"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <span className="h-8 w-8 rounded-full bg-amber-500/12 text-xs font-bold text-[#B45309] dark:text-[#FBBF24] flex items-center justify-center tabular-nums shrink-0">
+                  <span className="h-8 w-8 rounded-lg border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-xs font-semibold text-[#0F5132] dark:text-[#C5A46D] flex items-center justify-center tabular-nums shrink-0">
                     {String(s.id).padStart(2, '0')}
                   </span>
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE] truncate">
+                    <div className="text-sm font-semibold text-[#121212] dark:text-[#F4F4F5] truncate">
                       {lang === 'ar' ? s.nameAr : s.nameEn}
                     </div>
-                    <div className="text-xs text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
+                    <div className="text-xs text-[#6B6A66] dark:text-[#8E8E93] tabular-nums">
                       {numFmt(s.totalAyahs)} {t.ayahsWord} · {t.pageShort} {numFmt(s.startPage)}
                     </div>
                   </div>
                 </div>
                 <span
                   dir="rtl"
-                  className="font-quran-scheherazade text-lg text-[#B45309] dark:text-[#FBBF24] shrink-0"
+                  className="font-quran-scheherazade text-lg text-[#121212] dark:text-[#F4F4F5] shrink-0"
                 >
                   {s.nameAr.replace('سُورَةُ ', '')}
                 </span>
@@ -614,15 +606,15 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                     onChangePage(startPage);
                     setBrowseTab('quran');
                   }}
-                  className="rounded-2xl border border-amber-500/15 bg-white/80 dark:bg-[#211914] p-4 text-start hover:border-[#D97706] transition-colors space-y-1 shadow-sm"
+                  className="rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-3.5 text-start hover:border-[#0F5132]/40 dark:hover:border-[#C5A46D]/40 transition-colors space-y-1"
                 >
-                  <div className="text-sm font-bold text-[#2D231E] dark:text-[#FAF5EE] tabular-nums">
+                  <div className="text-xs font-semibold text-[#6B6A66] dark:text-[#8E8E93] tabular-nums">
                     {t.juzWord} {numFmt(juzNum)}
                   </div>
-                  <div className="font-quran-scheherazade text-base text-[#B45309] dark:text-[#FBBF24]">
+                  <div className="font-quran-scheherazade text-base font-bold text-[#121212] dark:text-[#F4F4F5]">
                     الجزء {toArabicDigits(juzNum)}
                   </div>
-                  <div className="text-xs text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
+                  <div className="text-xs text-[#0F5132] dark:text-[#C5A46D] tabular-nums">
                     {t.pageShort} {numFmt(startPage)}
                   </div>
                 </button>
@@ -635,14 +627,15 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
       {/* Inline Tab: PAGE JUMPER */}
       {browseTab === 'page' && (
         <div className="mx-auto max-w-3xl px-4 sm:px-8" data-testid="mushaf-page-panel">
-          <div className="rounded-3xl border border-amber-500/15 bg-white/80 dark:bg-[#211914] p-5 sm:p-6 shadow-sm space-y-4">
+          <div className="rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-5 sm:p-6 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 className="text-sm font-bold text-[#2D231E] dark:text-[#FAF5EE]">
+                <h2 className="text-sm font-semibold text-[#121212] dark:text-[#F4F4F5]">
                   {t.jumpToPageLabel}
                 </h2>
-                <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
-                  {t.pageWord} {numFmt(currentPage)} {t.ofWord} {numFmt(604)}
+                <p className="text-xs text-[#6B6A66] dark:text-[#8E8E93] tabular-nums">
+                  {t.pageWord} {numFmt(currentPage)} {t.ofWord} {numFmt(604)} · {t.hizbWord}{' '}
+                  {numFmt(hizbInfo.hizb)}
                 </p>
               </div>
               <form
@@ -663,11 +656,11 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                   value={pageJumpInput}
                   onChange={(e) => setPageJumpInput(e.target.value)}
                   aria-label={t.pageWord}
-                  className="w-20 rounded-full border border-amber-500/25 bg-[#FDFBF7] dark:bg-[#17110D] px-3 py-1.5 text-xs font-bold text-[#2D231E] dark:text-[#FAF5EE] tabular-nums"
+                  className="w-20 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#09090B] px-3 py-1.5 text-xs font-semibold text-[#121212] dark:text-[#F4F4F5] tabular-nums"
                 />
                 <button
                   type="submit"
-                  className="rounded-full bg-[#D97706] px-4 py-1.5 text-xs font-semibold text-white"
+                  className="rounded-xl bg-[#0F5132] dark:bg-[#C5A46D] px-4 py-1.5 text-xs font-semibold text-white dark:text-[#09090B]"
                 >
                   {t.goBtn}
                 </button>
@@ -680,7 +673,7 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
               value={currentPage}
               onChange={(e) => onChangePage(Number(e.target.value))}
               aria-label={t.jumpToPageLabel}
-              className="w-full accent-[#D97706] cursor-pointer"
+              className="w-full accent-[#0F5132] dark:accent-[#C5A46D] cursor-pointer"
             />
             <div className="flex flex-wrap gap-2 pt-1">
               {[
@@ -697,7 +690,7 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                     onChangePage(item.p);
                     setBrowseTab('quran');
                   }}
-                  className="rounded-full border border-amber-500/20 bg-[#FAF5EE] dark:bg-[#17110D] px-3.5 py-1.5 text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] hover:border-[#D97706]"
+                  className="rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#09090B] px-3.5 py-1.5 text-xs font-medium text-[#121212] dark:text-[#F4F4F5] hover:border-[#0F5132] dark:hover:border-[#C5A46D]"
                 >
                   {item.label}
                 </button>
@@ -707,7 +700,7 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
         </div>
       )}
 
-      {/* Main Warm Borderless Mushaf Reading Canvas */}
+      {/* Main Editorial Paper Mushaf Reading Canvas */}
       {browseTab === 'quran' && (
         <div className="relative mx-auto max-w-4xl lg:px-14 pb-6" dir="ltr">
           {!focusMode && (
@@ -717,18 +710,18 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                 onClick={() => onChangePage(Math.min(604, currentPage + 1))}
                 disabled={currentPage >= 604}
                 aria-label={`${t.nextPage} (${Math.min(604, currentPage + 1)})`}
-                className="hidden lg:flex absolute left-1 top-1/2 -translate-y-1/2 h-10 w-10 items-center justify-center rounded-full border border-amber-500/20 bg-white/85 dark:bg-[#221914]/90 text-[#B45309] dark:text-[#FBBF24] hover:border-[#D97706] disabled:opacity-25 shadow-sm transition-all"
+                className="hidden lg:flex absolute left-1 top-1/2 -translate-y-1/2 h-10 w-10 items-center justify-center rounded-full border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#121212] dark:text-[#F4F4F5] hover:border-[#0F5132] dark:hover:border-[#C5A46D] disabled:opacity-25 transition-colors"
               >
-                <ChevronLeft className="h-5 w-5" />
+                <ChevronLeft className="h-5 w-5" strokeWidth={1.5} />
               </button>
               <button
                 type="button"
                 onClick={() => onChangePage(Math.max(1, currentPage - 1))}
                 disabled={currentPage <= 1}
                 aria-label={`${t.prevPage} (${Math.max(1, currentPage - 1)})`}
-                className="hidden lg:flex absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 items-center justify-center rounded-full border border-amber-500/20 bg-white/85 dark:bg-[#221914]/90 text-[#B45309] dark:text-[#FBBF24] hover:border-[#D97706] disabled:opacity-25 shadow-sm transition-all"
+                className="hidden lg:flex absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 items-center justify-center rounded-full border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#121212] dark:text-[#F4F4F5] hover:border-[#0F5132] dark:hover:border-[#C5A46D] disabled:opacity-25 transition-colors"
               >
-                <ChevronRight className="h-5 w-5" />
+                <ChevronRight className="h-5 w-5" strokeWidth={1.5} />
               </button>
             </>
           )}
@@ -736,16 +729,16 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
           <article
             data-testid="mushaf-page-frame"
             dir={lang === 'ar' ? 'rtl' : 'ltr'}
-            className="relative mx-2.5 my-1 sm:mx-auto max-w-3xl rounded-3xl border border-amber-500/15 bg-white/92 dark:bg-[#211914]/95 md:bg-white/80 md:dark:bg-[#211914]/90 md:backdrop-blur-md p-4 sm:p-8 shadow-sm shadow-amber-500/5 overflow-hidden"
+            className="relative mx-2.5 my-1 sm:mx-auto max-w-3xl rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-4 sm:p-8 overflow-hidden"
           >
             <div className="relative z-10 px-0.5 sm:px-2 py-0.5 sm:py-1">
-              {/* Subtle Madani Mushaf Page Header (Surah on one side, Juz' on opposite side) */}
+              {/* Quiet Madani Mushaf Page Header */}
               <div
                 dir="rtl"
                 data-testid="mushaf-top-header"
-                className="flex items-center justify-between gap-2 text-xs font-medium text-amber-900/60 dark:text-amber-200/65 px-2 sm:px-4 pt-0.5 pb-2.5 mb-3.5 sm:mb-5 border-b border-amber-500/12 tabular-nums"
+                className="flex items-center justify-between gap-2 text-xs font-medium text-[#6B6A66] dark:text-[#8E8E93] px-2 sm:px-4 pt-0.5 pb-2.5 mb-3.5 sm:mb-5 border-b border-[#E6E4DF] dark:border-[#222226] tabular-nums"
               >
-                <span className="font-quran-scheherazade text-sm sm:text-base whitespace-nowrap truncate">
+                <span className="font-quran-scheherazade text-sm sm:text-base whitespace-nowrap truncate text-[#121212] dark:text-[#F4F4F5]">
                   {lang === 'ar'
                     ? headerSurahMeta?.nameAr.replace('سُورَةُ ', '')
                     : `${headerSurahMeta?.nameAr.replace('سُورَةُ ', '') || ''} · ${
@@ -783,14 +776,14 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                         <div
                           dir="rtl"
                           data-testid={`surah-bismillah-${surah.id}`}
-                          className={`${fontClass} tracking-normal text-center text-[21px] sm:text-[26px] leading-[2.05] text-[#2D231E] dark:text-[#FDE68A]/95 py-0.5`}
+                          className={`${fontClass} tracking-normal text-center text-[21px] sm:text-[26px] leading-[2.05] text-[#121212] dark:text-[#F4F4F5] py-0.5`}
                         >
                           بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
                         </div>
                       )}
 
                       {settings.showTranslation ? (
-                        <div className="divide-y divide-amber-500/10">
+                        <div className="divide-y divide-[#E6E4DF] dark:divide-[#222226]">
                           {items.map((verse) => {
                             const ayahKey = `${verse.surah}:${verse.ayah}`;
                             const isActiveAudio =
@@ -817,24 +810,24 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                                 data-ayah-key={ayahKey}
                                 {...{[VERSE_KEY_ATTR]: ayahKey}}
                                 {...(isActiveAudio ? {[ACTIVE_VERSE_ATTR]: 'true'} : {})}
-                                className={`py-4 px-2.5 sm:px-4 rounded-2xl transition-colors ${
+                                className={`py-4 px-2.5 sm:px-4 rounded-xl transition-colors ${
                                   isSelected
-                                    ? 'bg-amber-500/12 dark:bg-amber-500/15'
-                                    : 'hover:bg-amber-500/[0.04]'
+                                    ? 'bg-[#0F5132]/8 dark:bg-[#C5A46D]/14'
+                                    : 'hover:bg-[#F9F8F6] dark:hover:bg-[#18181C]'
                                 }`}
                               >
                                 <div className="flex items-center justify-between gap-2 mb-2">
-                                  <span className="rounded-full bg-amber-500/12 px-2.5 py-0.5 text-xs font-bold text-[#B45309] dark:text-[#FBBF24] tabular-nums">
+                                  <span className="rounded-lg border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] px-2.5 py-0.5 text-xs font-semibold text-[#0F5132] dark:text-[#C5A46D] tabular-nums">
                                     {verse.surah}:{verse.ayah}
                                     {verse.sajda && (
-                                      <span className="ms-1.5 text-[#D97706]">· Sajdah ۩</span>
+                                      <span className="ms-1.5">· Sajdah ۩</span>
                                     )}
                                   </span>
 
                                   <button
                                     type="button"
                                     onClick={() => onOpenTafsir(verse)}
-                                    className="text-xs font-semibold text-[#6E5649] dark:text-[#D6C7B8] hover:text-[#D97706]"
+                                    className="text-xs font-medium text-[#6B6A66] dark:text-[#8E8E93] hover:text-[#0F5132] dark:hover:text-[#C5A46D]"
                                   >
                                     {t.tafsir}
                                   </button>
@@ -851,7 +844,7 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                                     }
                                   }}
                                   dir="rtl"
-                                  className={`w-full text-right ${fontClass} mushaf-script-flow tracking-normal text-[#2D231E] dark:text-[#FAF5EE] cursor-pointer`}
+                                  className={`w-full text-right ${fontClass} mushaf-script-flow tracking-normal text-[#121212] dark:text-[#F4F4F5] cursor-pointer`}
                                   style={
                                     {
                                       '--q-size': `${settings.fontSize}px`,
@@ -878,7 +871,7 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                                               : isWordMissed
                                                 ? 'bg-rose-500/20 text-rose-600 dark:text-rose-300 underline decoration-rose-400 underline-offset-8 animate-pulse'
                                                 : isWordMatched
-                                                  ? 'text-[#059669] dark:text-[#34D399]'
+                                                  ? 'text-[#0F5132] dark:text-[#C5A46D]'
                                                   : ''
                                           }`}
                                         >
@@ -887,7 +880,7 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                                       </React.Fragment>
                                     );
                                   })}
-                                  <span className="inline-block whitespace-nowrap align-baseline mx-1 text-[0.8em] leading-none text-[#B45309] dark:text-[#FBBF24]">
+                                  <span className="inline-block whitespace-nowrap align-baseline mx-1 text-[0.8em] leading-none text-[#8C6D46] dark:text-[#C5A46D]">
                                     ﴿{toArabicDigits(verse.ayah)}﴾
                                   </span>
                                 </div>
@@ -895,7 +888,7 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                                 {translations && translations[verse.index] && (
                                   <p
                                     dir="ltr"
-                                    className={`mt-2.5 text-sm leading-relaxed text-[#4E3629] dark:text-[#D6C7B8] text-left transition-all duration-300 ${
+                                    className={`mt-2.5 text-sm leading-relaxed text-[#6B6A66] dark:text-[#A1A1AA] text-left transition-all duration-300 ${
                                       !isRevealed ? 'blur-[4px] opacity-25 select-none' : ''
                                     }`}
                                   >
@@ -903,15 +896,15 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                                   </p>
                                 )}
 
-                                {/* Subtle Quick Amber Circular Action Icons Below Each Verse */}
+                                {/* Subtle Monochrome Action Icons */}
                                 <div className="mt-3 flex items-center gap-2">
                                   <button
                                     type="button"
                                     onClick={() => onPlayAyah(verse.surah, verse.ayah)}
                                     aria-label={`Play Ayah ${verse.surah}:${verse.ayah}`}
-                                    className="h-8 w-8 flex items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10 text-[#B45309] dark:text-[#FBBF24] hover:bg-amber-500 hover:text-white transition-colors"
+                                    className="h-8 w-8 flex items-center justify-center rounded-full border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#121212] dark:text-[#F4F4F5] hover:border-[#0F5132] dark:hover:border-[#C5A46D] transition-colors"
                                   >
-                                    <Play className="h-3.5 w-3.5 fill-current ms-0.5" />
+                                    <Play className="h-3.5 w-3.5 ms-0.5" strokeWidth={1.5} />
                                   </button>
 
                                   <button
@@ -920,23 +913,23 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                                     aria-label={`Bookmark Ayah ${verse.surah}:${verse.ayah}`}
                                     className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors ${
                                       isBookmarked
-                                        ? 'border-[#D97706] bg-[#D97706] text-white'
-                                        : 'border-amber-500/25 bg-amber-500/10 text-[#B45309] dark:text-[#FBBF24] hover:bg-amber-500/20'
+                                        ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
+                                        : 'border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#121212] dark:text-[#F4F4F5] hover:border-[#0F5132]'
                                     }`}
                                   >
-                                    <Bookmark className={`h-3.5 w-3.5 ${isBookmarked ? 'fill-current' : ''}`} />
+                                    <Bookmark className="h-3.5 w-3.5" strokeWidth={1.5} />
                                   </button>
 
                                   <button
                                     type="button"
                                     onClick={() => void handleShareVerse(verse)}
                                     aria-label={`Share Ayah ${verse.surah}:${verse.ayah}`}
-                                    className="h-8 w-8 flex items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10 text-[#B45309] dark:text-[#FBBF24] hover:bg-amber-500/20 transition-colors"
+                                    className="h-8 w-8 flex items-center justify-center rounded-full border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#121212] dark:text-[#F4F4F5] hover:border-[#0F5132] transition-colors"
                                   >
                                     {sharedKey === ayahKey ? (
-                                      <Check className="h-3.5 w-3.5" />
+                                      <Check className="h-3.5 w-3.5 text-[#0F5132] dark:text-[#C5A46D]" strokeWidth={1.5} />
                                     ) : (
-                                      <Share2 className="h-3.5 w-3.5" />
+                                      <Share2 className="h-3.5 w-3.5" strokeWidth={1.5} />
                                     )}
                                   </button>
                                 </div>
@@ -949,7 +942,7 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                         <div
                           dir="rtl"
                           data-testid={`mushaf-justified-block-${surah.id}`}
-                          className={`${fontClass} mushaf-script-flow mushaf-justified px-1 sm:px-3 text-[#2D231E] dark:text-[#FAF5EE]`}
+                          className={`${fontClass} mushaf-script-flow mushaf-justified px-1 sm:px-3 text-[#121212] dark:text-[#F4F4F5]`}
                           style={
                             {
                               '--q-size': `${settings.fontSize}px`,
@@ -993,10 +986,10 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                                   }
                                 }}
                                 aria-label={`Ayah ${verse.surah}:${verse.ayah}`}
-                                className={`inline px-0.5 [box-decoration-break:clone] tracking-normal rounded transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D97706] ${
+                                className={`inline px-0.5 [box-decoration-break:clone] tracking-normal rounded transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0F5132] dark:focus-visible:ring-[#C5A46D] ${
                                   isSelected
-                                    ? 'bg-[#FDE68A]/75 dark:bg-amber-500/25'
-                                    : '[@media(hover:hover)]:hover:bg-[#FDE68A]/35 dark:[@media(hover:hover)]:hover:bg-amber-500/10'
+                                    ? 'bg-[#0F5132]/12 dark:bg-[#C5A46D]/18'
+                                    : '[@media(hover:hover)]:hover:bg-[#0F5132]/6 dark:[@media(hover:hover)]:hover:bg-[#C5A46D]/10'
                                 }`}
                               >
                                 {words.map((word, wIdx) => {
@@ -1018,7 +1011,7 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                                             : isWordMissed
                                               ? 'bg-rose-500/20 text-rose-600 dark:text-rose-300 underline decoration-rose-400 underline-offset-8 animate-pulse'
                                               : isWordMatched
-                                                ? 'text-[#059669] dark:text-[#34D399]'
+                                                ? 'text-[#0F5132] dark:text-[#C5A46D]'
                                                 : ''
                                         }`}
                                       >
@@ -1046,7 +1039,7 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
               {/* Bottom Page Navigation Footer */}
               <div
                 dir="ltr"
-                className={`mt-6 sm:mt-8 pt-3.5 sm:pt-4 px-2 sm:px-4 pb-0.5 border-t border-amber-500/12 flex items-center justify-between gap-2 sm:gap-4 transition-opacity duration-300 ${
+                className={`mt-6 sm:mt-8 pt-3.5 sm:pt-4 px-2 sm:px-4 pb-0.5 border-t border-[#E6E4DF] dark:border-[#222226] flex items-center justify-between gap-2 sm:gap-4 transition-opacity duration-300 ${
                   focusMode ? 'opacity-30 hover:opacity-100' : 'opacity-100'
                 }`}
               >
@@ -1054,16 +1047,16 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                   type="button"
                   onClick={() => onChangePage(Math.min(604, currentPage + 1))}
                   disabled={currentPage >= 604}
-                  className="min-h-[40px] inline-flex items-center gap-1 sm:gap-1.5 rounded-full border border-amber-500/20 px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE] disabled:opacity-35 hover:border-[#D97706] transition-colors whitespace-nowrap"
+                  className="min-h-[40px] inline-flex items-center gap-1 sm:gap-1.5 rounded-xl border border-[#E6E4DF] dark:border-[#222226] px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-[#121212] dark:text-[#F4F4F5] disabled:opacity-35 hover:border-[#0F5132] dark:hover:border-[#C5A46D] transition-colors whitespace-nowrap"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
                   <span>{t.nextPage}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setBrowseTab('page')}
-                  className="min-h-[38px] inline-flex items-center justify-center gap-1.5 px-4 py-1 rounded-full border border-amber-500/25 bg-[#FAF5EE] dark:bg-[#19120E] text-[#B45309] dark:text-[#FBBF24] tabular-nums hover:border-[#D97706] transition-colors whitespace-nowrap"
+                  className="min-h-[38px] inline-flex items-center justify-center gap-1.5 px-4 py-1 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#09090B] text-[#0F5132] dark:text-[#C5A46D] tabular-nums hover:border-[#0F5132] dark:hover:border-[#C5A46D] transition-colors whitespace-nowrap"
                 >
                   <span className="font-quran-scheherazade text-base sm:text-lg leading-none">
                     {toArabicDigits(currentPage)} / ٦٠٤
@@ -1074,10 +1067,10 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
                   type="button"
                   onClick={() => onChangePage(Math.max(1, currentPage - 1))}
                   disabled={currentPage <= 1}
-                  className="min-h-[40px] inline-flex items-center gap-1 sm:gap-1.5 rounded-full border border-amber-500/20 px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE] disabled:opacity-35 hover:border-[#D97706] transition-colors whitespace-nowrap"
+                  className="min-h-[40px] inline-flex items-center gap-1 sm:gap-1.5 rounded-xl border border-[#E6E4DF] dark:border-[#222226] px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-[#121212] dark:text-[#F4F4F5] disabled:opacity-35 hover:border-[#0F5132] dark:hover:border-[#C5A46D] transition-colors whitespace-nowrap"
                 >
                   <span>{t.prevPage}</span>
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
                 </button>
               </div>
             </div>
@@ -1090,9 +1083,9 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
         <button
           type="button"
           onClick={onToggleFocusMode}
-          className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-white/95 dark:bg-[#221914]/98 md:backdrop-blur-md px-3.5 py-2 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] shadow-lg hover:border-[#D97706]"
+          className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-1.5 rounded-full border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] px-3.5 py-2 text-xs font-semibold text-[#121212] dark:text-[#F4F4F5] shadow-lg"
         >
-          <Maximize2 className="h-3.5 w-3.5 text-[#D97706]" />
+          <Maximize2 className="h-3.5 w-3.5 text-[#0F5132] dark:text-[#C5A46D]" strokeWidth={1.5} />
           <span>{t.exitFocus}</span>
         </button>
       )}
@@ -1110,4 +1103,3 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
 };
 
 export const MushafView = React.memo(MushafViewInner);
-

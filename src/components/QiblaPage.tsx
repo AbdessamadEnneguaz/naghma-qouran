@@ -16,6 +16,7 @@ interface QiblaPageProps {
 }
 
 const CITY_STORAGE_KEY = 'najm_city';
+const DEGREE_TICKS = Array.from({length: 72}, (_, idx) => idx * 5);
 
 function getInitialCity(): QiblaCity {
   try {
@@ -122,7 +123,6 @@ export const QiblaPage: React.FC<QiblaPageProps> = ({lang, t}) => {
     }
   };
 
-  // Dial rotates counter to heading so top edge is device forward; needle + Kaaba lock to qibla delta
   const dialRotation = -deviceHeading;
   const kaabaAngleFromDeviceForward = guidance.delta;
   const numFmt = (n: number) => (lang === 'ar' ? toArabicDigits(n) : String(n));
@@ -131,21 +131,21 @@ export const QiblaPage: React.FC<QiblaPageProps> = ({lang, t}) => {
     <div className="mx-auto max-w-3xl px-4 sm:px-6 pt-5 sm:pt-8 pb-8 space-y-4 sm:space-y-5">
       {/* Page Title & Location Bar */}
       <div className="text-center space-y-1">
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#2D231E] dark:text-[#FAF5EE] uppercase">
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#121212] dark:text-[#F4F4F5]">
           {t.qiblaTitle}
         </h1>
-        <p className="text-xs sm:text-sm text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
+        <p className="text-xs sm:text-sm text-[#6B6A66] dark:text-[#8E8E93] tabular-nums">
           {lang === 'ar' ? coords.labelAr : coords.labelEn} ·{' '}
           {coords.lat.toFixed(2)}°, {coords.lng.toFixed(2)}°
         </p>
       </div>
 
       {/* Location & GPS Strip */}
-      <div className="rounded-3xl border border-amber-500/15 bg-white/90 dark:bg-[#211914]/92 md:bg-white/75 md:dark:bg-[#211914]/85 md:backdrop-blur-md p-3 sm:p-4 shadow-sm shadow-amber-500/5 flex flex-wrap items-center gap-2.5">
+      <div className="rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-3 sm:p-4 flex flex-wrap items-center gap-2.5">
         <div className="flex items-center gap-2 flex-1 min-w-[165px]">
           <label
             htmlFor="qibla-city-select"
-            className="text-xs font-semibold text-[#6E5649] dark:text-[#D6C7B8] whitespace-nowrap shrink-0"
+            className="text-xs font-medium text-[#6B6A66] dark:text-[#8E8E93] whitespace-nowrap shrink-0"
           >
             {t.selectCityLabel}:
           </label>
@@ -154,7 +154,7 @@ export const QiblaPage: React.FC<QiblaPageProps> = ({lang, t}) => {
             data-testid="qibla-city-select"
             value={selectedCity.id}
             onChange={(e) => handleSelectCity(e.target.value)}
-            className="min-w-0 flex-1 rounded-xl border border-amber-500/20 bg-[#FDFBF7] dark:bg-[#17110D] px-2.5 py-2 text-xs sm:text-sm font-semibold text-[#2D231E] dark:text-[#FAF5EE] truncate focus:outline-none focus:ring-2 focus:ring-[#D97706]"
+            className="min-w-0 flex-1 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#09090B] px-2.5 py-2 text-xs sm:text-sm font-medium text-[#121212] dark:text-[#F4F4F5] truncate focus:outline-none focus:ring-1 focus:ring-[#0F5132] dark:focus:ring-[#C5A46D]"
           >
             {QIBLA_CITIES.map((city) => (
               <option key={city.id} value={city.id}>
@@ -168,9 +168,9 @@ export const QiblaPage: React.FC<QiblaPageProps> = ({lang, t}) => {
           type="button"
           onClick={handleUseGps}
           data-testid="qibla-gps-btn"
-          className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-amber-500/15 border border-amber-500/25 px-3 py-2 text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] hover:bg-amber-500/25 transition-colors whitespace-nowrap"
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-[#F9F8F6] dark:bg-[#18181C] border border-[#E6E4DF] dark:border-[#222226] px-3 py-2 text-xs font-semibold text-[#0F5132] dark:text-[#C5A46D] hover:border-[#0F5132]/40 dark:hover:border-[#C5A46D]/40 transition-colors whitespace-nowrap"
         >
-          <LocateFixed className="h-3.5 w-3.5" />
+          <LocateFixed className="h-3.5 w-3.5" strokeWidth={1.5} />
           <span>
             {gpsStatus === 'loading'
               ? lang === 'ar'
@@ -185,141 +185,156 @@ export const QiblaPage: React.FC<QiblaPageProps> = ({lang, t}) => {
         </button>
       </div>
 
-      {/* Main 3D Gold Compass Card */}
-      <section className="rounded-3xl border border-amber-500/15 bg-white/90 dark:bg-[#211914]/92 md:bg-white/75 md:dark:bg-[#211914]/85 md:backdrop-blur-md p-5 sm:p-8 shadow-sm shadow-amber-500/5 flex flex-col items-center space-y-4 sm:space-y-5">
-        {/* Top Direction Target Triangle */}
+      {/* Main Precision Instrument Compass Card */}
+      <section className="rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-5 sm:p-8 flex flex-col items-center space-y-5">
+        {/* Top Reference Index Tick */}
         <div className="flex flex-col items-center">
           <div
-            className={`w-0 h-0 border-x-[7px] border-x-transparent border-t-[10px] transition-colors ${
-              guidance.isAligned ? 'border-t-[#059669]' : 'border-t-[#F97316]'
+            className={`w-0.5 h-3 rounded-full transition-colors ${
+              guidance.isAligned
+                ? 'bg-[#0F5132] dark:bg-[#C5A46D]'
+                : 'bg-[#121212]/40 dark:bg-white/40'
             }`}
             aria-hidden="true"
           />
         </div>
 
-        {/* 3D Warm Gold Compass Dial */}
+        {/* Minimalist Apple-Watch-Inspired Precision Compass Dial */}
         <div
           data-testid="qibla-compass-dial"
-          className="relative h-56 w-56 sm:h-72 sm:w-72 flex items-center justify-center"
+          className="relative h-60 w-60 sm:h-72 sm:w-72 flex items-center justify-center"
         >
-          {/* Outer Rim Shadow + Gradient */}
           <div
-            className={`relative h-full w-full rounded-full bg-gradient-to-b from-amber-100/90 via-[#FDFBF7] to-white dark:from-[#32241A] dark:via-[#221914] dark:to-[#18110D] shadow-lg border-4 transition-colors duration-300 ${
+            className={`relative h-full w-full rounded-full bg-[#F9F8F6] dark:bg-[#09090B] border transition-colors duration-300 ${
               guidance.isAligned
-                ? 'border-[#D97706] ring-4 ring-amber-400/25'
-                : 'border-amber-500/25 dark:border-amber-500/30'
+                ? 'border-[#0F5132] dark:border-[#C5A46D] ring-4 ring-[#0F5132]/12 dark:ring-[#C5A46D]/18'
+                : 'border-[#E6E4DF] dark:border-[#222226]'
             }`}
           >
-            {/* Cardinal N / E / S / W Markers (rotate smoothly with device heading) */}
+            {/* Precision Degree Tick Ring + Cardinal N / E / S / W Markers */}
             <div
               className="absolute inset-0 transition-transform duration-200 ease-out"
               style={{transform: `rotate(${dialRotation}deg)`}}
             >
-              <span className="absolute top-3.5 left-1/2 -translate-x-1/2 text-sm font-bold text-[#B45309] dark:text-[#FBBF24]">
+              <svg viewBox="0 0 240 240" className="absolute inset-0 h-full w-full" aria-hidden="true">
+                <circle
+                  cx="120"
+                  cy="120"
+                  r="108"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeOpacity="0.08"
+                  strokeWidth="1"
+                  className="text-[#121212] dark:text-white"
+                />
+                {DEGREE_TICKS.map((deg) => {
+                  const isMajor = deg % 30 === 0;
+                  return (
+                    <line
+                      key={deg}
+                      x1="120"
+                      y1={isMajor ? '10' : '13'}
+                      x2="120"
+                      y2={isMajor ? '19' : '17'}
+                      stroke="currentColor"
+                      strokeOpacity={isMajor ? '0.45' : '0.18'}
+                      strokeWidth={isMajor ? '1.3' : '0.8'}
+                      strokeLinecap="round"
+                      transform={`rotate(${deg} 120 120)`}
+                      className={
+                        deg === 0
+                          ? 'text-[#0F5132] dark:text-[#C5A46D]'
+                          : 'text-[#121212] dark:text-[#F4F4F5]'
+                      }
+                    />
+                  );
+                })}
+              </svg>
+
+              <span className="absolute top-6 left-1/2 -translate-x-1/2 text-xs font-semibold tracking-wider text-[#0F5132] dark:text-[#C5A46D]">
                 N
               </span>
-              <span className="absolute bottom-3.5 left-1/2 -translate-x-1/2 text-sm font-bold text-[#6E5649] dark:text-[#D6C7B8]">
+              <span className="absolute bottom-6 left-1/2 -translate-x-1/2 text-xs font-medium tracking-wider text-[#6B6A66] dark:text-[#8E8E93]">
                 S
               </span>
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-[#6E5649] dark:text-[#D6C7B8]">
+              <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-medium tracking-wider text-[#6B6A66] dark:text-[#8E8E93]">
                 E
               </span>
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-[#6E5649] dark:text-[#D6C7B8]">
+              <span className="absolute left-6 top-1/2 -translate-y-1/2 text-xs font-medium tracking-wider text-[#6B6A66] dark:text-[#8E8E93]">
                 W
               </span>
-
-              {/* 4 Corner Calibration Dots */}
-              {[45, 135, 225, 315].map((deg) => (
-                <div
-                  key={deg}
-                  className="absolute inset-0"
-                  style={{transform: `rotate(${deg}deg)`}}
-                >
-                  <span className="block mx-auto mt-7 h-1.5 w-1.5 rounded-full bg-amber-600/40 dark:bg-amber-400/40" />
-                </div>
-              ))}
             </div>
 
-            {/* Qibla Direction Overlay (Kaaba Anchor + 3D Orange Needle) */}
+            {/* Qibla Bearing Vector & Architectural Kaaba Marker */}
             <div
               className="absolute inset-0 transition-transform duration-200 ease-out"
               style={{transform: `rotate(${kaabaAngleFromDeviceForward}deg)`}}
             >
-              {/* Tiny Kaaba Icon on Perimeter */}
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 h-8 w-8 rounded-full bg-[#FDFBF7] dark:bg-[#221914] border border-amber-500/30 shadow-md flex items-center justify-center">
-                <KaabaIconSvg className="h-4.5 w-4.5" />
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 h-8 w-8 rounded-full bg-white dark:bg-[#121215] border border-[#0F5132]/40 dark:border-[#C5A46D]/45 shadow-sm flex items-center justify-center text-[#0F5132] dark:text-[#C5A46D]">
+                <KaabaIconSvg className="h-4 w-4" />
               </div>
 
-              {/* 3D Sunset-Orange Tapered Needle */}
               <svg
                 viewBox="0 0 80 200"
-                className="h-full w-full p-12 drop-shadow-sm"
+                className="h-full w-full p-12"
                 aria-hidden="true"
               >
-                <defs>
-                  <linearGradient id="needleGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#F97316" />
-                    <stop offset="100%" stopColor="#D97706" />
-                  </linearGradient>
-                </defs>
-                {/* Needle Point */}
+                {/* Upper Directional Needle */}
                 <path
-                  d="M40 16 L49 98 L31 98 Z"
-                  fill="url(#needleGrad)"
+                  d="M40 16 L46 96 L34 96 Z"
+                  className="fill-[#0F5132] dark:fill-[#C5A46D]"
                 />
                 {/* Tail Counterweight */}
                 <path
-                  d="M34 102 L46 102 L40 132 Z"
-                  fill="#D6C7B8"
-                  fillOpacity="0.6"
+                  d="M36 104 L44 104 L40 132 Z"
+                  className="fill-[#121212]/20 dark:fill-white/25"
                 />
-                {/* Pivot Cap */}
+                {/* Center Pivot */}
                 <circle
                   cx="40"
                   cy="100"
-                  r="11"
-                  fill="url(#needleGrad)"
-                  stroke="#FDFBF7"
-                  strokeWidth="3"
+                  r="6.5"
+                  className="fill-white dark:fill-[#121215] stroke-[#0F5132] dark:stroke-[#C5A46D]"
+                  strokeWidth="2.5"
                 />
               </svg>
             </div>
           </div>
         </div>
 
-        {/* Angle Readout Card */}
-        <div className="w-full max-w-xs rounded-2xl bg-[#FAF5EE] dark:bg-[#17110D] border border-amber-500/15 px-5 py-3.5 text-center space-y-0.5">
+        {/* Bearing Readout */}
+        <div className="w-full max-w-xs rounded-xl bg-[#F9F8F6] dark:bg-[#09090B] border border-[#E6E4DF] dark:border-[#222226] px-5 py-3.5 text-center space-y-0.5">
           <div
             data-testid="qibla-angle-readout"
-            className="text-2xl sm:text-3xl font-bold text-[#2D231E] dark:text-[#FAF5EE] tabular-nums"
+            className="text-2xl sm:text-3xl font-semibold text-[#121212] dark:text-[#F4F4F5] tabular-nums"
           >
             {numFmt(qiblaBearing)}°
           </div>
-          <p className="text-xs font-medium text-[#6E5649] dark:text-[#D6C7B8]">
+          <p className="text-xs font-medium text-[#6B6A66] dark:text-[#8E8E93]">
             {t.qiblaAngleLabel}
           </p>
         </div>
 
-        {/* Rotation Guidance Pill */}
+        {/* Alignment Status Pill */}
         <div
           data-testid="qibla-guidance-pill"
-          className={`rounded-full px-5 py-2.5 text-xs sm:text-sm font-semibold tabular-nums transition-colors ${
+          className={`rounded-xl px-5 py-2 text-xs sm:text-sm font-semibold tabular-nums transition-colors ${
             guidance.isAligned
-              ? 'bg-amber-500 text-white shadow-sm'
-              : 'bg-amber-500/14 text-[#B45309] dark:text-[#FBBF24] border border-amber-500/20'
+              ? 'bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
+              : 'bg-[#F9F8F6] dark:bg-[#18181C] text-[#0F5132] dark:text-[#C5A46D] border border-[#E6E4DF] dark:border-[#222226]'
           }`}
         >
           {lang === 'ar' ? guidance.labelAr : guidance.labelEn}
         </div>
 
         {/* Calibration / Manual Heading Control */}
-        <div className="w-full max-w-sm pt-2 border-t border-amber-500/12 space-y-2">
-          <div className="flex items-center justify-between text-xs text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
+        <div className="w-full max-w-sm pt-3 border-t border-[#E6E4DF] dark:border-[#222226] space-y-2">
+          <div className="flex items-center justify-between text-xs text-[#6B6A66] dark:text-[#8E8E93] tabular-nums">
             <span className="inline-flex items-center gap-1.5 font-medium">
-              <Compass className="h-3.5 w-3.5 text-[#D97706]" />
+              <Compass className="h-3.5 w-3.5 text-[#0F5132] dark:text-[#C5A46D]" strokeWidth={1.5} />
               <span>{t.compassCalibrationHint}</span>
             </span>
-            <span className="font-semibold text-[#B45309] dark:text-[#FBBF24]">
+            <span className="font-semibold text-[#121212] dark:text-[#F4F4F5]">
               {numFmt(deviceHeading)}°
             </span>
           </div>
@@ -331,16 +346,16 @@ export const QiblaPage: React.FC<QiblaPageProps> = ({lang, t}) => {
               value={deviceHeading}
               onChange={(e) => setDeviceHeading(Number(e.target.value))}
               aria-label={t.compassCalibrationHint}
-              className="flex-1 accent-[#D97706] cursor-pointer"
+              className="flex-1 accent-[#0F5132] dark:accent-[#C5A46D] cursor-pointer"
             />
             {!sensorActive && (
               <button
                 type="button"
                 onClick={() => void requestCompassPermission()}
                 aria-label="Enable compass sensors"
-                className="p-2 rounded-xl border border-amber-500/20 bg-[#FAF5EE] dark:bg-[#17110D] text-[#B45309] dark:text-[#FBBF24]"
+                className="p-2 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#0F5132] dark:text-[#C5A46D]"
               >
-                <RotateCw className="h-3.5 w-3.5" />
+                <RotateCw className="h-3.5 w-3.5" strokeWidth={1.5} />
               </button>
             )}
           </div>

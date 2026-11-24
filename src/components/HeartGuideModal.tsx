@@ -71,15 +71,15 @@ export const HeartGuideModal: React.FC<HeartGuideModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={t.heartGuideTitle}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-sm p-3 sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-6"
     >
-      <div className="w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-3xl border border-amber-500/20 bg-[#FDFBF7] dark:bg-[#1B1410] p-4 sm:p-7 shadow-2xl space-y-5">
-        <div className="flex items-start justify-between gap-3 border-b border-amber-500/12 pb-3.5">
+      <div className="w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-4 sm:p-7 shadow-2xl space-y-5">
+        <div className="flex items-start justify-between gap-3 border-b border-[#E6E4DF] dark:border-[#222226] pb-3.5">
           <div>
-            <h2 className="text-lg sm:text-xl font-bold text-[#2D231E] dark:text-[#FAF5EE]">
+            <h2 className="text-lg sm:text-xl font-semibold text-[#121212] dark:text-[#F4F4F5]">
               {t.heartGuideTitle}
             </h2>
-            <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8]">
+            <p className="text-xs text-[#6B6A66] dark:text-[#8E8E93]">
               {lang === 'ar' ? moodMeta.subtitleAr : moodMeta.subtitleEn}
             </p>
           </div>
@@ -87,9 +87,9 @@ export const HeartGuideModal: React.FC<HeartGuideModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label={t.closeWord}
-            className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full border border-amber-500/20 text-[#6E5649] dark:text-[#D6C7B8] hover:text-[#2D231E]"
+            className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full border border-[#E6E4DF] dark:border-[#222226] text-[#6B6A66] dark:text-[#8E8E93] hover:text-[#121212] dark:hover:text-[#F4F4F5]"
           >
-            <X className="h-4.5 w-4.5" />
+            <X className="h-4.5 w-4.5" strokeWidth={1.5} />
           </button>
         </div>
 
@@ -102,10 +102,10 @@ export const HeartGuideModal: React.FC<HeartGuideModalProps> = ({
                 setSelectedMood(m.id);
                 setPreviewCard(null);
               }}
-              className={`px-3.5 py-2 rounded-full text-xs font-semibold border transition-colors whitespace-nowrap ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold border transition-colors whitespace-nowrap ${
                 selectedMood === m.id
-                  ? 'border-[#D97706] bg-[#D97706] text-white'
-                  : 'border-amber-500/20 bg-white/80 dark:bg-[#241B15] text-[#6E5649] dark:text-[#D6C7B8]'
+                  ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
+                  : 'border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#6B6A66] dark:text-[#8E8E93]'
               }`}
             >
               {lang === 'ar' ? m.labelAr : m.labelEn}
@@ -114,25 +114,25 @@ export const HeartGuideModal: React.FC<HeartGuideModalProps> = ({
         </div>
 
         {previewCard && (
-          <div className="rounded-3xl border border-amber-500/25 bg-amber-500/10 p-4 flex flex-col sm:flex-row items-center gap-4">
+          <div className="rounded-2xl border border-[#0F5132]/30 dark:border-[#C5A46D]/35 bg-[#F9F8F6] dark:bg-[#18181C] p-4 flex flex-col sm:flex-row items-center gap-4">
             <img
               src={previewCard.dataUrl}
               alt={`${previewCard.entry.surahNameEn} ${previewCard.entry.surah}:${previewCard.entry.ayah} Story Card`}
-              className="w-24 aspect-[9/16] rounded-2xl border border-amber-500/35 object-cover shadow-md shrink-0"
+              className="w-24 aspect-[9/16] rounded-xl border border-[#E6E4DF] dark:border-[#222226] object-cover shrink-0"
             />
             <div className="flex-1 space-y-2 text-center sm:text-start">
-              <p className="text-sm font-bold text-[#B45309] dark:text-[#FBBF24]">
+              <p className="text-sm font-semibold text-[#0F5132] dark:text-[#C5A46D]">
                 {t.storyCardReadyTitle}
               </p>
-              <p className="text-xs text-[#6E5649] dark:text-[#D6C7B8]">
+              <p className="text-xs text-[#6B6A66] dark:text-[#8E8E93]">
                 {t.storyCardReadyDesc} ({previewCard.filename})
               </p>
               <a
                 href={previewCard.dataUrl}
                 download={previewCard.filename}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[#D97706] px-4 py-2 text-xs font-semibold text-white"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#0F5132] dark:bg-[#C5A46D] px-4 py-2 text-xs font-semibold text-white dark:text-[#09090B]"
               >
-                <Download className="h-3.5 w-3.5" />
+                <Download className="h-3.5 w-3.5" strokeWidth={1.5} />
                 <span>{t.downloadPngAgain}</span>
               </a>
             </div>
@@ -145,15 +145,15 @@ export const HeartGuideModal: React.FC<HeartGuideModalProps> = ({
             return (
               <div
                 key={entry.id}
-                className="rounded-3xl border border-amber-500/14 bg-white/80 dark:bg-[#241B15] p-4 sm:p-5 space-y-3.5 shadow-sm"
+                className="rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] p-4 sm:p-5 space-y-3.5"
               >
-                <div className="flex items-center justify-between gap-2 text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] tabular-nums">
+                <div className="flex items-center justify-between gap-2 text-xs font-semibold text-[#0F5132] dark:text-[#C5A46D] tabular-nums">
                   <span>
                     {lang === 'ar'
                       ? `${entry.surahNameAr} · الآية ${toArabicDigits(entry.ayah)}`
                       : `${entry.surahNameEn} · ${entry.surah}:${entry.ayah}`}
                   </span>
-                  <span className="text-[#6E5649] dark:text-[#D6C7B8]">
+                  <span className="text-[#6B6A66] dark:text-[#8E8E93]">
                     {lang === 'ar'
                       ? `${t.pageWord} ${toArabicDigits(entry.page)}`
                       : `${t.pageWord} ${entry.page}`}
@@ -162,24 +162,24 @@ export const HeartGuideModal: React.FC<HeartGuideModalProps> = ({
 
                 <p
                   dir="rtl"
-                  className="font-quran-amiri text-2xl sm:text-[26px] leading-[2.25] tracking-normal text-[#2D231E] dark:text-[#FAF5EE] text-right"
+                  className="font-quran-amiri text-2xl sm:text-[26px] leading-[2.25] tracking-normal text-[#121212] dark:text-[#F4F4F5] text-right"
                 >
                   {entry.arabic}
                 </p>
 
-                <p className="text-xs sm:text-sm leading-relaxed text-[#4E3629] dark:text-[#D6C7B8]">
+                <p className="text-xs sm:text-sm leading-relaxed text-[#6B6A66] dark:text-[#A1A1AA]">
                   “{entry.translationEn}”
                 </p>
 
-                <p className="text-xs text-[#D97706] dark:text-[#FBBF24]">
+                <p className="text-xs text-[#8C6D46] dark:text-[#C5A46D]">
                   {lang === 'ar' ? entry.reflectionAr : entry.reflectionEn}
                 </p>
 
-                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-amber-500/12">
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#E6E4DF] dark:border-[#222226]">
                   <button
                     type="button"
                     onClick={() => onPlayAyah(entry.surah, entry.ayah)}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-[#D97706] px-4 py-2 text-xs font-semibold text-white hover:bg-[#B45309]"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#0F5132] dark:bg-[#C5A46D] px-4 py-2 text-xs font-semibold text-white dark:text-[#09090B]"
                   >
                     <Play className="h-3.5 w-3.5 fill-current" />
                     <span>{t.listenAyah}</span>
@@ -191,9 +191,9 @@ export const HeartGuideModal: React.FC<HeartGuideModalProps> = ({
                       onClose();
                       onOpenSurah(entry.surah, entry.ayah);
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 px-4 py-2 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706]"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] px-4 py-2 text-xs font-semibold text-[#121212] dark:text-[#F4F4F5] hover:border-[#0F5132] dark:hover:border-[#C5A46D]"
                   >
-                    <BookOpen className="h-3.5 w-3.5" />
+                    <BookOpen className="h-3.5 w-3.5" strokeWidth={1.5} />
                     <span>{t.openInMushafBtn}</span>
                   </button>
 
@@ -201,12 +201,12 @@ export const HeartGuideModal: React.FC<HeartGuideModalProps> = ({
                     type="button"
                     disabled={isBusy}
                     onClick={() => void handleSaveStory(entry)}
-                    className="ms-auto inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/12 px-4 py-2 text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] hover:bg-amber-500/20 transition-colors"
+                    className="ms-auto inline-flex items-center gap-1.5 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] px-4 py-2 text-xs font-semibold text-[#0F5132] dark:text-[#C5A46D] hover:border-[#0F5132] dark:hover:border-[#C5A46D] transition-colors"
                   >
                     {isBusy ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
                     ) : (
-                      <Download className="h-3.5 w-3.5" />
+                      <Download className="h-3.5 w-3.5" strokeWidth={1.5} />
                     )}
                     <span>{t.saveStoryCardBtn}</span>
                   </button>

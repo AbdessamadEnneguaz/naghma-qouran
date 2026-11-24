@@ -16,7 +16,7 @@
     />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#FDFBF7" />
+    <meta name="theme-color" content="#F9F8F6" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -46,14 +46,14 @@
             root.classList.remove('dark');
           }
           var savedLang = localStorage.getItem('najm_lang') || localStorage.getItem('naghma_lang');
-          var lang = savedLang === 'ar' ? 'ar' : 'en';
+          var lang = savedLang === 'ar' ? 'ar' : savedLang === 'fr' ? 'fr' : 'en';
           root.lang = lang;
           root.dir = lang === 'ar' ? 'rtl' : 'ltr';
         } catch (e) {}
       })();
     </script>
   </head>
-  <body class="bg-[#FDFBF7] text-[#2D231E] dark:bg-[#17110D] dark:text-[#FAF5EE] antialiased selection:bg-[#D97706]/25">
+  <body class="bg-[#F9F8F6] text-[#121212] dark:bg-[#09090B] dark:text-[#F4F4F5] antialiased selection:bg-[#0F5132]/15 dark:selection:bg-[#C5A46D]/25">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

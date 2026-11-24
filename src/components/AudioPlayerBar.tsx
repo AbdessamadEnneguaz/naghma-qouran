@@ -201,7 +201,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
     }
   }, []);
 
-  // Direct 60fps DOM paint via pub-sub listener (zero React re-renders!)
+  // Direct 60fps DOM paint via pub-sub listener (zero React re-renders)
   useEffect(() => {
     paintBars(currentTime, duration);
     const unsub = subscribeProgress((curSec, durSec) => {
@@ -304,25 +304,25 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
         {(isListening || voiceError) && (
           <div className="w-full max-w-lg pointer-events-auto">
             {voiceError ? (
-              <div className="rounded-2xl border border-amber-500/35 bg-white/95 dark:bg-[#221914]/95 px-3.5 py-2.5 text-xs text-[#B45309] dark:text-[#FBBF24] shadow-lg flex items-center justify-between gap-2">
+              <div className="rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] px-3.5 py-2.5 text-xs text-[#121212] dark:text-[#F4F4F5] shadow-lg flex items-center justify-between gap-2">
                 <span>{voiceError}</span>
                 <button
                   type="button"
                   onClick={onClearVoiceError}
                   aria-label="Dismiss microphone notice"
-                  className="p-1 rounded-lg hover:bg-amber-500/10 shrink-0"
+                  className="p-1 rounded-lg hover:bg-[#F4F2ED] dark:hover:bg-[#1E1E22] shrink-0"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-3.5 w-3.5" strokeWidth={1.5} />
                 </button>
               </div>
             ) : (
-              <div className="rounded-2xl border border-amber-500/35 bg-white/95 dark:bg-[#221914]/95 px-3.5 py-2 text-xs shadow-lg flex items-center justify-between gap-2">
+              <div className="rounded-xl border border-[#0F5132]/30 dark:border-[#C5A46D]/35 bg-white dark:bg-[#121215] px-3.5 py-2 text-xs shadow-lg flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="relative flex h-2.5 w-2.5 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F97316] opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D97706]" />
+                  <span className="relative flex h-2 w-2 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0F5132] dark:bg-[#C5A46D] opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#0F5132] dark:bg-[#C5A46D]" />
                   </span>
-                  <span className="font-semibold text-[#B45309] dark:text-[#FBBF24] truncate">
+                  <span className="font-semibold text-[#0F5132] dark:text-[#C5A46D] truncate">
                     {hasMistakePulse
                       ? t.micSkippedHint
                       : interimText
@@ -331,7 +331,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   </span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 tabular-nums">
-                  <span className="text-[11px] font-semibold text-[#4E3629] dark:text-[#D6C7B8]">
+                  <span className="text-[11px] font-medium text-[#6B6A66] dark:text-[#8E8E93]">
                     {lang === 'ar' ? toArabicDigits(matchedCount) : matchedCount}{' '}
                     {t.micMatchedWords}
                   </span>
@@ -341,9 +341,9 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                       onClick={onResetVoiceProgress}
                       title="Reset"
                       aria-label="Reset voice follow progress"
-                      className="p-1 rounded-md hover:bg-amber-500/10 text-[#6E5649] dark:text-[#D6C7B8]"
+                      className="p-1 rounded-md hover:bg-[#F4F2ED] dark:hover:bg-[#1E1E22] text-[#6B6A66] dark:text-[#8E8E93]"
                     >
-                      <RotateCcw className="h-3.5 w-3.5" />
+                      <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </button>
                   )}
                 </div>
@@ -355,8 +355,8 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
         {/* Talqeen Repeat-Aloud Pause Banner */}
         {talqeenCountdown !== null && (
           <div className="w-full max-w-lg pointer-events-auto">
-            <div className="rounded-2xl border border-amber-500/40 bg-white/95 dark:bg-[#221914]/95 px-3.5 py-2 text-xs shadow-lg flex items-center justify-between gap-2">
-              <span className="font-semibold text-[#B45309] dark:text-[#FBBF24] tabular-nums">
+            <div className="rounded-xl border border-[#0F5132]/30 dark:border-[#C5A46D]/35 bg-white dark:bg-[#121215] px-3.5 py-2 text-xs shadow-lg flex items-center justify-between gap-2">
+              <span className="font-semibold text-[#0F5132] dark:text-[#C5A46D] tabular-nums">
                 {t.talqeenPromptPrefix}{' '}
                 {lang === 'ar'
                   ? `${toArabicDigits(talqeenCountdown)} ث`
@@ -365,7 +365,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
               <button
                 type="button"
                 onClick={onSkipTalqeenPause}
-                className="rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-[11px] font-semibold text-[#B45309] dark:text-[#FBBF24]"
+                className="rounded-lg bg-[#0F5132] dark:bg-[#C5A46D] px-3 py-1 text-[11px] font-semibold text-white dark:text-[#09090B]"
               >
                 {t.talqeenSkipPause}
               </button>
@@ -373,23 +373,23 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
           </div>
         )}
 
-        {/* Expandable Settings & Reciter Drawer (Floating Sheet Above Capsule) */}
+        {/* Clean Decluttered Audio Drawer */}
         {expanded && (
           <div
             data-testid="audio-player-drawer"
-            className="w-full max-w-2xl pointer-events-auto rounded-3xl border border-amber-500/20 bg-[#FDFBF7]/98 dark:bg-[#1E1611]/98 md:backdrop-blur-md shadow-2xl px-4 sm:px-5 py-4 space-y-4 max-h-[58vh] overflow-y-auto"
+            className="w-full max-w-2xl pointer-events-auto rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] shadow-2xl px-4 sm:px-5 py-4 space-y-3.5 max-h-[58vh] overflow-y-auto"
           >
             {/* Header Info + Quick Actions (Mic, Hifz, Jump, Close) */}
-            <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-amber-500/12">
+            <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-[#E6E4DF] dark:border-[#222226]">
               <button
                 type="button"
                 onClick={onJumpToActiveAyah}
                 className="min-w-0 text-start hover:opacity-80 transition-opacity"
               >
-                <div className="text-sm font-bold text-[#2D231E] dark:text-[#FAF5EE] truncate tabular-nums">
+                <div className="text-sm font-semibold text-[#121212] dark:text-[#F4F4F5] truncate tabular-nums">
                   {surahTitle} · {ayahBadge}
                 </div>
-                <div className="text-[11px] text-[#6E5649] dark:text-[#D6C7B8] truncate">
+                <div className="text-[11px] text-[#6B6A66] dark:text-[#8E8E93] truncate">
                   {lang === 'ar' ? reciter.nameAr : reciter.nameEn}
                 </div>
               </button>
@@ -403,13 +403,13 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors ${
                     isListening
                       ? 'border-rose-500 bg-rose-500 text-white'
-                      : 'border-amber-500/25 bg-amber-500/10 text-[#7C4A15] dark:text-[#FBBF24]'
+                      : 'border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#121212] dark:text-[#F4F4F5]'
                   }`}
                 >
                   {isListening ? (
-                    <MicOff className="h-3.5 w-3.5" />
+                    <MicOff className="h-3.5 w-3.5" strokeWidth={1.5} />
                   ) : (
-                    <Mic className="h-3.5 w-3.5" />
+                    <Mic className="h-3.5 w-3.5" strokeWidth={1.5} />
                   )}
                 </button>
 
@@ -420,11 +420,15 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   aria-label={t.hifzMode}
                   className={`h-8 px-2.5 inline-flex items-center gap-1 rounded-full border text-[11px] font-semibold transition-colors ${
                     hifzMode
-                      ? 'border-[#7C4A15] bg-[#7C4A15] text-white'
-                      : 'border-amber-500/20 bg-white dark:bg-[#2A2018] text-[#4E3629] dark:text-[#D6C7B8]'
+                      ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
+                      : 'border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#121212] dark:text-[#F4F4F5]'
                   }`}
                 >
-                  {hifzMode ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                  {hifzMode ? (
+                    <Eye className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  ) : (
+                    <EyeOff className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  )}
                   <span>{t.hifzMode}</span>
                 </button>
 
@@ -432,21 +436,21 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   type="button"
                   onClick={() => setExpanded(false)}
                   aria-label={t.closeWord}
-                  className="h-8 w-8 flex items-center justify-center rounded-full text-[#6E5649] dark:text-[#D6C7B8] hover:bg-amber-500/10"
+                  className="h-8 w-8 flex items-center justify-center rounded-full text-[#6B6A66] dark:text-[#8E8E93] hover:bg-[#F4F2ED] dark:hover:bg-[#1E1E22]"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-4 w-4" strokeWidth={1.5} />
                 </button>
               </div>
             </div>
 
             {audioError && (
-              <p className="text-xs font-medium text-[#B45309] dark:text-[#FBBF24]">
+              <p className="text-xs font-medium text-[#0F5132] dark:text-[#C5A46D]">
                 {audioError}
               </p>
             )}
 
             {/* Transport & Elapsed Readout */}
-            <div className="flex items-center justify-between text-xs text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
+            <div className="flex items-center justify-between text-xs text-[#6B6A66] dark:text-[#8E8E93] tabular-nums">
               <span>
                 {t.elapsed}: {formatAudioTime(currentTime)}
               </span>
@@ -455,17 +459,17 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   type="button"
                   onClick={onPlayPrev}
                   aria-label={t.prevSurah}
-                  className="p-1.5 rounded-full bg-amber-500/12 text-[#7C4A15] dark:text-[#FBBF24]"
+                  className="p-1.5 rounded-full border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#121212] dark:text-[#F4F4F5]"
                 >
-                  <SkipBack className="h-3.5 w-3.5" />
+                  <SkipBack className="h-3.5 w-3.5" strokeWidth={1.5} />
                 </button>
                 <button
                   type="button"
                   onClick={onPlayNext}
                   aria-label={t.nextSurah}
-                  className="p-1.5 rounded-full bg-amber-500/12 text-[#7C4A15] dark:text-[#FBBF24]"
+                  className="p-1.5 rounded-full border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#121212] dark:text-[#F4F4F5]"
                 >
-                  <SkipForward className="h-3.5 w-3.5" />
+                  <SkipForward className="h-3.5 w-3.5" strokeWidth={1.5} />
                 </button>
               </div>
               <span>
@@ -473,12 +477,12 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
               </span>
             </div>
 
-            {/* Row 1: Reciter, Repeat, Speed, Offline, Sleep Timer */}
+            {/* Reciter, Repeat, Speed, Offline Download */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
               <div className="space-y-1">
                 <label
                   htmlFor="dock-reciter-select"
-                  className="block text-[11px] font-semibold text-[#6E5649] dark:text-[#D6C7B8]"
+                  className="block text-[11px] font-medium text-[#6B6A66] dark:text-[#8E8E93]"
                 >
                   {t.reciterLabel} ({RECITERS.length})
                 </label>
@@ -486,7 +490,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   id="dock-reciter-select"
                   value={reciter.id}
                   onChange={(e) => onChangeReciter(e.target.value)}
-                  className="w-full rounded-xl border border-amber-500/20 bg-white dark:bg-[#17110D] px-3 py-2 text-xs font-medium text-[#2D231E] dark:text-[#FAF5EE] focus:outline-none focus:ring-2 focus:ring-[#D97706]"
+                  className="w-full rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] px-3 py-2 text-xs font-medium text-[#121212] dark:text-[#F4F4F5] focus:outline-none focus:ring-1 focus:ring-[#0F5132] dark:focus:ring-[#C5A46D]"
                 >
                   <optgroup label={t.warshGroup}>
                     {warshReciters.map((r) => (
@@ -511,14 +515,14 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   onClick={onCycleLoopMode}
                   className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${
                     loopMode !== 'none'
-                      ? 'border-[#7C4A15] bg-amber-500/15 text-[#7C4A15] dark:text-[#FBBF24]'
-                      : 'border-amber-500/20 bg-white dark:bg-[#17110D] text-[#2D231E] dark:text-[#FAF5EE]'
+                      ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132]/10 dark:bg-[#C5A46D]/15 text-[#0F5132] dark:text-[#C5A46D]'
+                      : 'border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#121212] dark:text-[#F4F4F5]'
                   }`}
                 >
                   {loopMode === 'ayah' ? (
-                    <Repeat1 className="h-3.5 w-3.5" />
+                    <Repeat1 className="h-3.5 w-3.5" strokeWidth={1.5} />
                   ) : (
-                    <Repeat className="h-3.5 w-3.5" />
+                    <Repeat className="h-3.5 w-3.5" strokeWidth={1.5} />
                   )}
                   <span>
                     {loopMode === 'none'
@@ -529,16 +533,16 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   </span>
                 </button>
 
-                <div className="inline-flex items-center rounded-xl border border-amber-500/20 bg-white dark:bg-[#17110D] p-0.5 tabular-nums">
+                <div className="inline-flex items-center rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] p-0.5 tabular-nums">
                   {SPEEDS.map((spd) => (
                     <button
                       key={spd}
                       type="button"
                       onClick={() => onChangeSpeed(spd)}
-                      className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${
+                      className={`px-2 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
                         playbackSpeed === spd
-                          ? 'bg-[#7C4A15] text-white'
-                          : 'text-[#6E5649] dark:text-[#D6C7B8]'
+                          ? 'bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
+                          : 'text-[#6B6A66] dark:text-[#8E8E93]'
                       }`}
                     >
                       {spd}x
@@ -554,33 +558,33 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                     aria-label={isCurrentSurahOffline ? t.offlineReady : t.downloadSurahOffline}
                     className={`min-h-[34px] min-w-[34px] flex items-center justify-center rounded-xl border transition-colors ${
                       isCurrentSurahOffline
-                        ? 'border-[#D97706]/40 bg-amber-500/15 text-[#7C4A15] dark:text-[#FBBF24]'
-                        : 'border-amber-500/20 bg-white dark:bg-[#17110D] text-[#2D231E] dark:text-[#FAF5EE]'
+                        ? 'border-[#0F5132]/40 dark:border-[#C5A46D]/40 bg-[#0F5132]/10 dark:bg-[#C5A46D]/15 text-[#0F5132] dark:text-[#C5A46D]'
+                        : 'border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#121212] dark:text-[#F4F4F5]'
                     }`}
                   >
                     {isDownloadingCurrent ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-[#D97706]" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0F5132] dark:text-[#C5A46D]" strokeWidth={1.5} />
                     ) : isCurrentSurahOffline ? (
-                      <Check className="h-3.5 w-3.5" />
+                      <Check className="h-3.5 w-3.5" strokeWidth={1.5} />
                     ) : (
-                      <Download className="h-3.5 w-3.5" />
+                      <Download className="h-3.5 w-3.5" strokeWidth={1.5} />
                     )}
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Sleep Timer & Typography Controls */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end pt-2 border-t border-amber-500/12">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-[#D97706] shrink-0" />
+            {/* Sleep Timer, Translation & Wake Lock */}
+            <div className="pt-2.5 border-t border-[#E6E4DF] dark:border-[#222226] flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-[160px]">
+                <Clock className="h-4 w-4 text-[#0F5132] dark:text-[#C5A46D] shrink-0" strokeWidth={1.5} />
                 <select
                   aria-label={t.sleepTimerOff}
                   value={sleepTimer}
                   onChange={(e) =>
                     onChangeSleepTimer(Number(e.target.value) as SleepTimerOption)
                   }
-                  className="flex-1 rounded-xl border border-amber-500/20 bg-white dark:bg-[#17110D] px-2.5 py-2 text-xs font-medium text-[#2D231E] dark:text-[#FAF5EE]"
+                  className="flex-1 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] px-2.5 py-1.5 text-xs font-medium text-[#121212] dark:text-[#F4F4F5]"
                 >
                   <option value={0}>{t.sleepTimerOff}</option>
                   <option value={15}>15 {t.minutesUnit}</option>
@@ -590,84 +594,19 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   <option value={-1}>{t.endOfSurah}</option>
                 </select>
                 {sleepSecondsLeft > 0 && (
-                  <span className="text-xs font-semibold text-[#D97706] tabular-nums">
+                  <span className="text-xs font-semibold text-[#0F5132] dark:text-[#C5A46D] tabular-nums">
                     {formatAudioTime(sleepSecondsLeft)}
                   </span>
                 )}
               </div>
 
-              <div className="space-y-1">
-                <label
-                  htmlFor="dock-font-size"
-                  className="flex justify-between text-[11px] font-semibold text-[#6E5649] dark:text-[#D6C7B8] tabular-nums"
-                >
-                  <span>{t.arabicFontSize}</span>
-                  <span>{settings.fontSize}px</span>
-                </label>
-                <input
-                  id="dock-font-size"
-                  type="range"
-                  min={18}
-                  max={38}
-                  step={1}
-                  value={settings.fontSize}
-                  onChange={(e) => onUpdateSettings({fontSize: Number(e.target.value)})}
-                  className="w-full accent-[#7C4A15]"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label
-                  htmlFor="dock-line-height"
-                  className="flex justify-between text-[11px] font-semibold text-[#6E5649] dark:text-[#D6C7B8] tabular-nums"
-                >
-                  <span>{t.lineSpacing}</span>
-                  <span>{settings.lineHeight.toFixed(2)}</span>
-                </label>
-                <input
-                  id="dock-line-height"
-                  type="range"
-                  min={1.9}
-                  max={2.7}
-                  step={0.05}
-                  value={settings.lineHeight}
-                  onChange={(e) => onUpdateSettings({lineHeight: Number(e.target.value)})}
-                  className="w-full accent-[#7C4A15]"
-                />
-              </div>
-            </div>
-
-            {/* Font Family, Translation, Wake Lock */}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => onUpdateSettings({font: 'amiri'})}
-                className={`py-1.5 px-3 rounded-xl text-xs font-medium border whitespace-nowrap ${
-                  settings.font === 'amiri'
-                    ? 'border-[#7C4A15] bg-amber-500/15 text-[#7C4A15] dark:text-[#FBBF24]'
-                    : 'border-amber-500/15 bg-white dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
-                }`}
-              >
-                Amiri Quran
-              </button>
-              <button
-                type="button"
-                onClick={() => onUpdateSettings({font: 'scheherazade'})}
-                className={`py-1.5 px-3 rounded-xl text-xs font-medium border whitespace-nowrap ${
-                  settings.font === 'scheherazade'
-                    ? 'border-[#7C4A15] bg-amber-500/15 text-[#7C4A15] dark:text-[#FBBF24]'
-                    : 'border-amber-500/15 bg-white dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
-                }`}
-              >
-                Scheherazade
-              </button>
               <button
                 type="button"
                 onClick={() => onUpdateSettings({showTranslation: !settings.showTranslation})}
                 className={`py-1.5 px-3 rounded-xl text-xs font-semibold border transition-colors whitespace-nowrap ${
                   settings.showTranslation
-                    ? 'border-[#7C4A15] bg-amber-500/15 text-[#7C4A15] dark:text-[#FBBF24]'
-                    : 'border-amber-500/20 bg-white dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
+                    ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132]/10 dark:bg-[#C5A46D]/15 text-[#0F5132] dark:text-[#C5A46D]'
+                    : 'border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#6B6A66] dark:text-[#8E8E93]'
                 }`}
               >
                 {settings.showTranslation ? t.translationVisible : t.translationHidden}
@@ -683,13 +622,14 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   title={t.wakeLockDesc}
                   className={`inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-semibold border transition-colors whitespace-nowrap ${
                     wakeLockEnabled
-                      ? 'border-[#7C4A15] bg-amber-500/15 text-[#7C4A15] dark:text-[#FBBF24]'
-                      : 'border-amber-500/20 bg-white dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
+                      ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132]/10 dark:bg-[#C5A46D]/15 text-[#0F5132] dark:text-[#C5A46D]'
+                      : 'border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#6B6A66] dark:text-[#8E8E93]'
                   }`}
                 >
                   <Sun
+                    strokeWidth={1.5}
                     className={`h-3.5 w-3.5 shrink-0 ${
-                      wakeLockActive ? 'text-[#D97706] dark:text-[#FBBF24]' : ''
+                      wakeLockActive ? 'text-[#0F5132] dark:text-[#C5A46D]' : ''
                     }`}
                   />
                   <span>{wakeLockEnabled ? t.wakeLockActive : t.wakeLockOff}</span>
@@ -697,82 +637,14 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
               )}
             </div>
 
-            {/* Verse Timing Sync Fine Offset */}
-            <div className="pt-2.5 border-t border-amber-500/12 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-              <div className="flex items-center justify-between sm:min-w-[180px] gap-2 text-[11px] font-semibold text-[#6E5649] dark:text-[#D6C7B8] tabular-nums">
-                <label htmlFor="dock-sync-offset">{t.audioSyncOffsetLabel}</label>
-                <span data-testid="sync-offset-readout" className="text-[#7C4A15] dark:text-[#FBBF24]">
-                  {settings.audioSyncOffsetSec > 0 ? '+' : ''}
-                  {settings.audioSyncOffsetSec.toFixed(1)}s
-                </span>
-              </div>
-              <div className="flex items-center gap-2 flex-1">
-                <button
-                  type="button"
-                  data-testid="sync-nudge-minus"
-                  onClick={() => {
-                    const next = Math.max(
-                      -5,
-                      Math.round((settings.audioSyncOffsetSec - 0.5) * 10) / 10
-                    );
-                    onUpdateSettings({audioSyncOffsetSec: next});
-                  }}
-                  aria-label="Sync offset minus 0.5 seconds"
-                  className="rounded-lg border border-amber-500/20 bg-white dark:bg-[#17110D] px-2.5 py-1 text-[11px] font-semibold text-[#2D231E] dark:text-[#FAF5EE] tabular-nums"
-                >
-                  -0.5s
-                </button>
-                <input
-                  id="dock-sync-offset"
-                  type="range"
-                  min={-5}
-                  max={5}
-                  step={0.1}
-                  value={settings.audioSyncOffsetSec}
-                  onChange={(e) =>
-                    onUpdateSettings({
-                      audioSyncOffsetSec: Math.round(Number(e.target.value) * 10) / 10,
-                    })
-                  }
-                  aria-label={t.audioSyncOffsetLabel}
-                  className="w-full accent-[#7C4A15]"
-                />
-                <button
-                  type="button"
-                  data-testid="sync-nudge-plus"
-                  onClick={() => {
-                    const next = Math.min(
-                      5,
-                      Math.round((settings.audioSyncOffsetSec + 0.5) * 10) / 10
-                    );
-                    onUpdateSettings({audioSyncOffsetSec: next});
-                  }}
-                  aria-label="Sync offset plus 0.5 seconds"
-                  className="rounded-lg border border-amber-500/20 bg-white dark:bg-[#17110D] px-2.5 py-1 text-[11px] font-semibold text-[#2D231E] dark:text-[#FAF5EE] tabular-nums"
-                >
-                  +0.5s
-                </button>
-                {settings.audioSyncOffsetSec !== 0 && (
-                  <button
-                    type="button"
-                    data-testid="sync-nudge-reset"
-                    onClick={() => onUpdateSettings({audioSyncOffsetSec: 0})}
-                    className="rounded-lg border border-amber-500/20 px-2 py-1 text-[11px] font-semibold text-[#6E5649] dark:text-[#D6C7B8]"
-                  >
-                    {t.resetOffsetLabel}
-                  </button>
-                )}
-              </div>
-            </div>
-
             {/* Talqeen Memorization Mode */}
-            <div className="pt-2.5 border-t border-amber-500/12 space-y-2">
+            <div className="pt-2.5 border-t border-[#E6E4DF] dark:border-[#222226] space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <div className="text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE]">
+                  <div className="text-xs font-semibold text-[#121212] dark:text-[#F4F4F5]">
                     {t.talqeenTitle}
                   </div>
-                  <p className="text-[11px] text-[#6E5649] dark:text-[#D6C7B8]">
+                  <p className="text-[11px] text-[#6B6A66] dark:text-[#8E8E93]">
                     {reciter.mode === 'ayah' ? t.talqeenDesc : t.talqeenSwitchAyahNote}
                   </p>
                 </div>
@@ -786,10 +658,10 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                     }
                     onUpdateTalqeen({enabled: nextEnabled});
                   }}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors whitespace-nowrap ${
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap ${
                     talqeen.enabled
-                      ? 'border-[#7C4A15] bg-amber-500/18 text-[#7C4A15] dark:text-[#FBBF24]'
-                      : 'border-amber-500/20 bg-white dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
+                      ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132]/10 dark:bg-[#C5A46D]/15 text-[#0F5132] dark:text-[#C5A46D]'
+                      : 'border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#6B6A66] dark:text-[#8E8E93]'
                   }`}
                 >
                   {talqeen.enabled ? t.talqeenEnabled : t.talqeenOff}
@@ -798,7 +670,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
 
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-xs tabular-nums">
-                  <span className="font-semibold text-[#6E5649] dark:text-[#D6C7B8]">
+                  <span className="font-medium text-[#6B6A66] dark:text-[#8E8E93]">
                     {t.talqeenRangeLabel}:
                   </span>
                   <input
@@ -815,9 +687,9 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                       })
                     }
                     aria-label="Talqeen start ayah"
-                    className="w-14 rounded-lg border border-amber-500/20 bg-white dark:bg-[#17110D] px-2 py-1 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE]"
+                    className="w-14 rounded-lg border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] px-2 py-1 text-xs font-semibold text-[#121212] dark:text-[#F4F4F5]"
                   />
-                  <span className="text-[#6E5649] dark:text-[#D6C7B8]">{t.talqeenToWord}</span>
+                  <span className="text-[#6B6A66] dark:text-[#8E8E93]">{t.talqeenToWord}</span>
                   <input
                     type="number"
                     min={talqeen.startAyah}
@@ -835,12 +707,12 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                       })
                     }
                     aria-label="Talqeen end ayah"
-                    className="w-14 rounded-lg border border-amber-500/20 bg-white dark:bg-[#17110D] px-2 py-1 text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE]"
+                    className="w-14 rounded-lg border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] px-2 py-1 text-xs font-semibold text-[#121212] dark:text-[#F4F4F5]"
                   />
                 </div>
 
                 <div className="flex items-center gap-1 text-xs">
-                  <span className="font-semibold text-[#6E5649] dark:text-[#D6C7B8]">
+                  <span className="font-medium text-[#6B6A66] dark:text-[#8E8E93]">
                     {t.talqeenPauseLabel}:
                   </span>
                   {([3, 5, 8] as const).map((sec) => (
@@ -848,10 +720,10 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                       key={sec}
                       type="button"
                       onClick={() => onUpdateTalqeen({pauseSeconds: sec})}
-                      className={`px-2 py-1 rounded-full border text-xs font-semibold tabular-nums transition-colors ${
+                      className={`px-2 py-1 rounded-lg border text-xs font-semibold tabular-nums transition-colors ${
                         talqeen.pauseSeconds === sec
-                          ? 'border-[#7C4A15] bg-amber-500/18 text-[#7C4A15] dark:text-[#FBBF24]'
-                          : 'border-amber-500/20 bg-white dark:bg-[#17110D] text-[#6E5649] dark:text-[#D6C7B8]'
+                          ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132]/10 dark:bg-[#C5A46D]/15 text-[#0F5132] dark:text-[#C5A46D]'
+                          : 'border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#6B6A66] dark:text-[#8E8E93]'
                       }`}
                     >
                       {lang === 'ar' ? `${toArabicDigits(sec)}ث` : `${sec}s`}
@@ -862,12 +734,12 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
             </div>
 
             {!isInstalled && onOpenInstall && (
-              <div className="pt-2.5 border-t border-amber-500/12 flex items-center justify-between gap-3">
+              <div className="pt-2.5 border-t border-[#E6E4DF] dark:border-[#222226] flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="text-xs font-semibold text-[#2D231E] dark:text-[#FAF5EE]">
+                  <div className="text-xs font-semibold text-[#121212] dark:text-[#F4F4F5]">
                     {t.downloadApkTitle}
                   </div>
-                  <p className="text-[11px] text-[#6E5649] dark:text-[#D6C7B8] truncate">
+                  <p className="text-[11px] text-[#6B6A66] dark:text-[#8E8E93] truncate">
                     {t.downloadApkDesc}
                   </p>
                 </div>
@@ -878,9 +750,9 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                     setExpanded(false);
                     onOpenInstall();
                   }}
-                  className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-amber-500/35 bg-amber-500/12 px-3 py-1.5 text-xs font-semibold text-[#7C4A15] dark:text-[#FBBF24] whitespace-nowrap"
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] px-3 py-1.5 text-xs font-semibold text-[#0F5132] dark:text-[#C5A46D] whitespace-nowrap"
                 >
-                  <Smartphone className="h-3.5 w-3.5" />
+                  <Smartphone className="h-3.5 w-3.5" strokeWidth={1.5} />
                   <span>{t.downloadApkBtn}</span>
                 </button>
               </div>
@@ -888,21 +760,21 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
           </div>
         )}
 
-        {/* Luxury Waveform Capsule Audio Player (Exact Match to Reference Capsule) */}
+        {/* Precision Editorial Waveform Capsule Player */}
         <div
           data-testid="waveform-capsule-player"
-          className="w-full max-w-[366px] sm:max-w-lg pointer-events-auto rounded-full bg-[#F5DEC1] dark:bg-[#2A2018] shadow-md shadow-amber-900/10 border border-[#7C4A15]/10 dark:border-amber-500/20 px-2.5 py-2 flex items-center gap-3"
+          className="w-full max-w-[366px] sm:max-w-lg pointer-events-auto rounded-full bg-white dark:bg-[#16161A] shadow-xl border border-[#E6E4DF] dark:border-[#222226] px-2.5 py-2 flex items-center gap-3"
         >
-          {/* Left Circular Deep Bronze-Espresso Play/Pause Button */}
+          {/* Left Sharp Monochrome Play/Pause Button */}
           <button
             type="button"
             data-testid="capsule-play-btn"
             onClick={onTogglePlayPause}
             aria-label={isPlaying ? t.pauseReciter : t.playReciter}
-            className="w-10 h-10 rounded-full bg-[#7C4A15] hover:bg-[#663C10] active:scale-95 text-white flex items-center justify-center shadow-sm transition-all shrink-0"
+            className="w-10 h-10 rounded-full bg-[#121212] dark:bg-[#F4F4F5] hover:opacity-90 active:scale-95 text-white dark:text-[#09090B] flex items-center justify-center shadow-sm transition-all shrink-0"
           >
             {isBuffering ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} />
             ) : isPlaying ? (
               <Pause className="h-4 w-4 fill-current" />
             ) : (
@@ -910,7 +782,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
             )}
           </button>
 
-          {/* Center Symmetric Interactive Multi-Bar Acoustic Waveform */}
+          {/* Center Fine Acoustic Waveform */}
           <div
             ref={waveformRef}
             dir="ltr"
@@ -926,7 +798,7 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
             onPointerUp={handleWaveformPointerUp}
             onPointerCancel={handleWaveformPointerUp}
             onKeyDown={handleWaveformKeyDown}
-            className="flex-1 min-w-0 h-8 flex items-center justify-between gap-[2px] sm:gap-[3px] cursor-pointer touch-none select-none px-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C4A15] rounded-full"
+            className="flex-1 min-w-0 h-8 flex items-center justify-between gap-[2px] sm:gap-[3px] cursor-pointer touch-none select-none px-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F5132] dark:focus-visible:ring-[#C5A46D] rounded-full"
           >
             {waveformBars.map((amp, idx) => (
               <span
@@ -935,13 +807,13 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   barRefs.current[idx] = el;
                 }}
                 data-played="false"
-                className="w-[2.5px] sm:w-[3px] rounded-full transition-colors duration-75 bg-[#DFC29D]/55 dark:bg-[#DFC29D]/30 data-[played=true]:bg-[#7C4A15] dark:data-[played=true]:bg-[#F59E0B]"
+                className="w-[2px] rounded-full transition-colors duration-75 bg-[#121212]/15 dark:bg-white/20 data-[played=true]:bg-[#0F5132] dark:data-[played=true]:bg-[#C5A46D]"
                 style={{height: `${Math.round(amp * 100)}%`}}
               />
             ))}
           </div>
 
-          {/* Right Subtle Pill Badge / Controls Drawer Toggle */}
+          {/* Right Compact Drawer Toggle */}
           <button
             type="button"
             data-testid="capsule-drawer-toggle"
@@ -949,17 +821,17 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
             aria-expanded={expanded}
             aria-label={t.settingsBtn}
             title={`${surahTitle} · ${ayahBadge} · ${playbackSpeed}x`}
-            className={`h-8 px-2.5 inline-flex items-center gap-1 rounded-full text-[11px] font-bold transition-colors shrink-0 tabular-nums ${
+            className={`h-8 px-2.5 inline-flex items-center gap-1 rounded-full text-[11px] font-semibold transition-colors shrink-0 tabular-nums ${
               expanded
-                ? 'bg-[#7C4A15] text-white'
-                : 'bg-white/60 dark:bg-black/25 text-[#5C360E] dark:text-[#FDE68A] hover:bg-white/85'
+                ? 'bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
+                : 'bg-[#F4F2ED] dark:bg-[#1E1E22] text-[#121212] dark:text-[#F4F4F5] hover:bg-[#EAE7DF] dark:hover:bg-[#27272C]'
             }`}
           >
             <span className="max-w-[54px] truncate">{ayahBadge}</span>
             {expanded ? (
-              <ChevronUp className="h-3.5 w-3.5 rotate-180 transition-transform" />
+              <ChevronUp className="h-3.5 w-3.5 rotate-180 transition-transform" strokeWidth={1.5} />
             ) : (
-              <SlidersHorizontal className="h-3.5 w-3.5" />
+              <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
             )}
           </button>
         </div>

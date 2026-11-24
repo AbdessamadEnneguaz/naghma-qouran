@@ -38,24 +38,23 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header
-      className={`sticky top-0 z-30 pt-safe-top border-b border-amber-500/12 dark:border-amber-500/15 bg-[#FDFBF7]/96 dark:bg-[#17110D]/96 md:bg-[#FDFBF7]/92 md:dark:bg-[#17110D]/92 md:backdrop-blur-md transition-all duration-300 ${
+      className={`sticky top-0 z-30 pt-safe-top border-b border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#09090B] transition-transform duration-300 ${
         hidden
           ? '-translate-y-full opacity-0 pointer-events-none'
           : 'translate-y-0 opacity-100'
       }`}
     >
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
-        {/* Brand */}
         <button
           type="button"
           onClick={() => onNavigate('home')}
-          className="flex items-center gap-2.5 whitespace-nowrap shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D97706]"
+          className="flex items-center gap-2.5 whitespace-nowrap shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F5132] dark:focus-visible:ring-[#C5A46D]"
           aria-label={t.appName}
         >
-          <NaghmaAppIconImg alt={t.appName} className="h-8 w-8 rounded-xl shrink-0" />
-          <span className="text-base font-bold tracking-tight text-[#2D231E] dark:text-[#FAF5EE]">
+          <NaghmaAppIconImg alt={t.appName} className="h-8 w-8 rounded-lg shrink-0" />
+          <span className="text-base font-semibold tracking-tight text-[#121212] dark:text-[#F4F4F5]">
             {lang === 'ar' ? (
-              <span className="font-quran-scheherazade text-xl text-[#B45309] dark:text-[#FBBF24]">
+              <span className="font-quran-scheherazade text-xl text-[#0F5132] dark:text-[#C5A46D]">
                 مِحْرَاب النُّور
               </span>
             ) : (
@@ -64,7 +63,6 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
         </button>
 
-        {/* Clean Desktop Text Navigation (5 concise links) */}
         <nav
           aria-label="Primary navigation"
           className="hidden md:flex items-center gap-7 text-sm font-medium"
@@ -77,8 +75,8 @@ export const Header: React.FC<HeaderProps> = ({
               aria-current={activeRoute === link.id ? 'page' : undefined}
               className={`whitespace-nowrap shrink-0 py-1 transition-colors ${
                 activeRoute === link.id
-                  ? 'text-[#D97706] dark:text-[#FBBF24] font-semibold'
-                  : 'text-[#6E5649] dark:text-[#D6C7B8] hover:text-[#2D231E] dark:hover:text-[#FAF5EE]'
+                  ? 'text-[#0F5132] dark:text-[#C5A46D] font-semibold'
+                  : 'text-[#6B6A66] dark:text-[#8E8E93] hover:text-[#121212] dark:hover:text-[#F4F4F5]'
               }`}
             >
               {link.label}
@@ -86,18 +84,17 @@ export const Header: React.FC<HeaderProps> = ({
           ))}
         </nav>
 
-        {/* Minimal Right Actions */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           {!isInstalled && (
             <button
               type="button"
               data-testid="header-apk-btn"
               onClick={() => onNavigate('download')}
               aria-label={t.downloadApkBtn}
-              className={`h-8 px-3 rounded-full text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+              className={`h-8 px-3 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap shrink-0 border ${
                 activeRoute === 'download'
-                  ? 'bg-[#D97706] text-white'
-                  : 'bg-amber-500/14 text-[#B45309] dark:text-[#FBBF24] border border-amber-500/25 hover:bg-amber-500/22'
+                  ? 'bg-[#0F5132] dark:bg-[#C5A46D] border-transparent text-white dark:text-[#09090B]'
+                  : 'bg-white dark:bg-[#121215] border-[#E6E4DF] dark:border-[#222226] text-[#121212] dark:text-[#F4F4F5] hover:border-[#0F5132] dark:hover:border-[#C5A46D]'
               }`}
             >
               APK
@@ -114,7 +111,7 @@ export const Header: React.FC<HeaderProps> = ({
                   ? 'التبديل إلى العربية'
                   : 'Switch interface to English'
             }
-            className="h-8 px-2.5 rounded-full text-xs font-semibold text-[#6E5649] dark:text-[#D6C7B8] hover:bg-amber-500/10 transition-colors whitespace-nowrap shrink-0"
+            className="h-8 px-2.5 rounded-lg text-xs font-semibold text-[#6B6A66] dark:text-[#8E8E93] hover:text-[#121212] dark:hover:text-[#F4F4F5] hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition-colors whitespace-nowrap shrink-0"
           >
             {t.langToggleLabel}
           </button>
@@ -122,9 +119,13 @@ export const Header: React.FC<HeaderProps> = ({
             type="button"
             onClick={onToggleTheme}
             aria-label={theme === 'dark' ? t.themeToLight : t.themeToDark}
-            className="h-8 w-8 flex items-center justify-center rounded-full text-[#6E5649] dark:text-[#D6C7B8] hover:bg-amber-500/10 transition-colors"
+            className="h-8 w-8 flex items-center justify-center rounded-lg text-[#6B6A66] dark:text-[#8E8E93] hover:text-[#121212] dark:hover:text-[#F4F4F5] hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition-colors"
           >
-            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {theme === 'dark' ? (
+              <Sun className="h-4 w-4" strokeWidth={1.5} />
+            ) : (
+              <Moon className="h-4 w-4" strokeWidth={1.5} />
+            )}
           </button>
         </div>
       </div>

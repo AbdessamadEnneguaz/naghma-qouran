@@ -18,17 +18,13 @@
   body {
     overscroll-behavior-y: contain;
     overflow-x: hidden;
-    background-image: linear-gradient(180deg, #FDFBF7 0%, #FAF5EE 100%);
-  }
-
-  @media (min-width: 768px) {
-    body {
-      background-attachment: fixed;
-    }
+    background-color: #F9F8F6;
+    color: #121212;
   }
 
   html.dark body {
-    background-image: linear-gradient(180deg, #17110D 0%, #110C09 100%);
+    background-color: #09090B;
+    color: #F4F4F5;
   }
 }
 
@@ -83,43 +79,25 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Warm desert-sand ambient halo for distraction-free Mushaf reading */
+/* Clean Editorial Mushaf Paper Surface */
 .mushaf-frame {
-  background-image:
-    radial-gradient(circle at top center, rgba(217, 119, 6, 0.05), transparent 62%),
-    radial-gradient(circle at bottom center, rgba(249, 115, 22, 0.03), transparent 55%);
-}
-
-/* Subtle warm-sand grain card surface (skip heavy blur on mobile GPUs) */
-.sand-card {
-  background-color: rgba(255, 255, 255, 0.88);
-}
-
-@media (min-width: 768px) {
-  .sand-card {
-    background-color: rgba(255, 255, 255, 0.74);
-    backdrop-filter: blur(12px);
-  }
-}
-
-html.dark .sand-card {
-  background-color: rgba(34, 25, 20, 0.9);
+  background-color: transparent;
 }
 
 /* Direct DOM active-verse highlighting (zero React re-render overhead) */
 [data-verse-key][data-active-verse="true"] {
-  background-color: rgba(253, 230, 138, 0.78);
-  border-radius: 0.45rem;
+  background-color: rgba(15, 81, 50, 0.10);
+  border-radius: 0.375rem;
 }
 
 html.dark [data-verse-key][data-active-verse="true"] {
-  background-color: rgba(217, 119, 6, 0.28);
+  background-color: rgba(197, 164, 109, 0.15);
 }
 
-/* Subtle custom scrollbar */
+/* Subtle architectural scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -127,29 +105,34 @@ html.dark [data-verse-key][data-active-verse="true"] {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(180, 83, 9, 0.22);
+  background: rgba(107, 106, 102, 0.25);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(217, 119, 6, 0.45);
+  background: rgba(15, 81, 50, 0.45);
 }
 
-@keyframes najm-splash-emblem-in {
+html.dark ::-webkit-scrollbar-thumb {
+  background: rgba(142, 142, 147, 0.25);
+}
+
+/* GPU-composited entrance splash animations (logo rises cleanly, name unfolds from below logo) */
+@keyframes mihrab-logo-enter {
   from {
     opacity: 0;
-    transform: scale(0.88) translateY(8px);
+    transform: translate3d(0, 12px, 0) scale(0.92);
   }
   to {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
-@keyframes najm-stroke-draw {
+@keyframes mihrab-stroke-draw {
   from {
-    stroke-dashoffset: 180;
-    opacity: 0.2;
+    stroke-dashoffset: 160;
+    opacity: 0.25;
   }
   to {
     stroke-dashoffset: 0;
@@ -157,49 +140,25 @@ html.dark [data-verse-key][data-active-verse="true"] {
   }
 }
 
-@keyframes najm-crescent-fill {
+@keyframes mihrab-name-emerge {
   0% {
     opacity: 0;
-    transform: scale(0.86);
+    transform: translate3d(0, -105%, 0);
   }
   100% {
     opacity: 1;
-    transform: scale(1);
+    transform: translate3d(0, 0, 0);
   }
 }
 
-@keyframes najm-aura-breathe {
-  0%,
-  100% {
-    opacity: 0.55;
-    transform: scale(0.94);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.08);
-  }
-}
-
-@keyframes najm-title-stagger {
-  from {
+@keyframes mihrab-sub-emerge {
+  0% {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translate3d(0, -90%, 0);
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes najm-mote-float {
-  0%,
   100% {
-    opacity: 0.18;
-    transform: translate3d(0, 6px, 0) scale(0.85);
-  }
-  50% {
-    opacity: 0.65;
-    transform: translate3d(0, -10px, 0) scale(1.1);
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -211,4 +170,3 @@ html.dark [data-verse-key][data-active-verse="true"] {
     scroll-behavior: auto !important;
   }
 }
-

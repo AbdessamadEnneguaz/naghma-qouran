@@ -121,12 +121,12 @@ export const MushafSettingsSheet: React.FC<MushafSettingsSheetProps> = ({
         e.stopPropagation();
         onClose();
       }}
-      className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/50 p-0 md:p-6"
+      className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 p-0 md:p-6"
     >
       <div
         ref={sheetRef}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-t-3xl md:rounded-3xl border border-amber-500/22 bg-[#FDFBF7] dark:bg-[#1B1410] pb-safe-bottom shadow-2xl overflow-hidden will-change-transform"
+        className="w-full max-w-lg rounded-t-3xl md:rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] pb-safe-bottom shadow-2xl overflow-hidden will-change-transform"
       >
         {/* Top Drag Handle Zone — Finger Swipe-Down to Dismiss */}
         <div
@@ -135,15 +135,15 @@ export const MushafSettingsSheet: React.FC<MushafSettingsSheetProps> = ({
           onPointerMove={handlePointerMove}
           onPointerUp={finishDrag}
           onPointerCancel={finishDrag}
-          className="touch-none select-none cursor-grab active:cursor-grabbing px-5 pt-3 pb-3.5 border-b border-amber-500/12"
+          className="touch-none select-none cursor-grab active:cursor-grabbing px-5 pt-3 pb-3.5 border-b border-[#E6E4DF] dark:border-[#222226]"
         >
-          <div className="w-14 h-1.5 rounded-full bg-amber-600/35 dark:bg-amber-400/35 mx-auto mb-2.5" />
+          <div className="w-12 h-1 rounded-full bg-[#D6D3CB] dark:bg-[#2F2F35] mx-auto mb-3" />
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-base font-bold text-[#2D231E] dark:text-[#FAF5EE]">
+              <h2 className="text-base font-semibold text-[#121212] dark:text-[#F4F4F5]">
                 {t.quickSettingsTitle}
               </h2>
-              <p className="text-[11px] text-[#6E5649] dark:text-[#D6C7B8]">
+              <p className="text-[11px] text-[#6B6A66] dark:text-[#8E8E93]">
                 {t.swipeDownToCloseHint}
               </p>
             </div>
@@ -152,28 +152,28 @@ export const MushafSettingsSheet: React.FC<MushafSettingsSheetProps> = ({
               data-testid="settings-close-btn"
               onClick={onClose}
               aria-label={t.closeWord}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-[#6E5649] dark:text-[#D6C7B8] hover:bg-amber-500/10 transition-colors"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-[#6B6A66] dark:text-[#8E8E93] hover:bg-[#F4F2ED] dark:hover:bg-[#1E1E22] transition-colors"
             >
-              <X className="h-5 w-5" />
+              <X className="h-5 w-5" strokeWidth={1.5} />
             </button>
           </div>
         </div>
 
-        {/* 4 Oversized, Crystal-Clear Reader Controls */}
-        <div className="p-4 sm:p-5 space-y-3.5">
+        {/* 4 Clean, Touch-Friendly Reader Controls */}
+        <div className="p-4 sm:p-5 space-y-3">
           {/* 1. Font Size (- / + large tactile controls) */}
-          <div className="min-h-[60px] rounded-2xl border border-amber-500/16 bg-white/85 dark:bg-[#241B15] px-4 py-2.5 flex items-center justify-between gap-3">
+          <div className="min-h-[60px] rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] px-4 py-2.5 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <span className="h-11 w-11 rounded-2xl bg-amber-500/14 text-[#B45309] dark:text-[#FBBF24] flex items-center justify-center shrink-0">
-                <Type className="h-6 w-6" />
+              <span className="h-10 w-10 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#0F5132] dark:text-[#C5A46D] flex items-center justify-center shrink-0">
+                <Type className="h-5 w-5" strokeWidth={1.5} />
               </span>
               <div className="min-w-0">
-                <div className="text-sm font-bold text-[#2D231E] dark:text-[#FAF5EE] truncate">
+                <div className="text-sm font-semibold text-[#121212] dark:text-[#F4F4F5] truncate">
                   {t.fontSizeLabel}
                 </div>
                 <div
                   data-testid="settings-font-size-value"
-                  className="text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] tabular-nums"
+                  className="text-xs font-medium text-[#0F5132] dark:text-[#C5A46D] tabular-nums"
                 >
                   {numFmt(settings.fontSize)} px
                 </div>
@@ -191,9 +191,9 @@ export const MushafSettingsSheet: React.FC<MushafSettingsSheetProps> = ({
                     fontSize: Math.max(MIN_FONT_SIZE, settings.fontSize - 2),
                   })
                 }
-                className="min-h-[48px] min-w-[48px] rounded-2xl border border-amber-500/25 bg-[#FAF5EE] dark:bg-[#17110D] text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] disabled:opacity-35 flex items-center justify-center transition-colors"
+                className="min-h-[44px] min-w-[44px] rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#121212] dark:text-[#F4F4F5] hover:border-[#0F5132] dark:hover:border-[#C5A46D] disabled:opacity-35 flex items-center justify-center transition-colors"
               >
-                <Minus className="h-5 w-5" />
+                <Minus className="h-4 w-4" strokeWidth={1.5} />
               </button>
               <button
                 type="button"
@@ -205,9 +205,9 @@ export const MushafSettingsSheet: React.FC<MushafSettingsSheetProps> = ({
                     fontSize: Math.min(MAX_FONT_SIZE, settings.fontSize + 2),
                   })
                 }
-                className="min-h-[48px] min-w-[48px] rounded-2xl border border-amber-500/25 bg-[#FAF5EE] dark:bg-[#17110D] text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706] disabled:opacity-35 flex items-center justify-center transition-colors"
+                className="min-h-[44px] min-w-[44px] rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#121212] dark:text-[#F4F4F5] hover:border-[#0F5132] dark:hover:border-[#C5A46D] disabled:opacity-35 flex items-center justify-center transition-colors"
               >
-                <Plus className="h-5 w-5" />
+                <Plus className="h-4 w-4" strokeWidth={1.5} />
               </button>
             </div>
           </div>
@@ -235,76 +235,78 @@ export const MushafSettingsSheet: React.FC<MushafSettingsSheetProps> = ({
                   type="button"
                   data-testid={`settings-riwayat-${opt.id}`}
                   onClick={() => onUpdateSettings({riwayat: opt.id})}
-                  className={`min-h-[60px] rounded-2xl border px-3.5 py-2.5 flex items-center gap-3 text-start transition-colors ${
+                  className={`min-h-[60px] rounded-xl border px-3.5 py-2.5 flex items-center gap-3 text-start transition-colors ${
                     active
-                      ? 'border-[#D97706] bg-amber-500/15 text-[#92400E] dark:text-[#FBBF24]'
-                      : 'border-amber-500/16 bg-white/85 dark:bg-[#241B15] text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706]/50'
+                      ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132]/8 dark:bg-[#C5A46D]/14 text-[#0F5132] dark:text-[#C5A46D]'
+                      : 'border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#121212] dark:text-[#F4F4F5]'
                   }`}
                 >
                   <span
                     className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
                       active
-                        ? 'bg-[#D97706] text-white'
-                        : 'bg-amber-500/12 text-[#B45309] dark:text-[#FBBF24]'
+                        ? 'bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
+                        : 'border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#6B6A66] dark:text-[#8E8E93]'
                     }`}
                   >
-                    <BookOpen className="h-5 w-5" />
+                    <BookOpen className="h-5 w-5" strokeWidth={1.5} />
                   </span>
                   <div className="min-w-0">
                     <div className="font-quran-scheherazade text-lg font-bold leading-tight">
                       {opt.titleAr}
                     </div>
-                    <div className="text-[11px] font-semibold opacity-80">{opt.titleEn}</div>
+                    <div className="text-[11px] font-medium opacity-80">{opt.titleEn}</div>
                   </div>
                 </button>
               );
             })}
           </div>
 
-          {/* 3. Theme (نهاري دافئ / ليلي مريح) Big Toggle */}
+          {/* 3. Theme Toggle */}
           <div className="grid grid-cols-2 gap-2.5">
             <button
               type="button"
               data-testid="settings-theme-light"
               onClick={() => onUpdateSettings({theme: 'light'})}
-              className={`min-h-[60px] rounded-2xl border px-3 py-2.5 flex items-center gap-2.5 text-start transition-colors ${
+              className={`min-h-[60px] rounded-xl border px-3 py-2.5 flex items-center gap-2.5 text-start transition-colors ${
                 settings.theme === 'light'
-                  ? 'border-[#D97706] bg-amber-500/15 text-[#92400E] dark:text-[#FBBF24]'
-                  : 'border-amber-500/16 bg-white/85 dark:bg-[#241B15] text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706]/50'
+                  ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132]/8 dark:bg-[#C5A46D]/14 text-[#0F5132] dark:text-[#C5A46D]'
+                  : 'border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#121212] dark:text-[#F4F4F5]'
               }`}
             >
               <span
                 className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
                   settings.theme === 'light'
-                    ? 'bg-[#D97706] text-white'
-                    : 'bg-amber-500/12 text-[#B45309] dark:text-[#FBBF24]'
+                    ? 'bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
+                    : 'border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#6B6A66] dark:text-[#8E8E93]'
                 }`}
               >
-                <Sun className="h-5 w-5" />
+                <Sun className="h-5 w-5" strokeWidth={1.5} />
               </span>
-              <span className="text-xs sm:text-sm font-bold leading-tight">{t.themeWarmDay}</span>
+              <span className="text-xs sm:text-sm font-semibold leading-tight">
+                {t.themeWarmDay}
+              </span>
             </button>
 
             <button
               type="button"
               data-testid="settings-theme-dark"
               onClick={() => onUpdateSettings({theme: 'dark'})}
-              className={`min-h-[60px] rounded-2xl border px-3 py-2.5 flex items-center gap-2.5 text-start transition-colors ${
+              className={`min-h-[60px] rounded-xl border px-3 py-2.5 flex items-center gap-2.5 text-start transition-colors ${
                 settings.theme === 'dark'
-                  ? 'border-[#D97706] bg-amber-500/15 text-[#92400E] dark:text-[#FBBF24]'
-                  : 'border-amber-500/16 bg-white/85 dark:bg-[#241B15] text-[#2D231E] dark:text-[#FAF5EE] hover:border-[#D97706]/50'
+                  ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132]/8 dark:bg-[#C5A46D]/14 text-[#0F5132] dark:text-[#C5A46D]'
+                  : 'border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#121212] dark:text-[#F4F4F5]'
               }`}
             >
               <span
                 className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
                   settings.theme === 'dark'
-                    ? 'bg-[#D97706] text-white'
-                    : 'bg-amber-500/12 text-[#B45309] dark:text-[#FBBF24]'
+                    ? 'bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
+                    : 'border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#6B6A66] dark:text-[#8E8E93]'
                 }`}
               >
-                <Moon className="h-5 w-5" />
+                <Moon className="h-5 w-5" strokeWidth={1.5} />
               </span>
-              <span className="text-xs sm:text-sm font-bold leading-tight">
+              <span className="text-xs sm:text-sm font-semibold leading-tight">
                 {t.themeNightComfort}
               </span>
             </button>
@@ -313,13 +315,13 @@ export const MushafSettingsSheet: React.FC<MushafSettingsSheetProps> = ({
           {/* 4. Reciter (1-Tap Prominent Selector) */}
           <label
             htmlFor="quick-settings-reciter"
-            className="min-h-[60px] rounded-2xl border border-amber-500/16 bg-white/85 dark:bg-[#241B15] px-4 py-2.5 flex items-center gap-3 cursor-pointer"
+            className="min-h-[60px] rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] px-4 py-2.5 flex items-center gap-3 cursor-pointer"
           >
-            <span className="h-11 w-11 rounded-2xl bg-amber-500/14 text-[#B45309] dark:text-[#FBBF24] flex items-center justify-center shrink-0">
-              <Volume2 className="h-6 w-6" />
+            <span className="h-10 w-10 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#0F5132] dark:text-[#C5A46D] flex items-center justify-center shrink-0">
+              <Volume2 className="h-5 w-5" strokeWidth={1.5} />
             </span>
             <div className="min-w-0 flex-1 space-y-0.5">
-              <div className="text-[11px] font-semibold text-[#6E5649] dark:text-[#D6C7B8]">
+              <div className="text-[11px] font-medium text-[#6B6A66] dark:text-[#8E8E93]">
                 {t.reciterSelectLabel}
               </div>
               <select
@@ -327,18 +329,18 @@ export const MushafSettingsSheet: React.FC<MushafSettingsSheetProps> = ({
                 data-testid="settings-reciter-select"
                 value={settings.reciterId}
                 onChange={(e) => onUpdateSettings({reciterId: e.target.value})}
-                className="w-full bg-transparent text-xs sm:text-sm font-bold text-[#2D231E] dark:text-[#FAF5EE] focus:outline-none"
+                className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#121212] dark:text-[#F4F4F5] focus:outline-none"
               >
                 <optgroup label={t.warshGroup}>
                   {warshReciters.map((r) => (
-                    <option key={r.id} value={r.id} className="text-[#2D231E] bg-[#FDFBF7]">
+                    <option key={r.id} value={r.id} className="text-[#121212] bg-white">
                       {lang === 'ar' ? r.nameAr : `${r.nameEn} · ${r.nameAr}`}
                     </option>
                   ))}
                 </optgroup>
                 <optgroup label={t.hafsGroup}>
                   {hafsReciters.map((r) => (
-                    <option key={r.id} value={r.id} className="text-[#2D231E] bg-[#FDFBF7]">
+                    <option key={r.id} value={r.id} className="text-[#121212] bg-white">
                       {lang === 'ar' ? r.nameAr : `${r.nameEn} · ${r.nameAr}`}
                     </option>
                   ))}

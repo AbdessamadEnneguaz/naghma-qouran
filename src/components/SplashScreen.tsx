@@ -6,14 +6,6 @@ interface SplashScreenProps {
 
 const SPLASH_SESSION_KEY = 'najm_splash_seen';
 
-const FLOATING_MOTES = [
-  {left: '18%', top: '34%', size: 7, delay: '0ms', duration: '2600ms'},
-  {left: '79%', top: '28%', size: 5, delay: '220ms', duration: '2400ms'},
-  {left: '26%', top: '66%', size: 6, delay: '380ms', duration: '2800ms'},
-  {left: '74%', top: '64%', size: 8, delay: '140ms', duration: '2500ms'},
-  {left: '50%', top: '22%', size: 5, delay: '300ms', duration: '2300ms'},
-];
-
 export const SplashScreen: React.FC<SplashScreenProps> = ({isDataReady}) => {
   const [visible, setVisible] = useState<boolean>(() => {
     try {
@@ -32,7 +24,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({isDataReady}) => {
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     const minTimer = window.setTimeout(
       () => setMinDelayDone(true),
-      prefersReduced ? 120 : 1250
+      prefersReduced ? 120 : 1350
     );
     return () => window.clearTimeout(minTimer);
   }, [visible]);
@@ -45,7 +37,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({isDataReady}) => {
     } catch {
       // ignore storage restrictions
     }
-    const hideTimer = window.setTimeout(() => setVisible(false), 350);
+    const hideTimer = window.setTimeout(() => setVisible(false), 320);
     return () => window.clearTimeout(hideTimer);
   }, [visible, minDelayDone, isDataReady]);
 
@@ -55,122 +47,76 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({isDataReady}) => {
     <div
       data-testid="najm-splash"
       aria-hidden="true"
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#FDFBF7] via-[#FBF4E7] to-[#F7E9D2] dark:from-[#17110D] dark:via-[#140E0B] dark:to-[#0E0A07] px-6 transition-opacity duration-350 ${
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden bg-[#F9F8F6] dark:bg-[#09090B] px-6 transition-opacity duration-300 ${
         fading ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
     >
-      {/* Breathing Honey-Gold Radial Aura */}
-      <div
-        className="pointer-events-none absolute h-80 w-80 sm:h-96 sm:w-96 rounded-full animate-[najm-aura-breathe_2400ms_ease-in-out_infinite]"
-        style={{
-          background:
-            'radial-gradient(circle, rgba(217, 119, 6, 0.22) 0%, rgba(249, 115, 22, 0.10) 42%, transparent 72%)',
-        }}
-      />
-
-      {/* Subtle Floating Desert-Gold Light Motes */}
-      {FLOATING_MOTES.map((mote, idx) => (
-        <span
-          key={idx}
-          className="pointer-events-none absolute rounded-full bg-[#F59E0B]/45 dark:bg-[#FBBF24]/35 animate-[najm-mote-float_ease-in-out_infinite]"
-          style={{
-            left: mote.left,
-            top: mote.top,
-            width: `${mote.size}px`,
-            height: `${mote.size}px`,
-            animationDelay: mote.delay,
-            animationDuration: mote.duration,
-          }}
-        />
-      ))}
-
-      {/* Centered Emblem & Staggered Calligraphic Title */}
-      <div className="relative z-10 flex flex-col items-center text-center gap-5">
-        <div className="relative flex items-center justify-center animate-[najm-splash-emblem-in_550ms_cubic-bezier(0.22,1,0.36,1)_both]">
-          {/* Animated 8-Pointed Rub el Hizb + Crescent SVG Reveal */}
-          <svg
-            viewBox="0 0 112 112"
-            className="h-28 w-28 sm:h-32 sm:w-32 drop-shadow-xl"
-            fill="none"
-          >
-            <defs>
-              <linearGradient id="najm-splash-card" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#FFFDF9" />
-                <stop offset="100%" stopColor="#FEF3C7" />
-              </linearGradient>
-              <linearGradient id="najm-splash-gold" x1="12%" y1="10%" x2="90%" y2="90%">
-                <stop offset="0%" stopColor="#F59E0B" />
-                <stop offset="52%" stopColor="#D97706" />
-                <stop offset="100%" stopColor="#92400E" />
-              </linearGradient>
-            </defs>
-
-            <rect
-              x="6"
-              y="6"
-              width="100"
-              height="100"
-              rx="28"
-              fill="url(#najm-splash-card)"
-              stroke="#D97706"
-              strokeOpacity="0.22"
-              strokeWidth="1.5"
-            />
-
-            {/* Outer Star Square 1 with stroke-dashoffset draw */}
-            <rect
-              x="28"
-              y="28"
-              width="56"
-              height="56"
-              rx="6"
-              stroke="url(#najm-splash-gold)"
-              strokeWidth="3.2"
-              strokeDasharray="180"
-              strokeDashoffset="180"
-              className="animate-[najm-stroke-draw_820ms_cubic-bezier(0.22,1,0.36,1)_80ms_forwards]"
-            />
-
-            {/* Rotated Star Square 2 */}
-            <rect
-              x="28"
-              y="28"
-              width="56"
-              height="56"
-              rx="6"
-              stroke="url(#najm-splash-gold)"
-              strokeWidth="3.2"
-              transform="rotate(45 56 56)"
-              strokeDasharray="180"
-              strokeDashoffset="180"
-              className="animate-[najm-stroke-draw_820ms_cubic-bezier(0.22,1,0.36,1)_220ms_forwards]"
-            />
-
-            {/* Center Golden Crescent & Mihrab Star */}
-            <g
-              style={{transformOrigin: '56px 56px'}}
-              className="animate-[najm-crescent-fill_520ms_cubic-bezier(0.22,1,0.36,1)_420ms_both]"
-            >
+      <div className="relative flex flex-col items-center text-center">
+        {/* Architectural Mihrab Mark (Emerald & Brushed Gold) */}
+        <div
+          data-testid="splash-logo-mark"
+          className="relative z-10 flex items-center justify-center animate-[mihrab-logo-enter_560ms_cubic-bezier(0.22,1,0.36,1)_both]"
+        >
+          <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-[26px] bg-[#0F5132] border border-[#C5A46D]/30 flex items-center justify-center shadow-lg shadow-black/10">
+            <svg viewBox="0 0 64 64" className="h-20 w-20 sm:h-24 sm:w-24" fill="none">
               <path
-                d="M62.5 39.5A17.5 17.5 0 1 0 72.2 69.2A14.5 14.5 0 0 1 62.5 39.5Z"
-                fill="url(#najm-splash-gold)"
+                d="M19 47V30C19 21 32 13.5 32 13.5C32 13.5 45 21 45 30V47"
+                stroke="#C5A46D"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeDasharray="160"
+                strokeDashoffset="160"
+                className="animate-[mihrab-stroke-draw_760ms_cubic-bezier(0.22,1,0.36,1)_100ms_forwards]"
               />
               <path
-                d="M66.2 46.5L67.6 50L71.2 50.4L68.4 52.8L69.3 56.4L66.2 54.4L63.1 56.4L64 52.8L61.2 50.4L64.8 50L66.2 46.5Z"
-                fill="#F59E0B"
+                d="M23.5 47V31C23.5 24 32 18.2 32 18.2C32 18.2 40.5 24 40.5 31V47"
+                stroke="#C5A46D"
+                strokeOpacity="0.45"
+                strokeWidth="1.15"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeDasharray="160"
+                strokeDashoffset="160"
+                className="animate-[mihrab-stroke-draw_760ms_cubic-bezier(0.22,1,0.36,1)_200ms_forwards]"
               />
-            </g>
-          </svg>
+              <rect
+                x="26.2"
+                y="26.2"
+                width="11.6"
+                height="11.6"
+                rx="1.4"
+                stroke="#F9F8F6"
+                strokeWidth="1"
+              />
+              <rect
+                x="26.2"
+                y="26.2"
+                width="11.6"
+                height="11.6"
+                rx="1.4"
+                stroke="#F9F8F6"
+                strokeWidth="1"
+                transform="rotate(45 32 32)"
+              />
+              <circle cx="32" cy="32" r="1.8" fill="#C5A46D" />
+              <path d="M15 47H49" stroke="#C5A46D" strokeWidth="1.75" strokeLinecap="round" />
+            </svg>
+          </div>
         </div>
 
-        <div className="space-y-1.5">
+        {/* Masked Brand Name Emerging Directly Out From Under the Logo */}
+        <div
+          data-testid="splash-name-mask"
+          className="relative z-0 -mt-1 pt-5 overflow-hidden flex flex-col items-center gap-1.5"
+        >
           <p
             dir="rtl"
-            className="font-quran-scheherazade text-4xl sm:text-5xl font-bold text-[#B45309] dark:text-[#FBBF24] leading-tight animate-[najm-title-stagger_520ms_cubic-bezier(0.22,1,0.36,1)_280ms_both]"
+            className="font-quran-scheherazade text-3xl sm:text-4xl font-bold text-[#121212] dark:text-[#F4F4F5] leading-tight animate-[mihrab-name-emerge_640ms_cubic-bezier(0.22,1,0.36,1)_340ms_both]"
           >
             مِحْرَاب النُّور
           </p>
-          <p className="text-xs sm:text-sm font-semibold tracking-[0.22em] uppercase text-[#4E3629] dark:text-[#F5E6D3] animate-[najm-title-stagger_520ms_cubic-bezier(0.22,1,0.36,1)_430ms_both]">
+          <p className="text-[11px] sm:text-xs font-semibold tracking-[0.28em] uppercase text-[#0F5132] dark:text-[#C5A46D] animate-[mihrab-sub-emerge_520ms_cubic-bezier(0.22,1,0.36,1)_480ms_both]">
             Mihrab Noor
           </p>
         </div>

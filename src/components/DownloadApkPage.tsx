@@ -70,32 +70,32 @@ export const DownloadApkPage: React.FC<DownloadApkPageProps> = ({
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 pt-6 sm:pt-10 pb-8 space-y-6">
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-7 items-center rounded-3xl border border-amber-500/18 bg-white/92 dark:bg-[#211914]/95 md:bg-white/80 md:dark:bg-[#211914]/90 md:backdrop-blur-md p-5 sm:p-8 lg:p-10 shadow-sm">
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-7 items-center rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-5 sm:p-8 lg:p-10">
         <div className="lg:col-span-7 space-y-5">
           <div className="space-y-2.5">
-            <div className="flex flex-wrap items-center gap-2.5 text-xs font-semibold text-[#B45309] dark:text-[#FBBF24] tabular-nums">
+            <div className="flex flex-wrap items-center gap-2.5 text-xs font-semibold text-[#0F5132] dark:text-[#C5A46D] tabular-nums">
               <span data-testid="apk-version-meta">{versionMetaText}</span>
               {apkVerified && (
                 <span
                   data-testid="apk-verified-badge"
-                  className="rounded-full bg-amber-500/14 px-2.5 py-0.5 text-[11px] font-semibold text-[#B45309] dark:text-[#FBBF24]"
+                  className="rounded-lg border border-[#0F5132]/30 dark:border-[#C5A46D]/35 bg-[#0F5132]/8 dark:bg-[#C5A46D]/12 px-2.5 py-0.5 text-[11px] font-semibold text-[#0F5132] dark:text-[#C5A46D]"
                 >
                   {lang === 'ar' ? 'جاهز للتحميل' : 'APK Ready'}
                 </span>
               )}
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#2D231E] dark:text-[#FAF5EE] [text-wrap:balance]">
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#121212] dark:text-[#F4F4F5] [text-wrap:balance]">
               {t.downloadPageHeading}
             </h1>
 
-            <p className="text-sm sm:text-base text-[#6E5649] dark:text-[#D6C7B8] leading-relaxed max-w-xl">
+            <p className="text-sm sm:text-base text-[#6B6A66] dark:text-[#8E8E93] leading-relaxed max-w-xl">
               {t.downloadPageSubheading}
             </p>
           </div>
 
           {isInstalled ? (
-            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm font-semibold text-[#B45309] dark:text-[#FBBF24]">
+            <div className="rounded-xl border border-[#0F5132]/30 dark:border-[#C5A46D]/35 bg-[#0F5132]/8 dark:bg-[#C5A46D]/12 p-4 text-sm font-semibold text-[#0F5132] dark:text-[#C5A46D]">
               {t.installedStandalone}
             </div>
           ) : (
@@ -107,11 +107,11 @@ export const DownloadApkPage: React.FC<DownloadApkPageProps> = ({
                   type={DEFAULT_APK_MIME}
                   data-testid="download-page-apk-cta"
                   onClick={() => setDownloadStarted(true)}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D97706] hover:bg-[#B45309] px-6 py-3.5 text-sm font-bold text-white shadow-sm transition-colors whitespace-nowrap"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0F5132] dark:bg-[#C5A46D] hover:opacity-90 px-6 py-3.5 text-sm font-semibold text-white dark:text-[#09090B] transition-opacity whitespace-nowrap"
                 >
-                  <Download className="h-4 w-4 shrink-0" />
+                  <Download className="h-4 w-4 shrink-0" strokeWidth={1.5} />
                   <span>{t.downloadApkCta}</span>
-                  <span className="text-xs font-semibold opacity-90 tabular-nums" dir="ltr">
+                  <span className="text-xs font-medium opacity-90 tabular-nums" dir="ltr">
                     ({apkSizeLabel})
                   </span>
                 </a>
@@ -120,7 +120,7 @@ export const DownloadApkPage: React.FC<DownloadApkPageProps> = ({
                   <button
                     type="button"
                     onClick={() => void onTriggerNativeInstall()}
-                    className="rounded-full border border-amber-500/35 bg-amber-500/12 px-5 py-3.5 text-sm font-semibold text-[#B45309] dark:text-[#FBBF24] hover:bg-amber-500/20 transition-colors whitespace-nowrap"
+                    className="rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] px-5 py-3.5 text-sm font-semibold text-[#121212] dark:text-[#F4F4F5] hover:border-[#0F5132] dark:hover:border-[#C5A46D] transition-colors whitespace-nowrap"
                   >
                     {t.installNowBtn}
                   </button>
@@ -128,7 +128,7 @@ export const DownloadApkPage: React.FC<DownloadApkPageProps> = ({
               </div>
 
               {downloadStarted && (
-                <p className="text-xs font-medium text-[#B45309] dark:text-[#FBBF24]">
+                <p className="text-xs font-medium text-[#0F5132] dark:text-[#C5A46D]">
                   {lang === 'ar'
                     ? 'بدأ تنزيل mihrab-noor.apk — افتح الملف من إشعارات المتصفح للتثبيت.'
                     : 'Downloading mihrab-noor.apk — open the file from your browser downloads to install.'}
@@ -137,22 +137,22 @@ export const DownloadApkPage: React.FC<DownloadApkPageProps> = ({
             </div>
           )}
 
-          <div className="pt-4 border-t border-amber-500/12 space-y-2">
-            <h2 className="text-xs font-bold tracking-wide text-[#2D231E] dark:text-[#FAF5EE]">
+          <div className="pt-4 border-t border-[#E6E4DF] dark:border-[#222226] space-y-2">
+            <h2 className="text-xs font-semibold tracking-wide text-[#121212] dark:text-[#F4F4F5]">
               {lang === 'ar' ? 'خطوات التثبيت والتحديث التلقائي' : 'Installation & Auto-Update Guide'}
             </h2>
-            <ol className="space-y-1.5 text-xs sm:text-sm text-[#6E5649] dark:text-[#D6C7B8]">
+            <ol className="space-y-1.5 text-xs sm:text-sm text-[#6B6A66] dark:text-[#8E8E93]">
               <li>{t.apkStep1}</li>
               <li>{t.apkStep2}</li>
               <li>{t.apkStep3}</li>
             </ol>
             <p
               data-testid="apk-uninstall-tip"
-              className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-3.5 py-2.5 text-xs font-medium text-[#92400E] dark:text-[#FBBF24]"
+              className="rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] px-3.5 py-2.5 text-xs font-medium text-[#121212] dark:text-[#F4F4F5]"
             >
               {t.apkUninstallTip}
             </p>
-            <p className="text-xs text-[#D97706] dark:text-[#FBBF24] pt-1">
+            <p className="text-xs text-[#0F5132] dark:text-[#C5A46D] pt-1">
               {lang === 'ar'
                 ? 'التحديثات المباشرة: أي تحسين أو ميزة جديدة تُنشر هنا تصلك تلقائياً داخل التطبيق دون حاجة لإعادة التحميل.'
                 : 'Live OTA Sync: Future design improvements and features published here sync automatically to your installed app.'}
@@ -160,41 +160,41 @@ export const DownloadApkPage: React.FC<DownloadApkPageProps> = ({
           </div>
         </div>
 
-        {/* Right: Warm Sand Minimal Phone Preview with Mihrab Noor Icon */}
+        {/* Right: Clean Architectural Phone Preview */}
         <div className="lg:col-span-5 flex justify-center">
           <div
             aria-label="Mihrab Noor Android App Preview"
-            className="w-[248px] sm:w-[264px] rounded-[34px] border-[4px] border-[#3A2B21] bg-gradient-to-b from-[#FDFBF7] to-[#FAF5EE] p-3.5 shadow-xl space-y-3"
+            className="w-[248px] sm:w-[264px] rounded-[34px] border-[4px] border-[#1E1E22] bg-[#F9F8F6] p-3.5 shadow-xl space-y-3"
           >
-            <div className="mx-auto h-1 w-12 rounded-full bg-amber-900/15" />
+            <div className="mx-auto h-1 w-12 rounded-full bg-black/15" />
 
-            <div className="flex items-center justify-between px-1.5 text-[#2D231E]">
+            <div className="flex items-center justify-between px-1.5 text-[#121212]">
               <div className="flex items-center gap-1.5">
                 <NaghmaAppIconImg alt="Mihrab Noor" className="h-5 w-5 rounded-md" />
-                <span className="font-quran-scheherazade text-base font-bold text-[#B45309]">
+                <span className="font-quran-scheherazade text-base font-bold text-[#0F5132]">
                   مِحْرَاب النُّور
                 </span>
               </div>
-              <span dir="ltr" className="text-[10px] text-[#6E5649] tabular-nums">١ / ٦٠٤</span>
+              <span dir="ltr" className="text-[10px] text-[#6B6A66] tabular-nums">١ / ٦٠٤</span>
             </div>
 
-            <div className="rounded-2xl border border-amber-500/20 bg-white/90 p-3.5 space-y-2 shadow-sm">
-              <div className="text-center border-b border-amber-500/12 pb-1.5">
-                <span className="font-quran-scheherazade text-base text-[#B45309]">
+            <div className="rounded-2xl border border-[#E6E4DF] bg-white p-3.5 space-y-2">
+              <div className="text-center border-b border-[#E6E4DF] pb-1.5">
+                <span className="font-quran-scheherazade text-base text-[#0F5132] font-bold">
                   سُورَةُ ٱلْفَاتِحَةِ
                 </span>
               </div>
 
-              <div dir="rtl" className="font-quran-amiri text-[15px] leading-[2.05] text-[#2D231E] text-right">
-                <span className="bg-amber-500/15 text-[#B45309] px-1 rounded">
+              <div dir="rtl" className="font-quran-amiri text-[15px] leading-[2.05] text-[#121212] text-right">
+                <span className="bg-[#0F5132]/10 text-[#0F5132] px-1 rounded">
                   بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ ﴿١﴾
                 </span>{' '}
                 ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَٰلَمِينَ ﴿٢﴾ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ ﴿٣﴾
               </div>
 
-              <div className="pt-1.5 border-t border-amber-500/12 flex items-center justify-between text-[10px] text-[#6E5649] tabular-nums">
+              <div className="pt-1.5 border-t border-[#E6E4DF] flex items-center justify-between text-[10px] text-[#6B6A66] tabular-nums">
                 <span>الحزب ١</span>
-                <span dir="ltr" className="text-[#D97706] font-semibold">١ / ٦٠٤</span>
+                <span dir="ltr" className="text-[#0F5132] font-semibold">١ / ٦٠٤</span>
                 <span>الفاتحة</span>
               </div>
             </div>
@@ -203,30 +203,30 @@ export const DownloadApkPage: React.FC<DownloadApkPageProps> = ({
       </section>
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="rounded-3xl border border-amber-500/14 bg-white/80 dark:bg-[#211914] p-5 sm:p-6 space-y-3 shadow-sm">
-          <h2 className="text-sm sm:text-base font-bold text-[#2D231E] dark:text-[#FAF5EE]">
+        <div className="rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-5 sm:p-6 space-y-3">
+          <h2 className="text-sm sm:text-base font-semibold text-[#121212] dark:text-[#F4F4F5]">
             {t.downloadHighlightsTitle}
           </h2>
-          <ul className="space-y-2 text-xs sm:text-sm text-[#6E5649] dark:text-[#D6C7B8]">
+          <ul className="space-y-2 text-xs sm:text-sm text-[#6B6A66] dark:text-[#8E8E93]">
             {highlights.map((item) => (
               <li key={item} className="flex items-start gap-2">
-                <span aria-hidden="true" className="text-[#D97706] font-bold">·</span>
+                <span aria-hidden="true" className="text-[#0F5132] dark:text-[#C5A46D] font-bold">·</span>
                 <span>{item}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="rounded-3xl border border-amber-500/14 bg-white/80 dark:bg-[#211914] p-5 sm:p-6 space-y-3 shadow-sm">
-          <h2 className="text-sm sm:text-base font-bold text-[#2D231E] dark:text-[#FAF5EE]">
+        <div className="rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-5 sm:p-6 space-y-3">
+          <h2 className="text-sm sm:text-base font-semibold text-[#121212] dark:text-[#F4F4F5]">
             {t.downloadAndroidStudioTitle}
           </h2>
-          <p className="text-xs sm:text-sm text-[#6E5649] dark:text-[#D6C7B8] leading-relaxed">
+          <p className="text-xs sm:text-sm text-[#6B6A66] dark:text-[#8E8E93] leading-relaxed">
             {t.downloadAndroidStudioDesc}
           </p>
           <div
             dir="ltr"
-            className="rounded-2xl border border-amber-500/20 bg-[#FAF5EE] dark:bg-[#17110D] px-3.5 py-2.5 text-[11px] font-mono text-[#B45309] dark:text-[#FBBF24] overflow-x-auto"
+            className="rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#09090B] px-3.5 py-2.5 text-[11px] font-mono text-[#0F5132] dark:text-[#C5A46D] overflow-x-auto"
           >
             npm run android:sync && npx cap open android
           </div>
