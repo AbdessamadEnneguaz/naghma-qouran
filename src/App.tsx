@@ -142,6 +142,7 @@ const ONBOARDING_STORAGE_KEY = 'najm_onboarding_done';
 function detectNativeOrStandalone(): boolean {
   if (typeof window === 'undefined') return false;
   return (
+    Boolean(window.Capacitor?.isNativePlatform?.()) ||
     window.location.protocol === 'file:' ||
     window.location.protocol === 'capacitor:' ||
     window.matchMedia?.('(display-mode: standalone)')?.matches === true
