@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {parseRouteFromLocation, routeToPath} from './routing';
 
 test('routeToPath maps every dedicated page to clean URL paths', () => {
+  assert.equal(routeToPath('intro'), '/intro');
   assert.equal(routeToPath('home'), '/');
   assert.equal(routeToPath('mushaf'), '/mushaf');
   assert.equal(routeToPath('surahs'), '/surahs');
@@ -16,6 +17,9 @@ test('routeToPath maps every dedicated page to clean URL paths', () => {
 
 test('parseRouteFromLocation resolves pathnames, trailing slashes, and hash fallbacks', () => {
   assert.equal(parseRouteFromLocation('/'), 'home');
+  assert.equal(parseRouteFromLocation('/intro'), 'intro');
+  assert.equal(parseRouteFromLocation('/welcome/'), 'intro');
+  assert.equal(parseRouteFromLocation('/about'), 'intro');
   assert.equal(parseRouteFromLocation('/mushaf/'), 'mushaf');
   assert.equal(parseRouteFromLocation('/quran'), 'mushaf');
   assert.equal(parseRouteFromLocation('/surahs'), 'surahs');
@@ -31,4 +35,5 @@ test('parseRouteFromLocation resolves pathnames, trailing slashes, and hash fall
   assert.equal(parseRouteFromLocation('/index.html', '#/download'), 'download');
   assert.equal(parseRouteFromLocation('/', '#/qibla'), 'qibla');
   assert.equal(parseRouteFromLocation('/', '#/privacy'), 'privacy');
+  assert.equal(parseRouteFromLocation('/', '#/intro'), 'intro');
 });

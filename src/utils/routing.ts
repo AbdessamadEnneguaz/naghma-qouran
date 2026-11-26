@@ -1,4 +1,5 @@
 export type AppRoute =
+  | 'intro'
   | 'home'
   | 'mushaf'
   | 'surahs'
@@ -10,6 +11,7 @@ export type AppRoute =
   | 'privacy';
 
 export const ROUTE_PATHS: Record<AppRoute, string> = {
+  intro: '/intro',
   home: '/',
   mushaf: '/mushaf',
   surahs: '/surahs',
@@ -22,6 +24,7 @@ export const ROUTE_PATHS: Record<AppRoute, string> = {
 };
 
 const VALID_ROUTES = new Set<AppRoute>([
+  'intro',
   'home',
   'mushaf',
   'surahs',
@@ -41,6 +44,7 @@ function normalizeSegment(raw: string): AppRoute | null {
     .toLowerCase();
 
   if (clean === '' || clean === 'index.html') return 'home';
+  if (clean === 'welcome' || clean === 'about') return 'intro';
   if (clean === 'reader' || clean === 'quran') return 'mushaf';
   if (clean === 'privacy-policy') return 'privacy';
   if (VALID_ROUTES.has(clean as AppRoute)) {

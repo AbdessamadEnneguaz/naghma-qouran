@@ -24,7 +24,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({isDataReady}) => {
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     const minTimer = window.setTimeout(
       () => setMinDelayDone(true),
-      prefersReduced ? 120 : 1350
+      prefersReduced ? 90 : 680
     );
     return () => window.clearTimeout(minTimer);
   }, [visible]);
@@ -37,9 +37,21 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({isDataReady}) => {
     } catch {
       // ignore storage restrictions
     }
-    const hideTimer = window.setTimeout(() => setVisible(false), 320);
+    const hideTimer = window.setTimeout(() => setVisible(false), 240);
     return () => window.clearTimeout(hideTimer);
   }, [visible, minDelayDone, isDataReady]);
+
+  const handleSkipSplash = () => {
+    if (!isDataReady) return;
+    setMinDelayDone(true);
+    setFading(true);
+    try {
+      sessionStorage.setItem(SPLASH_SESSION_KEY, '1');
+    } catch {
+      // ignore
+    }
+    window.setTimeout(() => setVisible(false), 180);
+  };
 
   if (!visible) return null;
 
@@ -47,17 +59,18 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({isDataReady}) => {
     <div
       data-testid="najm-splash"
       aria-hidden="true"
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden bg-[#F4F7F5] dark:bg-[#0A110E] px-6 transition-opacity duration-300 ${
+      onClick={handleSkipSplash}
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden bg-[#F4F7F5] dark:bg-[#0A110E] px-6 transition-opacity duration-250 cursor-pointer ${
         fading ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
     >
       <div className="relative flex flex-col items-center text-center">
-        {/* 3D Reflective Emerald Mihrab Emblem */}
+        {/* 3D Reflective Emerald Mihrab Emblem with Ambient LED Glow */}
         <div
           data-testid="splash-logo-mark"
-          className="relative z-10 flex items-center justify-center animate-[mihrab-logo-enter_560ms_cubic-bezier(0.22,1,0.36,1)_both]"
+          className="relative z-10 flex items-center justify-center animate-[mihrab-logo-enter_440ms_cubic-bezier(0.22,1,0.36,1)_both]"
         >
-          <div className="relative h-24 w-24 sm:h-28 sm:w-28 rounded-[28px] emerald-3d-hero flex items-center justify-center overflow-hidden">
+          <div className="relative h-24 w-24 sm:h-28 sm:w-28 rounded-[28px] emerald-3d-hero led-backdrop flex items-center justify-center overflow-hidden">
             <div className="pointer-events-none absolute inset-0 gloss-sheen" />
             <svg viewBox="0 0 64 64" className="relative z-10 h-20 w-20 sm:h-24 sm:w-24" fill="none">
               <path

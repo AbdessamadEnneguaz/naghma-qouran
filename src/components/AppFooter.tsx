@@ -53,6 +53,15 @@ export const AppFooter: React.FC<AppFooterProps> = ({
         >
           <button
             type="button"
+            data-testid="footer-intro-link"
+            onClick={() => onNavigate('intro')}
+            className="text-[#5A6B62] dark:text-[#92A59B] hover:text-[#142019] dark:hover:text-[#F1F5F3] transition-colors whitespace-nowrap"
+          >
+            {lang === 'ar' ? 'حول التطبيق' : lang === 'fr' ? 'Présentation' : 'Intro'}
+          </button>
+
+          <button
+            type="button"
             data-testid="footer-privacy-link"
             onClick={() => onNavigate('privacy')}
             className="text-[#27784C] dark:text-[#52B77F] hover:underline underline-offset-4 whitespace-nowrap font-semibold"

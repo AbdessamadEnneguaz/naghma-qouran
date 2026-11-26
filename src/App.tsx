@@ -58,6 +58,11 @@ import {
   routeToPath,
   type AppRoute,
 } from './utils/routing';
+import {
+  readIntroSeen,
+  shouldShowWebIntroLanding,
+  writeIntroSeen,
+} from './utils/introFlowLogic';
 import {useAudioPlayer} from './hooks/useAudioPlayer';
 import {useAppUpdater} from './hooks/useAppUpdater';
 import {useKhatmaReminders} from './hooks/useKhatmaReminders';
@@ -115,6 +120,9 @@ const OnboardingModal = lazy(() =>
 const NotificationsModal = lazy(() =>
   import('./components/NotificationsModal').then((m) => ({default: m.NotificationsModal}))
 );
+const IntroLandingPage = lazy(() =>
+  import('./components/IntroLandingPage').then((m) => ({default: m.IntroLandingPage}))
+);
 
 const DEFAULT_SETTINGS: ReaderSettings = {
   theme: 'light',
@@ -131,10 +139,33 @@ const DEFAULT_SETTINGS: ReaderSettings = {
 
 const ONBOARDING_STORAGE_KEY = 'najm_onboarding_done';
 
+function detectNativeOrStandalone(): boolean {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.location.protocol === 'file:' ||
+    window.location.protocol === 'capacitor:' ||
+    window.matchMedia?.('(display-mode: standalone)')?.matches === true
+  );
+}
+
+function getInitialRoute(): AppRoute {
+  if (typeof window === 'undefined') return 'home';
+  const showIntro = shouldShowWebIntroLanding({
+    pathname: window.location.pathname,
+    search: window.location.search,
+    hash: window.location.hash,
+    introSeen: readIntroSeen(window.localStorage),
+    isNativeOrStandalone: detectNativeOrStandalone(),
+  });
+  if (showIntro) return 'intro';
+  return parseRouteFromLocation(window.location.pathname, window.location.hash);
+}
+
 function getInitialShowOnboarding(): boolean {
   if (typeof window === 'undefined') return false;
   try {
     if (new URLSearchParams(window.location.search).has('autostart')) return false;
+    if (getInitialRoute() === 'intro') return false;
     return localStorage.getItem(ONBOARDING_STORAGE_KEY) !== '1';
   } catch {
     return false;
@@ -152,11 +183,6 @@ function getInitialLang(): AppLang {
     // ignore storage access issues
   }
   return 'en';
-}
-
-function getInitialRoute(): AppRoute {
-  if (typeof window === 'undefined') return 'home';
-  return parseRouteFromLocation(window.location.pathname, window.location.hash);
 }
 
 const RouteFallback = () => (
@@ -746,6 +772,16 @@ export default function App() {
     }
   }, [surahs, openSurah]);
 
+  const markIntroCompleted = useCallback(() => {
+    try {
+      writeIntroSeen(window.localStorage, true);
+      window.localStorage.setItem(ONBOARDING_STORAGE_KEY, '1');
+    } catch {
+      // ignore storage issues
+    }
+    setShowOnboarding(false);
+  }, []);
+
   const handleSearchResult = useCallback(
     (res: SearchResult) => {
       const clamped = clampPage(res.page);
@@ -953,6 +989,8 @@ export default function App() {
   }
 
   const isMushafFocus = activeRoute === 'mushaf' && focusMode;
+  const isIntroRoute = activeRoute === 'intro';
+  const hideAppChrome = isMushafFocus || isIntroRoute;
   const hideAudioBarOnMobileIdle =
     activeRoute !== 'mushaf' && !player.hasStarted && !player.isPlaying && !voice.isListening;
 
@@ -964,7 +1002,7 @@ export default function App() {
         lang={lang}
         t={t}
         theme={settings.theme}
-        hidden={isMushafFocus}
+        hidden={hideAppChrome}
         isInstalled={isInstalled}
         hasActiveNotifications={khatma.hasActiveNotifications}
         onNavigate={navigateToRoute}
@@ -1064,6 +1102,40 @@ export default function App() {
       )}
 
       <main>
+        <Suspense fallback={<RouteFallback />}>
+          {activeRoute === 'intro' && (
+            <IntroLandingPage
+              lang={lang}
+              t={t}
+              theme={settings.theme}
+              riwayat={settings.riwayat}
+              isPlayingSample={player.isPlaying}
+              playingSurah={player.activeSurah}
+              playingAyah={player.activeAyah}
+              onChangeLang={(nextLang) => setLang(nextLang)}
+              onChangeRiwayat={(riwayat) => updateSettings({riwayat})}
+              onToggleTheme={() =>
+                updateSettings({theme: settings.theme === 'dark' ? 'light' : 'dark'})
+              }
+              onPlaySampleVerse={(s, a) => {
+                void player.playVerse(s, a);
+              }}
+              onOpenSampleInMushaf={(s, a) => {
+                markIntroCompleted();
+                openSurah(s, a);
+              }}
+              onEnterApp={() => {
+                markIntroCompleted();
+                navigateToRoute('home');
+              }}
+              onOpenDownloadApk={() => {
+                markIntroCompleted();
+                navigateToRoute('download');
+              }}
+            />
+          )}
+        </Suspense>
+
         {activeRoute === 'home' && (
           <HomeView
             lang={lang}
@@ -1250,7 +1322,7 @@ export default function App() {
       <AppFooter
         lang={lang}
         t={t}
-        hidden={isMushafFocus}
+        hidden={hideAppChrome}
         isInstalled={isInstalled}
         onNavigate={navigateToRoute}
       />
@@ -1275,7 +1347,7 @@ export default function App() {
         settings={settings}
         offlineRecords={offlineRecords}
         downloadProgress={downloadProgress}
-        focusMode={isMushafFocus}
+        focusMode={isMushafFocus || (isIntroRoute && !player.hasStarted && !player.isPlaying)}
         hifzMode={hifzMode}
         isListening={voice.isListening}
         voiceError={voice.voiceError}
@@ -1327,7 +1399,7 @@ export default function App() {
       <MobileBottomNav
         activeRoute={activeRoute}
         t={t}
-        hidden={isMushafFocus}
+        hidden={hideAppChrome}
         isDrawerOpen={showMobileMenu}
         onNavigate={navigateToRoute}
         onOpenMenu={() => setShowMobileMenu(true)}
