@@ -14,6 +14,7 @@ export default defineConfig(() => {
         registerType: 'autoUpdate',
         includeAssets: [
           'icon.svg',
+          'sw-notifications.js',
           'najm-app-icon.png',
           'apple-touch-icon.png',
           'pwa-192x192.png',
@@ -59,6 +60,7 @@ export default defineConfig(() => {
           maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
           skipWaiting: true,
           clientsClaim: true,
+          importScripts: ['/sw-notifications.js'],
           navigateFallback: '/index.html',
           navigateFallbackDenylist: [/\.apk$/i, /\/version\.json$/i, /\/ads\.txt$/i, /\/google[a-z0-9]+\.html$/i],
           runtimeCaching: [
@@ -121,7 +123,7 @@ export default defineConfig(() => {
               res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
               res.end(
                 JSON.stringify({
-                  version: '3.0.0',
+                  version: '3.1.0',
                   buildId: devBuildId,
                   otaUrl: 'https://najmqouran.vercel.app',
                   apkUrl: '/mihrab-noor.apk',
@@ -174,7 +176,7 @@ export default defineConfig(() => {
             fs.writeFileSync(
               path.join(distDir, 'version.json'),
               JSON.stringify({
-                version: '3.0.0',
+                version: '3.1.0',
                 buildId: `prod-${Date.now()}`,
                 otaUrl: 'https://najmqouran.vercel.app',
                 apkUrl: '/mihrab-noor.apk',

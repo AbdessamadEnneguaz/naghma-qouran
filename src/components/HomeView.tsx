@@ -1,5 +1,6 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {
+  Bell,
   Bookmark,
   BookOpen,
   CalendarCheck,
@@ -27,6 +28,7 @@ import {getEffectiveReadingStats} from '../utils/readingStreakLogic';
 import {computeDailyPrayerSchedule} from '../utils/prayerTimes';
 import {QIBLA_CITIES, type QiblaCity} from '../utils/qiblaLogic';
 import {toArabicDigits} from '../utils/quranLogic';
+import {triggerHaptic} from '../utils/haptics';
 import type {AppLang, Translations} from '../i18n/translations';
 import {
   HeroMosqueWatermarkSvg,
@@ -46,10 +48,12 @@ interface HomeViewProps {
   readingStats: ReadingStats;
   talqeenPauseSeconds?: 3 | 5 | 8;
   isInstalled: boolean;
+  hasActiveNotifications?: boolean;
   onChangeRiwayat: (riwayat: Riwayat) => void;
   onOpenSurah: (surahId: number, ayah?: number) => void;
   onOpenPage: (page: number) => void;
   onOpenSearch: () => void;
+  onOpenNotifications?: () => void;
   onOpenAllSurahs: () => void;
   onOpenVault: () => void;
   onOpenKhatma: () => void;
@@ -162,10 +166,12 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
   khatmaSchedule,
   readingStats,
   isInstalled,
+  hasActiveNotifications = false,
   onChangeRiwayat,
   onOpenSurah,
   onOpenPage,
   onOpenSearch,
+  onOpenNotifications,
   onOpenAllSurahs,
   onOpenVault,
   onOpenKhatma,
@@ -368,11 +374,11 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
         </div>
       </div>
 
-      {/* 2. Signature 3D Reflective Emerald Hero Prayer Timeline Card */}
+      {/* 2. Signature 3D Reflective Emerald Hero Prayer Timeline Card with Ambient LED Halo */}
       <section
         aria-label={t.prayerTimesTitle}
         data-testid="home-prayer-times"
-        className="relative overflow-hidden rounded-[22px] sm:rounded-3xl emerald-3d-hero p-5 sm:p-7 text-white"
+        className="relative overflow-hidden rounded-[22px] sm:rounded-3xl emerald-3d-hero led-backdrop p-5 sm:p-7 text-white"
       >
         {/* Top-left 3D specular gloss reflection */}
         <div className="pointer-events-none absolute inset-0 gloss-sheen" />
@@ -497,23 +503,48 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
               {t.featuresShowcaseTitle}
             </h2>
           </div>
-          <button
-            type="button"
-            onClick={onOpenSearch}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#27784C] dark:text-[#52B77F] hover:underline"
-          >
-            <Search className="h-3.5 w-3.5" strokeWidth={1.75} />
-            <span>{t.searchBtn}</span>
-          </button>
+          <div className="flex items-center gap-3">
+            {onOpenNotifications && (
+              <button
+                type="button"
+                data-testid="home-notifications-pill"
+                onClick={() => {
+                  triggerHaptic('light');
+                  onOpenNotifications();
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl led-icon-tile px-2.5 py-1 text-[11px] font-semibold text-[#27784C] dark:text-[#52B77F] tactile-press"
+              >
+                <Bell className="h-3.5 w-3.5" strokeWidth={1.85} />
+                <span>{lang === 'ar' ? 'الإشعارات' : lang === 'fr' ? 'Alertes' : 'Alerts'}</span>
+                {hasActiveNotifications && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 led-dot-pulse" />
+                )}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic('light');
+                onOpenSearch();
+              }}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#27784C] dark:text-[#52B77F] hover:underline tactile-press"
+            >
+              <Search className="h-3.5 w-3.5" strokeWidth={1.75} />
+              <span>{t.searchBtn}</span>
+            </button>
+          </div>
         </div>
 
         {/* Primary 2x2 Bento matching screenshot */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          {/* Card 1: Featured 3D Emerald "Read Quran" Card with 3D Open Quran on Wooden Rahle */}
+          {/* Card 1: Featured 3D Emerald "Read Quran" Card with LED Backlight */}
           <button
             type="button"
-            onClick={() => onOpenPage(currentReadingPage)}
-            className="relative overflow-hidden rounded-2xl emerald-3d-hero p-3.5 sm:p-5 text-white text-start flex flex-col justify-between gap-2 min-h-[124px] hover:-translate-y-0.5 active:scale-[0.985] transition-transform"
+            onClick={() => {
+              triggerHaptic('medium');
+              onOpenPage(currentReadingPage);
+            }}
+            className="relative overflow-hidden rounded-2xl emerald-3d-hero led-backdrop p-3.5 sm:p-5 text-white text-start flex flex-col justify-between gap-2 min-h-[124px] hover:-translate-y-0.5 tactile-press"
           >
             <div className="pointer-events-none absolute inset-0 gloss-sheen" />
             <div className="relative z-10 flex items-center gap-2.5 sm:gap-3.5 min-w-0">
@@ -548,12 +579,16 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
           <button
             type="button"
             data-testid="showcase-card-mushaf"
-            onClick={() => (lastRead ? onOpenPage(lastRead.page) : onOpenPage(1))}
-            className="rounded-2xl surface-3d surface-3d-interactive p-4 sm:p-5 text-start flex flex-col justify-between gap-2 min-h-[124px]"
+            onClick={() => {
+              triggerHaptic('light');
+              if (lastRead) onOpenPage(lastRead.page);
+              else onOpenPage(1);
+            }}
+            className="rounded-2xl surface-3d surface-3d-interactive tactile-press p-4 sm:p-5 text-start flex flex-col justify-between gap-2 min-h-[124px]"
           >
             <div className="flex items-start justify-between gap-2">
-              <span className="h-10 w-10 rounded-xl bg-[#27784C]/[0.08] dark:bg-[#52B77F]/[0.12] border border-[#27784C]/15 text-[#27784C] dark:text-[#52B77F] flex items-center justify-center shrink-0">
-                <BookOpen className="h-5 w-5" strokeWidth={1.6} />
+              <span className="h-10 w-10 rounded-xl led-icon-tile text-[#27784C] dark:text-[#52B77F] flex items-center justify-center shrink-0">
+                <BookOpen className="h-5 w-5" strokeWidth={1.7} />
               </span>
               <span className="text-[11px] font-medium text-[#5A6B62] dark:text-[#92A59B] tabular-nums">
                 {t.pageShort} {numFmt(currentReadingPage)}
@@ -584,11 +619,14 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
           <button
             type="button"
             data-testid="home-browse-surahs-btn"
-            onClick={onOpenAllSurahs}
-            className="rounded-2xl surface-3d surface-3d-interactive p-4 sm:p-5 text-start flex flex-col justify-between gap-2 min-h-[118px]"
+            onClick={() => {
+              triggerHaptic('light');
+              onOpenAllSurahs();
+            }}
+            className="rounded-2xl surface-3d surface-3d-interactive tactile-press p-4 sm:p-5 text-start flex flex-col justify-between gap-2 min-h-[118px]"
           >
-            <span className="h-10 w-10 rounded-xl bg-[#27784C]/[0.08] dark:bg-[#52B77F]/[0.12] border border-[#27784C]/15 text-[#27784C] dark:text-[#52B77F] flex items-center justify-center shrink-0">
-              <Headphones className="h-5 w-5" strokeWidth={1.6} />
+            <span className="h-10 w-10 rounded-xl led-icon-tile text-[#27784C] dark:text-[#52B77F] flex items-center justify-center shrink-0">
+              <Headphones className="h-5 w-5" strokeWidth={1.7} />
             </span>
 
             <div className="flex items-end justify-between gap-2">
@@ -619,12 +657,15 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
           <button
             type="button"
             data-testid="showcase-card-vault"
-            onClick={onOpenVault}
-            className="rounded-2xl surface-3d surface-3d-interactive p-4 sm:p-5 text-start flex flex-col justify-between gap-2 min-h-[118px]"
+            onClick={() => {
+              triggerHaptic('light');
+              onOpenVault();
+            }}
+            className="rounded-2xl surface-3d surface-3d-interactive tactile-press p-4 sm:p-5 text-start flex flex-col justify-between gap-2 min-h-[118px]"
           >
             <div className="flex items-start justify-between gap-2">
-              <span className="h-10 w-10 rounded-xl bg-[#27784C]/[0.08] dark:bg-[#52B77F]/[0.12] border border-[#27784C]/15 text-[#27784C] dark:text-[#52B77F] flex items-center justify-center shrink-0">
-                <Bookmark className="h-5 w-5" strokeWidth={1.6} />
+              <span className="h-10 w-10 rounded-xl led-icon-tile text-[#27784C] dark:text-[#52B77F] flex items-center justify-center shrink-0">
+                <Bookmark className="h-5 w-5" strokeWidth={1.7} />
               </span>
               <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-[#27784C] dark:text-[#52B77F]">
                 <span>{lang === 'ar' ? 'عرض الكل' : 'View All'}</span>
@@ -689,11 +730,14 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
               key={id}
               type="button"
               data-testid={`showcase-card-${id}`}
-              onClick={onClick}
-              className="rounded-xl surface-3d surface-3d-interactive p-3 text-start flex items-center gap-2.5"
+              onClick={() => {
+                triggerHaptic('light');
+                onClick();
+              }}
+              className="rounded-xl surface-3d surface-3d-interactive tactile-press p-3 text-start flex items-center gap-2.5"
             >
-              <span className="h-9 w-9 rounded-xl bg-[#27784C]/[0.08] dark:bg-[#52B77F]/[0.12] text-[#27784C] dark:text-[#52B77F] flex items-center justify-center shrink-0">
-                <Icon className="h-[18px] w-[18px]" strokeWidth={1.6} />
+              <span className="h-9 w-9 rounded-xl led-icon-tile text-[#27784C] dark:text-[#52B77F] flex items-center justify-center shrink-0">
+                <Icon className="h-[18px] w-[18px]" strokeWidth={1.7} />
               </span>
               <div className="min-w-0">
                 <div className="text-xs sm:text-sm font-semibold text-[#142019] dark:text-[#F1F5F3] truncate">

@@ -33,6 +33,8 @@ import {
   shouldAutoScrollToVerse,
   syncActiveVerseDomHighlight,
 } from '../utils/verseHighlightDom';
+import {computePageSwipeDrag, evaluatePageSwipeTurn} from '../utils/swipeSheetLogic';
+import {triggerHaptic} from '../utils/haptics';
 import {SurahCartoucheBanner} from './OrnamentalSvg';
 import {MushafSettingsSheet} from './MushafSettingsSheet';
 import type {AppLang, Translations} from '../i18n/translations';
@@ -208,12 +210,30 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
   const [surahQuery, setSurahQuery] = useState('');
   const [sharedKey, setSharedKey] = useState<string | null>(null);
   const [pageJumpInput, setPageJumpInput] = useState(String(currentPage));
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
+  const [swipeDragX, setSwipeDragX] = useState(0);
+  const swipeGestureRef = useRef<{
+    active: boolean;
+    pointerId: number | null;
+    startX: number;
+    startY: number;
+    startMs: number;
+    axisLocked: 'x' | 'y' | null;
+    lastDx: number;
+  }>({
+    active: false,
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    startMs: 0,
+    axisLocked: null,
+    lastDx: 0,
+  });
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const pageFrameRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     setPageJumpInput(String(currentPage));
+    setSwipeDragX(0);
   }, [currentPage]);
 
   const surahMap = useMemo(() => {
@@ -346,23 +366,54 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
     }
   }, [selectedAyahKey, displayVerses]);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
+  const handlePagePointerDown = (e: React.PointerEvent<HTMLElement>) => {
+    if (browseTab !== 'quran' || settingsSheetOpen) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('button, input, select, a')) return;
+    swipeGestureRef.current = {
+      active: true,
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      startMs: performance.now(),
+      axisLocked: null,
+      lastDx: 0,
+    };
   };
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null || touchStartY.current === null) return;
-    if (browseTab !== 'quran') return;
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    const dy = e.changedTouches[0].clientY - touchStartY.current;
-    touchStartX.current = null;
-    touchStartY.current = null;
-    if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.15) return;
-    if (dx > 48 && currentPage < 604) {
-      onChangePage(currentPage + 1);
-    } else if (dx < -48 && currentPage > 1) {
-      onChangePage(currentPage - 1);
+
+  const handlePagePointerMove = (e: React.PointerEvent<HTMLElement>) => {
+    const g = swipeGestureRef.current;
+    if (!g.active || g.pointerId !== e.pointerId) return;
+    const dx = e.clientX - g.startX;
+    const dy = e.clientY - g.startY;
+    if (!g.axisLocked) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      g.axisLocked = Math.abs(dx) > Math.abs(dy) * 1.1 ? 'x' : 'y';
     }
+    if (g.axisLocked !== 'x') return;
+    g.lastDx = dx;
+    setSwipeDragX(computePageSwipeDrag(dx, currentPage, 1, 604));
+  };
+
+  const finishPageSwipe = (e: React.PointerEvent<HTMLElement>) => {
+    const g = swipeGestureRef.current;
+    if (!g.active || g.pointerId !== e.pointerId) return;
+    g.active = false;
+    g.pointerId = null;
+    if (g.axisLocked === 'x') {
+      const elapsedMs = performance.now() - g.startMs;
+      const result = evaluatePageSwipeTurn(g.lastDx, elapsedMs, currentPage, 1, 604);
+      setSwipeDragX(0);
+      if (result.direction) {
+        triggerHaptic('light');
+        onChangePage(result.targetPage);
+      }
+    } else {
+      setSwipeDragX(0);
+    }
+    g.axisLocked = null;
+    g.lastDx = 0;
   };
 
   const handleCanvasTap = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -425,8 +476,6 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
     <div
       ref={containerRef}
       onClick={handleCanvasTap}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
       className={`min-h-[calc(100vh-52px)] mushaf-frame transition-all duration-300 ${
         focusMode ? 'pt-5 pb-16' : 'pt-2 sm:pt-4 pb-44 md:pb-32'
       }`}
@@ -473,27 +522,30 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
             ))}
           </div>
 
-          {/* Right Decluttered Controls: Touch-Friendly Settings Sheet Trigger + Offline Download */}
-          <div className="flex items-center gap-2">
+          {/* Right Decluttered Controls: Ambient LED Icon-Only Offline & Settings Buttons */}
+          <div className="flex items-center gap-2.5">
             {headerSurahMeta && (
               <button
                 type="button"
-                onClick={() => onDownloadSurah(headerSurahMeta)}
+                onClick={() => {
+                  triggerHaptic('light');
+                  onDownloadSurah(headerSurahMeta);
+                }}
                 disabled={isDownloadingThisSurah}
                 title={isSurahDownloaded ? t.offlineReady : t.downloadSurahOffline}
                 aria-label={isSurahDownloaded ? t.offlineReady : t.downloadSurahOffline}
-                className={`min-h-[42px] min-w-[42px] flex items-center justify-center rounded-xl border transition-colors ${
+                className={`h-11 w-11 flex items-center justify-center rounded-2xl tactile-press transition-all ${
                   isSurahDownloaded
-                    ? 'border-[#27784C]/35 dark:border-[#52B77F]/40 bg-[#27784C]/8 dark:bg-[#52B77F]/12 text-[#27784C] dark:text-[#52B77F]'
-                    : 'border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] text-[#5A6B62] dark:text-[#92A59B] hover:text-[#142019] dark:hover:text-[#F1F5F3]'
+                    ? 'btn-3d-emerald led-backdrop text-white'
+                    : 'led-icon-tile text-[#27784C] dark:text-[#52B77F]'
                 }`}
               >
                 {isDownloadingThisSurah ? (
-                  <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5} />
+                  <Loader2 className="h-[18px] w-[18px] animate-spin" strokeWidth={1.85} />
                 ) : isSurahDownloaded ? (
-                  <Check className="h-4 w-4" strokeWidth={1.5} />
+                  <Check className="h-[18px] w-[18px]" strokeWidth={2} />
                 ) : (
-                  <Download className="h-4 w-4" strokeWidth={1.5} />
+                  <Download className="h-[18px] w-[18px]" strokeWidth={1.85} />
                 )}
               </button>
             )}
@@ -501,12 +553,15 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
             <button
               type="button"
               data-testid="mushaf-settings-trigger"
-              onClick={() => setSettingsSheetOpen(true)}
+              onClick={() => {
+                triggerHaptic('medium');
+                setSettingsSheetOpen(true);
+              }}
               aria-label={t.settingsBtn}
-              className="min-h-[42px] inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] text-xs sm:text-sm font-semibold text-[#142019] dark:text-[#F1F5F3] hover:border-[#27784C]/40 dark:hover:border-[#52B77F]/40 transition-colors whitespace-nowrap"
+              title={t.settingsBtn}
+              className="relative h-11 w-11 flex items-center justify-center rounded-2xl led-icon-tile text-[#27784C] dark:text-[#52B77F] tactile-press"
             >
-              <SlidersHorizontal className="h-4 w-4 shrink-0 text-[#27784C] dark:text-[#52B77F]" strokeWidth={1.5} />
-              <span>{t.settingsBtn}</span>
+              <SlidersHorizontal className="h-[19px] w-[19px]" strokeWidth={1.9} />
             </button>
           </div>
         </div>
@@ -707,29 +762,70 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
             <>
               <button
                 type="button"
-                onClick={() => onChangePage(Math.min(604, currentPage + 1))}
+                onClick={() => {
+                  triggerHaptic('light');
+                  onChangePage(Math.min(604, currentPage + 1));
+                }}
                 disabled={currentPage >= 604}
                 aria-label={`${t.nextPage} (${Math.min(604, currentPage + 1)})`}
-                className="hidden lg:flex absolute left-1 top-1/2 -translate-y-1/2 h-10 w-10 items-center justify-center rounded-full border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] text-[#142019] dark:text-[#F1F5F3] hover:border-[#27784C] dark:hover:border-[#52B77F] disabled:opacity-25 transition-colors"
+                className="hidden lg:flex absolute left-1 top-1/2 -translate-y-1/2 h-11 w-11 items-center justify-center rounded-full led-icon-tile text-[#27784C] dark:text-[#52B77F] disabled:opacity-25 tactile-press"
               >
-                <ChevronLeft className="h-5 w-5" strokeWidth={1.5} />
+                <ChevronLeft className="h-5 w-5" strokeWidth={1.85} />
               </button>
               <button
                 type="button"
-                onClick={() => onChangePage(Math.max(1, currentPage - 1))}
+                onClick={() => {
+                  triggerHaptic('light');
+                  onChangePage(Math.max(1, currentPage - 1));
+                }}
                 disabled={currentPage <= 1}
                 aria-label={`${t.prevPage} (${Math.max(1, currentPage - 1)})`}
-                className="hidden lg:flex absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 items-center justify-center rounded-full border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] text-[#142019] dark:text-[#F1F5F3] hover:border-[#27784C] dark:hover:border-[#52B77F] disabled:opacity-25 transition-colors"
+                className="hidden lg:flex absolute right-1 top-1/2 -translate-y-1/2 h-11 w-11 items-center justify-center rounded-full led-icon-tile text-[#27784C] dark:text-[#52B77F] disabled:opacity-25 tactile-press"
               >
-                <ChevronRight className="h-5 w-5" strokeWidth={1.5} />
+                <ChevronRight className="h-5 w-5" strokeWidth={1.85} />
               </button>
             </>
           )}
 
+          {/* Live Finger-Drag Directional Page Flip Indicator */}
+          {Math.abs(swipeDragX) > 16 && (
+            <div
+              aria-hidden="true"
+              className={`pointer-events-none absolute top-1/2 -translate-y-1/2 z-20 flex items-center gap-1.5 rounded-full btn-3d-emerald px-3.5 py-2 text-xs font-bold text-white shadow-lg ${
+                swipeDragX > 0 ? 'left-4' : 'right-4'
+              }`}
+            >
+              {swipeDragX > 0 ? (
+                <>
+                  <ChevronLeft className="h-4 w-4" />
+                  <span>{numFmt(Math.min(604, currentPage + 1))}</span>
+                </>
+              ) : (
+                <>
+                  <span>{numFmt(Math.max(1, currentPage - 1))}</span>
+                  <ChevronRight className="h-4 w-4" />
+                </>
+              )}
+            </div>
+          )}
+
           <article
+            ref={pageFrameRef}
             data-testid="mushaf-page-frame"
+            data-page={currentPage}
             dir={lang === 'ar' ? 'rtl' : 'ltr'}
-            className="relative mx-2.5 my-1 sm:mx-auto max-w-3xl rounded-2xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] p-4 sm:p-8 overflow-hidden"
+            onPointerDown={handlePagePointerDown}
+            onPointerMove={handlePagePointerMove}
+            onPointerUp={finishPageSwipe}
+            onPointerCancel={finishPageSwipe}
+            style={{
+              transform: `translate3d(${swipeDragX}px, 0, 0) rotate(${(swipeDragX * 0.014).toFixed(2)}deg)`,
+              transition:
+                swipeDragX === 0
+                  ? 'transform 260ms cubic-bezier(0.22, 1, 0.36, 1)'
+                  : 'none',
+            }}
+            className="touch-pan-y relative mx-2.5 my-1 sm:mx-auto max-w-3xl rounded-2xl surface-3d led-backdrop p-4 sm:p-8 overflow-hidden will-change-transform"
           >
             <div className="relative z-10 px-0.5 sm:px-2 py-0.5 sm:py-1">
               {/* Quiet Madani Mushaf Page Header */}
@@ -1045,18 +1141,24 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
               >
                 <button
                   type="button"
-                  onClick={() => onChangePage(Math.min(604, currentPage + 1))}
+                  onClick={() => {
+                    triggerHaptic('light');
+                    onChangePage(Math.min(604, currentPage + 1));
+                  }}
                   disabled={currentPage >= 604}
-                  className="min-h-[40px] inline-flex items-center gap-1 sm:gap-1.5 rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-[#142019] dark:text-[#F1F5F3] disabled:opacity-35 hover:border-[#27784C] dark:hover:border-[#52B77F] transition-colors whitespace-nowrap"
+                  className="min-h-[42px] inline-flex items-center gap-1 sm:gap-1.5 rounded-xl surface-3d tactile-press px-3.5 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-[#142019] dark:text-[#F1F5F3] disabled:opacity-35 hover:border-[#27784C] dark:hover:border-[#52B77F] whitespace-nowrap"
                 >
-                  <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
+                  <ChevronLeft className="h-4 w-4" strokeWidth={1.75} />
                   <span>{t.nextPage}</span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setBrowseTab('page')}
-                  className="min-h-[38px] inline-flex items-center justify-center gap-1.5 px-4 py-1 rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-[#F4F7F5] dark:bg-[#0A110E] text-[#27784C] dark:text-[#52B77F] tabular-nums hover:border-[#27784C] dark:hover:border-[#52B77F] transition-colors whitespace-nowrap"
+                  onClick={() => {
+                    triggerHaptic('light');
+                    setBrowseTab('page');
+                  }}
+                  className="min-h-[40px] inline-flex items-center justify-center gap-1.5 px-4 py-1 rounded-xl led-icon-tile text-[#27784C] dark:text-[#52B77F] tabular-nums tactile-press whitespace-nowrap"
                 >
                   <span className="font-quran-scheherazade text-base sm:text-lg leading-none">
                     {toArabicDigits(currentPage)} / ٦٠٤
@@ -1065,12 +1167,15 @@ const MushafViewInner: React.FC<MushafViewProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => onChangePage(Math.max(1, currentPage - 1))}
+                  onClick={() => {
+                    triggerHaptic('light');
+                    onChangePage(Math.max(1, currentPage - 1));
+                  }}
                   disabled={currentPage <= 1}
-                  className="min-h-[40px] inline-flex items-center gap-1 sm:gap-1.5 rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-[#142019] dark:text-[#F1F5F3] disabled:opacity-35 hover:border-[#27784C] dark:hover:border-[#52B77F] transition-colors whitespace-nowrap"
+                  className="min-h-[42px] inline-flex items-center gap-1 sm:gap-1.5 rounded-xl surface-3d tactile-press px-3.5 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-[#142019] dark:text-[#F1F5F3] disabled:opacity-35 hover:border-[#27784C] dark:hover:border-[#52B77F] whitespace-nowrap"
                 >
                   <span>{t.prevPage}</span>
-                  <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
+                  <ChevronRight className="h-4 w-4" strokeWidth={1.75} />
                 </button>
               </div>
             </div>

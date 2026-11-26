@@ -22,6 +22,7 @@ import {toArabicDigits} from '../utils/quranLogic';
 import {formatAyahLoopProgress} from '../utils/audioLoopLogic';
 import {computeSheetDragOffset, evaluateSwipeDismiss} from '../utils/swipeSheetLogic';
 import {renderAyahShareCardPng, type AyahCardFormat} from '../utils/storyCardCanvas';
+import {triggerHaptic} from '../utils/haptics';
 import {
   fetchVerseFrenchTranslation,
   getVerseTextByRiwayat,
@@ -290,6 +291,7 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
     const res = evaluateSwipeDismiss(dragStateRef.current.offsetY, elapsedMs);
     dragStateRef.current.offsetY = 0;
     if (res.shouldDismiss) {
+      triggerHaptic('light');
       onClose();
     } else if (sheetRef.current) {
       sheetRef.current.style.transition = 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)';
@@ -620,8 +622,11 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
           <button
             type="button"
             data-testid="sheet-listen-btn"
-            onClick={() => onPlayAyahWithRepeat(verse.surah, verse.ayah, hifzRepeatTarget)}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#27784C] dark:bg-[#52B77F] hover:opacity-90 px-5 py-2.5 text-xs sm:text-sm font-semibold text-white dark:text-[#0A110E] transition-opacity"
+            onClick={() => {
+              triggerHaptic('medium');
+              onPlayAyahWithRepeat(verse.surah, verse.ayah, hifzRepeatTarget);
+            }}
+            className="tactile-press inline-flex items-center gap-2 rounded-xl bg-[#27784C] dark:bg-[#52B77F] hover:opacity-90 px-5 py-2.5 text-xs sm:text-sm font-semibold text-white dark:text-[#0A110E] transition-opacity"
           >
             <Play className="h-4 w-4 fill-current" />
             <span>
@@ -636,8 +641,11 @@ export const TafsirDrawer: React.FC<TafsirDrawerProps> = ({
             <button
               type="button"
               data-testid="sheet-bookmark-btn"
-              onClick={() => onToggleBookmark(verse, bookmarkCategory || 'favorites')}
-              className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-colors ${
+              onClick={() => {
+                triggerHaptic('success');
+                onToggleBookmark(verse, bookmarkCategory || 'favorites');
+              }}
+              className={`tactile-press inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-colors ${
                 isBookmarked
                   ? 'border-[#27784C] dark:border-[#52B77F] bg-[#27784C]/10 dark:bg-[#52B77F]/15 text-[#27784C] dark:text-[#52B77F]'
                   : 'border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#15241D] text-[#142019] dark:text-[#F1F5F3]'

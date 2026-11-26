@@ -1,7 +1,7 @@
 export const DEFAULT_APK_FILENAME = 'mihrab-noor.apk';
 export const DEFAULT_APK_MIME = 'application/vnd.android.package-archive';
-export const DEFAULT_APK_SIZE_BYTES = 12690436;
-export const APP_VERSION = '3.0.0';
+export const DEFAULT_APK_SIZE_BYTES = 12699135;
+export const APP_VERSION = '3.1.0';
 export const DEFAULT_OTA_SERVER_URL = 'https://najmqouran.vercel.app';
 
 export function formatApkSizeMb(bytes: number): string {

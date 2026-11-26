@@ -1,0 +1,418 @@
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {
+  Bell,
+  BellRing,
+  BookOpen,
+  CalendarClock,
+  CheckCircle2,
+  Clock,
+  MoonStar,
+  Send,
+  Sparkles,
+  X,
+} from 'lucide-react';
+import type {KhatmaPlan} from '../types/quran';
+import type {AppLang, Translations} from '../i18n/translations';
+import type {NotificationChannelPrefs} from '../utils/notificationCenterLogic';
+import {computeSheetDragOffset, evaluateSwipeDismiss} from '../utils/swipeSheetLogic';
+import {triggerHaptic} from '../utils/haptics';
+
+interface NotificationsModalProps {
+  isOpen: boolean;
+  lang: AppLang;
+  t: Translations;
+  permission: NotificationPermission | 'unsupported';
+  plan: KhatmaPlan;
+  channelPrefs: NotificationChannelPrefs;
+  onClose: () => void;
+  onEnsurePermission: () => Promise<NotificationPermission | 'unsupported'>;
+  onToggleReminder: (enable: boolean) => Promise<NotificationPermission | 'unsupported'>;
+  onChangeReminderTime: (time: string) => void;
+  onToggleFridayKahf: (enable: boolean) => Promise<NotificationPermission | 'unsupported'>;
+  onTogglePrayerAlerts: (enable: boolean) => Promise<NotificationPermission | 'unsupported'>;
+  onToggleAdhkarAlerts: (enable: boolean) => Promise<NotificationPermission | 'unsupported'>;
+  onSendTestNotification: () => Promise<unknown>;
+}
+
+export const NotificationsModal: React.FC<NotificationsModalProps> = ({
+  isOpen,
+  lang,
+  t,
+  permission,
+  plan,
+  channelPrefs,
+  onClose,
+  onEnsurePermission,
+  onToggleReminder,
+  onChangeReminderTime,
+  onToggleFridayKahf,
+  onTogglePrayerAlerts,
+  onToggleAdhkarAlerts,
+  onSendTestNotification,
+}) => {
+  const [testSent, setTestSent] = useState(false);
+  const sheetRef = useRef<HTMLDivElement | null>(null);
+  const dragRef = useRef({active: false, startY: 0, startMs: 0, offsetY: 0});
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setTestSent(false);
+    if (sheetRef.current) {
+      sheetRef.current.style.transition = '';
+      sheetRef.current.style.transform = '';
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('button, input, a')) return;
+    dragRef.current = {active: true, startY: e.clientY, startMs: performance.now(), offsetY: 0};
+    if (sheetRef.current) sheetRef.current.style.transition = 'none';
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // ignore unsupported capture
+    }
+  }, []);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragRef.current.active || !sheetRef.current) return;
+    const clamped = computeSheetDragOffset(e.clientY - dragRef.current.startY);
+    dragRef.current.offsetY = clamped;
+    sheetRef.current.style.transform = `translate3d(0, ${clamped}px, 0)`;
+  }, []);
+
+  const finishDrag = useCallback(() => {
+    if (!dragRef.current.active) return;
+    dragRef.current.active = false;
+    const elapsed = performance.now() - dragRef.current.startMs;
+    const res = evaluateSwipeDismiss(dragRef.current.offsetY, elapsed);
+    dragRef.current.offsetY = 0;
+    if (res.shouldDismiss) {
+      triggerHaptic('light');
+      onClose();
+    } else if (sheetRef.current) {
+      sheetRef.current.style.transition = 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)';
+      sheetRef.current.style.transform = 'translate3d(0, 0, 0)';
+    }
+  }, [onClose]);
+
+  if (!isOpen) return null;
+
+  const isPermGranted = permission === 'granted';
+  const isPermDenied = permission === 'denied';
+
+  const channels = [
+    {
+      id: 'prayer',
+      testId: 'notif-tile-prayer',
+      active: channelPrefs.prayerAlertsEnabled,
+      Icon: Clock,
+      title:
+        lang === 'ar'
+          ? 'تنبيهات أوقات الصلاة'
+          : lang === 'fr'
+            ? 'Alertes des Prières'
+            : 'Prayer Alerts',
+      desc:
+        lang === 'ar'
+          ? 'إشعار قبل الأذان بـ ١٠ دقائق'
+          : lang === 'fr'
+            ? 'Rappel 10 min avant chaque prière'
+            : 'Alert 10 min before Adhan',
+      statusOn: lang === 'ar' ? 'مفعّل' : 'Active',
+      statusOff: lang === 'ar' ? 'إيقاف' : 'OFF',
+      onToggle: () => {
+        triggerHaptic('medium');
+        void onTogglePrayerAlerts(!channelPrefs.prayerAlertsEnabled);
+      },
+    },
+    {
+      id: 'wird',
+      testId: 'notif-tile-wird',
+      active: plan.reminderEnabled,
+      Icon: BookOpen,
+      title: t.dailyReminderTitle,
+      desc:
+        lang === 'ar'
+          ? `تذكير يومي في ${plan.reminderTime}`
+          : lang === 'fr'
+            ? `Rappel quotidien à ${plan.reminderTime}`
+            : `Daily reminder at ${plan.reminderTime}`,
+      statusOn: lang === 'ar' ? 'مفعّل' : 'Active',
+      statusOff: lang === 'ar' ? 'إيقاف' : 'OFF',
+      onToggle: () => {
+        triggerHaptic('medium');
+        void onToggleReminder(!plan.reminderEnabled);
+      },
+    },
+    {
+      id: 'adhkar',
+      testId: 'notif-tile-adhkar',
+      active: channelPrefs.adhkarEnabled,
+      Icon: MoonStar,
+      title:
+        lang === 'ar'
+          ? 'أذكار الصباح والمساء'
+          : lang === 'fr'
+            ? 'Adhkar Matin & Soir'
+            : 'Morning & Evening Adhkar',
+      desc:
+        lang === 'ar'
+          ? 'تذكير يومي صباحاً ومساءً'
+          : lang === 'fr'
+            ? 'Rappels matin & soir automatiques'
+            : 'Daily morning & evening reminders',
+      statusOn: lang === 'ar' ? 'مفعّل' : 'Active',
+      statusOff: lang === 'ar' ? 'إيقاف' : 'OFF',
+      onToggle: () => {
+        triggerHaptic('medium');
+        void onToggleAdhkarAlerts(!channelPrefs.adhkarEnabled);
+      },
+    },
+    {
+      id: 'kahf',
+      testId: 'notif-tile-kahf',
+      active: Boolean(plan.fridayKahfEnabled),
+      Icon: CalendarClock,
+      title: t.fridayKahfTitle,
+      desc:
+        lang === 'ar'
+          ? 'كل جمعة صباحاً · سورة الكهف'
+          : lang === 'fr'
+            ? 'Chaque vendredi matin · Al-Kahf'
+            : 'Every Friday morning · Al-Kahf',
+      statusOn: lang === 'ar' ? 'مفعّل' : 'Active',
+      statusOff: lang === 'ar' ? 'إيقاف' : 'OFF',
+      onToggle: () => {
+        triggerHaptic('medium');
+        void onToggleFridayKahf(!plan.fridayKahfEnabled);
+      },
+    },
+  ];
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={lang === 'ar' ? 'إشعارات التطبيق' : 'App Notifications'}
+      data-testid="notifications-modal"
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 backdrop-blur-[2px] p-0 md:p-6"
+    >
+      <div
+        ref={sheetRef}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-lg max-h-[88vh] flex flex-col rounded-t-3xl md:rounded-3xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] pb-safe-bottom shadow-2xl overflow-hidden will-change-transform"
+      >
+        {/* Top Draggable Handle + Ambient LED Header */}
+        <div
+          data-testid="notifications-drag-handle"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={finishDrag}
+          onPointerCancel={finishDrag}
+          className="touch-none select-none cursor-grab active:cursor-grabbing px-5 pt-3 pb-3.5 border-b border-[#E2EAE5] dark:border-[#1E2E26]"
+        >
+          <div className="w-12 h-1 rounded-full bg-[#CBDAD0] dark:bg-[#243B30] mx-auto mb-3" />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="h-11 w-11 rounded-2xl led-icon-tile flex items-center justify-center text-[#27784C] dark:text-[#52B77F] shrink-0">
+                <BellRing className="h-5 w-5" strokeWidth={1.85} />
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-base font-bold text-[#142019] dark:text-[#F1F5F3] truncate">
+                  {lang === 'ar'
+                    ? 'إشعارات وتنبيهات مِحْرَاب النُّور'
+                    : lang === 'fr'
+                      ? 'Notifications de l’application'
+                      : 'App Notifications & Alerts'}
+                </h2>
+                <p className="text-[11px] text-[#5A6B62] dark:text-[#92A59B] truncate">
+                  {lang === 'ar'
+                    ? 'تصلك مباشرة على هاتفك · اسحب للأسفل للإغلاق'
+                    : lang === 'fr'
+                      ? 'Envoyées sur votre appareil · glissez pour fermer'
+                      : 'Sent straight to your phone · swipe down to close'}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              data-testid="notifications-close-btn"
+              onClick={() => {
+                triggerHaptic('light');
+                onClose();
+              }}
+              aria-label={t.closeWord}
+              className="min-h-[42px] min-w-[42px] rounded-full surface-3d tactile-press flex items-center justify-center text-[#5A6B62] dark:text-[#92A59B] shrink-0"
+            >
+              <X className="h-4 w-4" strokeWidth={1.75} />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+          {/* Device Permission Banner */}
+          <div className="rounded-2xl led-backdrop emerald-3d-hero p-4 text-white flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="h-10 w-10 rounded-xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0">
+                {isPermGranted ? (
+                  <CheckCircle2 className="h-5 w-5 text-white" strokeWidth={1.9} />
+                ) : (
+                  <Bell className="h-5 w-5 text-white" strokeWidth={1.9} />
+                )}
+              </span>
+              <div className="min-w-0">
+                <div className="text-xs sm:text-sm font-bold leading-tight">
+                  {isPermGranted
+                    ? lang === 'ar'
+                      ? 'الإشعارات مفعّلة على جهازك'
+                      : lang === 'fr'
+                        ? 'Notifications autorisées'
+                        : 'Device Notifications Enabled'
+                    : isPermDenied
+                      ? lang === 'ar'
+                        ? 'الإشعارات محظورة من المتصفح'
+                        : lang === 'fr'
+                          ? 'Notifications bloquées'
+                          : 'Notifications Blocked in Browser'
+                      : lang === 'ar'
+                        ? 'فعّل إشعارات الهاتف والتطبيق'
+                        : lang === 'fr'
+                          ? 'Activer les alertes push'
+                          : 'Enable Device Notifications'}
+                </div>
+                <p className="text-[11px] text-white/85 truncate mt-0.5">
+                  {isPermDenied
+                    ? t.notificationBlockedHint
+                    : lang === 'ar'
+                      ? 'يعمل في الموقع وتطبيق أندرويد APK'
+                      : lang === 'fr'
+                        ? 'Fonctionne sur le web & APK Android'
+                        : 'Works across Web, PWA & Android APK'}
+                </p>
+              </div>
+            </div>
+
+            {!isPermGranted && (
+              <button
+                type="button"
+                data-testid="notif-enable-permission-btn"
+                onClick={() => {
+                  triggerHaptic('medium');
+                  void onEnsurePermission();
+                }}
+                className="shrink-0 rounded-xl bg-white px-3.5 py-2 text-xs font-bold text-[#1D633D] shadow-sm tactile-press whitespace-nowrap"
+              >
+                {lang === 'ar' ? 'تفعيل الآن' : lang === 'fr' ? 'Autoriser' : 'Allow'}
+              </button>
+            )}
+          </div>
+
+          {/* 4 Big Interactive 3D Notification Squares */}
+          <div className="grid grid-cols-2 gap-3" data-testid="notification-channels-grid">
+            {channels.map(({id, testId, active, Icon, title, desc, statusOn, statusOff, onToggle}) => (
+              <button
+                key={id}
+                type="button"
+                data-testid={testId}
+                role="switch"
+                aria-checked={active}
+                onClick={onToggle}
+                className={`min-h-[126px] rounded-2xl p-3.5 text-start flex flex-col justify-between gap-2 tactile-press ${
+                  active
+                    ? 'emerald-3d-hero led-backdrop text-white'
+                    : 'surface-3d surface-3d-interactive text-[#142019] dark:text-[#F1F5F3]'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-1.5">
+                  <span
+                    className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${
+                      active
+                        ? 'bg-white/20 text-white shadow-[0_0_16px_rgba(255,255,255,0.3)]'
+                        : 'led-icon-tile text-[#27784C] dark:text-[#52B77F]'
+                    }`}
+                  >
+                    <Icon className="h-5 w-5" strokeWidth={1.85} />
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap shrink-0 ${
+                      active
+                        ? 'bg-white text-[#27784C]'
+                        : 'bg-[#EAF1EC] dark:bg-[#192A22] text-[#5A6B62] dark:text-[#92A59B]'
+                    }`}
+                  >
+                    {active ? statusOn : statusOff}
+                  </span>
+                </div>
+
+                <div>
+                  <div className="text-xs sm:text-sm font-bold leading-tight">{title}</div>
+                  <p
+                    className={`text-[10.5px] leading-snug mt-0.5 ${
+                      active ? 'text-white/85' : 'text-[#5A6B62] dark:text-[#92A59B]'
+                    }`}
+                  >
+                    {desc}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Daily Reminder Time Picker + Instant Test Notification Button */}
+          <div className="rounded-2xl surface-3d p-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <Sparkles className="h-4 w-4 text-[#27784C] dark:text-[#52B77F]" strokeWidth={1.75} />
+              <label
+                htmlFor="modal-daily-reminder-time"
+                className="text-xs font-semibold text-[#142019] dark:text-[#F1F5F3]"
+              >
+                {t.reminderTimeLabel}
+              </label>
+              <input
+                id="modal-daily-reminder-time"
+                type="time"
+                value={plan.reminderTime}
+                onChange={(e) => onChangeReminderTime(e.target.value)}
+                className="rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-[#F4F7F5] dark:bg-[#0A110E] px-3 py-1.5 text-xs font-bold text-[#142019] dark:text-[#F1F5F3] tabular-nums"
+              />
+            </div>
+
+            <button
+              type="button"
+              data-testid="notif-send-test-btn"
+              onClick={async () => {
+                triggerHaptic('success');
+                await onSendTestNotification();
+                setTestSent(true);
+                window.setTimeout(() => setTestSent(false), 3200);
+              }}
+              className="inline-flex items-center gap-1.5 rounded-xl btn-3d-emerald px-4 py-2 text-xs font-bold text-white tactile-press whitespace-nowrap"
+            >
+              <Send className="h-3.5 w-3.5" strokeWidth={1.85} />
+              <span>
+                {testSent
+                  ? lang === 'ar'
+                    ? 'تم إرسال الإشعار!'
+                    : lang === 'fr'
+                      ? 'Envoyée !'
+                      : 'Notification Sent!'
+                  : t.sendTestReminderBtn}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

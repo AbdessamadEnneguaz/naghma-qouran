@@ -112,6 +112,9 @@ const HeartGuideModal = lazy(() =>
 const OnboardingModal = lazy(() =>
   import('./components/OnboardingModal').then((m) => ({default: m.OnboardingModal}))
 );
+const NotificationsModal = lazy(() =>
+  import('./components/NotificationsModal').then((m) => ({default: m.NotificationsModal}))
+);
 
 const DEFAULT_SETTINGS: ReaderSettings = {
   theme: 'light',
@@ -195,6 +198,7 @@ export default function App() {
   const [showSearch, setShowSearch] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [showHeartModal, setShowHeartModal] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [audioExpandSignal, setAudioExpandSignal] = useState(0);
   const [audioCollapseSignal, setAudioCollapseSignal] = useState(0);
@@ -705,6 +709,43 @@ export default function App() {
     [surahs, loadPageIntoView, persistLastRead, recordPageStat, updateSettings, navigateToRoute]
   );
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!('serviceWorker' in navigator) || !navigator.serviceWorker) return;
+
+    const handleSwMessage = (event: MessageEvent) => {
+      const payload = event.data as
+        | {type?: string; route?: AppRoute; surahId?: number | null}
+        | undefined;
+      if (!payload || payload.type !== 'MIHRAB_NOTIFICATION_NAVIGATE') return;
+      if (payload.surahId && Number.isFinite(Number(payload.surahId))) {
+        openSurah(Number(payload.surahId), 1);
+      } else if (payload.route) {
+        navigateToRoute(payload.route);
+      }
+    };
+
+    navigator.serviceWorker.addEventListener('message', handleSwMessage);
+    return () => {
+      navigator.serviceWorker.removeEventListener('message', handleSwMessage);
+    };
+  }, [openSurah, navigateToRoute]);
+
+  const coldSurahHandledRef = useRef(false);
+  useEffect(() => {
+    if (coldSurahHandledRef.current || surahs.length === 0 || typeof window === 'undefined') {
+      return;
+    }
+    const rawSurah = new URLSearchParams(window.location.search).get('surah');
+    if (rawSurah) {
+      coldSurahHandledRef.current = true;
+      const surahId = Number(rawSurah);
+      if (Number.isFinite(surahId) && surahId >= 1 && surahId <= 114) {
+        openSurah(surahId, 1);
+      }
+    }
+  }, [surahs, openSurah]);
+
   const handleSearchResult = useCallback(
     (res: SearchResult) => {
       const clamped = clampPage(res.page);
@@ -925,7 +966,9 @@ export default function App() {
         theme={settings.theme}
         hidden={isMushafFocus}
         isInstalled={isInstalled}
+        hasActiveNotifications={khatma.hasActiveNotifications}
         onNavigate={navigateToRoute}
+        onOpenNotifications={() => setShowNotifications(true)}
         onToggleLang={cycleLang}
         onToggleTheme={() => updateSettings({theme: settings.theme === 'dark' ? 'light' : 'dark'})}
       />
@@ -994,6 +1037,20 @@ export default function App() {
                 {t.openKahfBtn}
               </button>
             )}
+            {(khatma.toastPreview.action === 'qibla' || khatma.toastPreview.action === 'adhkar') && (
+              <button
+                type="button"
+                onClick={() => {
+                  const target: AppRoute =
+                    khatma.toastPreview?.action === 'adhkar' ? 'adhkar' : 'qibla';
+                  khatma.dismissToast();
+                  navigateToRoute(target);
+                }}
+                className="mt-1 inline-flex items-center rounded-lg bg-[#27784C] dark:bg-[#52B77F] px-3 py-1 text-[11px] font-semibold text-white dark:text-[#0A110E]"
+              >
+                {khatma.toastPreview.action === 'qibla' ? t.navQibla : t.navAdhkar}
+              </button>
+            )}
           </div>
           <button
             type="button"
@@ -1020,10 +1077,12 @@ export default function App() {
             readingStats={readingStats}
             talqeenPauseSeconds={player.talqeen.pauseSeconds}
             isInstalled={isInstalled}
+            hasActiveNotifications={khatma.hasActiveNotifications}
             onChangeRiwayat={(riwayat) => updateSettings({riwayat})}
             onOpenSurah={openSurah}
             onOpenPage={openPage}
             onOpenSearch={() => setShowSearch(true)}
+            onOpenNotifications={() => setShowNotifications(true)}
             onOpenAllSurahs={() => navigateToRoute('surahs')}
             onOpenVault={() => navigateToRoute('vault')}
             onOpenKhatma={() => navigateToRoute('khatma')}
@@ -1383,6 +1442,25 @@ export default function App() {
             onChangeRiwayat={(riwayat) => updateSettings({riwayat})}
             onChangeReciter={(reciterId) => updateSettings({reciterId})}
             onComplete={completeOnboarding}
+          />
+        )}
+
+        {showNotifications && (
+          <NotificationsModal
+            isOpen={showNotifications}
+            lang={lang}
+            t={t}
+            permission={khatma.permission}
+            plan={khatma.plan}
+            channelPrefs={khatma.channelPrefs}
+            onClose={() => setShowNotifications(false)}
+            onEnsurePermission={khatma.ensureNotificationPermission}
+            onToggleReminder={khatma.toggleReminder}
+            onChangeReminderTime={khatma.setReminderTime}
+            onToggleFridayKahf={khatma.toggleFridayKahf}
+            onTogglePrayerAlerts={khatma.togglePrayerAlerts}
+            onToggleAdhkarAlerts={khatma.toggleAdhkarAlerts}
+            onSendTestNotification={khatma.sendReminderNow}
           />
         )}
       </Suspense>

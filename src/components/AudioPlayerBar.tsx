@@ -48,6 +48,8 @@ import {
   computeSeekSecondsFromPointer,
   generateWaveformBars,
 } from '../utils/waveformLogic';
+import {computeSheetDragOffset, evaluateSwipeDismiss} from '../utils/swipeSheetLogic';
+import {triggerHaptic} from '../utils/haptics';
 import type {ProgressListener, SleepTimerOption} from '../hooks/useAudioPlayer';
 import type {AppLang, Translations} from '../i18n/translations';
 import {ReciterPickerList} from './ReciterPickerList';
@@ -173,6 +175,49 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
   const isDraggingRef = useRef(false);
   const latestDurationRef = useRef(duration);
   latestDurationRef.current = duration;
+
+  const drawerRef = useRef<HTMLDivElement | null>(null);
+  const drawerDragRef = useRef({active: false, startY: 0, startMs: 0, offsetY: 0});
+
+  const handleDrawerPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('button, a, input, select')) return;
+    drawerDragRef.current = {
+      active: true,
+      startY: e.clientY,
+      startMs: performance.now(),
+      offsetY: 0,
+    };
+    if (drawerRef.current) drawerRef.current.style.transition = 'none';
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // ignore unsupported capture
+    }
+  }, []);
+
+  const handleDrawerPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!drawerDragRef.current.active || !drawerRef.current) return;
+    const clamped = computeSheetDragOffset(e.clientY - drawerDragRef.current.startY);
+    drawerDragRef.current.offsetY = clamped;
+    drawerRef.current.style.transform = `translate3d(0, ${clamped}px, 0)`;
+  }, []);
+
+  const finishDrawerDrag = useCallback(() => {
+    if (!drawerDragRef.current.active) return;
+    drawerDragRef.current.active = false;
+    const elapsed = performance.now() - drawerDragRef.current.startMs;
+    const res = evaluateSwipeDismiss(drawerDragRef.current.offsetY, elapsed);
+    drawerDragRef.current.offsetY = 0;
+    if (res.shouldDismiss) {
+      triggerHaptic('light');
+      setExpanded(false);
+      return;
+    }
+    if (drawerRef.current) {
+      drawerRef.current.style.transition = 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)';
+      drawerRef.current.style.transform = 'translate3d(0, 0, 0)';
+    }
+  }, []);
 
   useEffect(() => {
     if (forceExpandSignal > 0) {
@@ -385,70 +430,92 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
         {/* Interactive 3D Audio Settings Drawer */}
         {expanded && (
           <div
+            ref={drawerRef}
             data-testid="audio-player-drawer"
-            className="w-full max-w-2xl pointer-events-auto rounded-3xl surface-3d shadow-2xl px-4 sm:px-5 py-4 space-y-4 max-h-[68vh] overflow-y-auto"
+            className="w-full max-w-2xl pointer-events-auto rounded-3xl surface-3d led-backdrop shadow-2xl px-4 sm:px-5 pb-4 pt-2.5 space-y-4 max-h-[68vh] overflow-y-auto will-change-transform"
           >
-            {/* Header Info + Tab Switcher (Audio Tiles vs Big Reciters List) */}
-            <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#E2EAE5] dark:border-[#1E2E26]">
-              <button
-                type="button"
-                onClick={onJumpToActiveAyah}
-                className="min-w-0 text-start hover:opacity-80 transition-opacity"
-              >
-                <div className="text-sm sm:text-base font-bold text-[#142019] dark:text-[#F1F5F3] truncate tabular-nums">
-                  {surahTitle} · {ayahBadge}
-                </div>
-                <div className="text-[11px] sm:text-xs text-[#27784C] dark:text-[#52B77F] font-medium truncate">
-                  {lang === 'ar' ? reciter.nameAr : reciter.nameEn}
-                </div>
-              </button>
+            {/* Swipe-Down Drag Handle Zone + Header Info */}
+            <div
+              onPointerDown={handleDrawerPointerDown}
+              onPointerMove={handleDrawerPointerMove}
+              onPointerUp={finishDrawerDrag}
+              onPointerCancel={finishDrawerDrag}
+              className="touch-none select-none cursor-grab active:cursor-grabbing space-y-2.5 pb-3 border-b border-[#E2EAE5] dark:border-[#1E2E26]"
+            >
+              <div className="w-11 h-1 rounded-full bg-[#CBDAD0] dark:bg-[#243B30] mx-auto" />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerHaptic('light');
+                    onJumpToActiveAyah();
+                  }}
+                  className="min-w-0 text-start hover:opacity-80 transition-opacity"
+                >
+                  <div className="text-sm sm:text-base font-bold text-[#142019] dark:text-[#F1F5F3] truncate tabular-nums">
+                    {surahTitle} · {ayahBadge}
+                  </div>
+                  <div className="text-[11px] sm:text-xs text-[#27784C] dark:text-[#52B77F] font-medium truncate">
+                    {lang === 'ar' ? reciter.nameAr : reciter.nameEn}
+                  </div>
+                </button>
 
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="inline-flex rounded-xl bg-[#F4F7F5] dark:bg-[#0A110E] border border-[#E2EAE5] dark:border-[#1E2E26] p-0.5">
-                  <button
-                    type="button"
-                    data-testid="drawer-tab-controls"
-                    onClick={() => setDrawerTab('controls')}
-                    className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all ${
-                      drawerTab === 'controls'
-                        ? 'btn-3d-emerald text-white'
-                        : 'text-[#5A6B62] dark:text-[#92A59B]'
-                    }`}
-                  >
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="inline-flex rounded-xl bg-[#F4F7F5] dark:bg-[#0A110E] border border-[#E2EAE5] dark:border-[#1E2E26] p-0.5">
+                    <button
+                      type="button"
+                      data-testid="drawer-tab-controls"
+                      onClick={() => {
+                        triggerHaptic('light');
+                        setDrawerTab('controls');
+                      }}
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold tactile-press ${
+                        drawerTab === 'controls'
+                          ? 'btn-3d-emerald text-white'
+                          : 'text-[#5A6B62] dark:text-[#92A59B]'
+                      }`}
+                    >
                     <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.75} />
                     <span>
                       {lang === 'ar' ? 'الإعدادات' : lang === 'fr' ? 'Réglages' : 'Controls'}
                     </span>
                   </button>
+                    <button
+                      type="button"
+                      data-testid="drawer-tab-reciters"
+                      onClick={() => {
+                        triggerHaptic('light');
+                        setDrawerTab('reciters');
+                      }}
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold tactile-press tabular-nums ${
+                        drawerTab === 'reciters'
+                          ? 'btn-3d-emerald text-white'
+                          : 'text-[#5A6B62] dark:text-[#92A59B]'
+                      }`}
+                    >
+                      <Users className="h-3.5 w-3.5" strokeWidth={1.75} />
+                      <span>
+                        {lang === 'ar'
+                          ? `القراء (${toArabicDigits(RECITERS.length)})`
+                          : lang === 'fr'
+                            ? `Récitateurs (${RECITERS.length})`
+                            : `Reciters (${RECITERS.length})`}
+                      </span>
+                    </button>
+                  </div>
+
                   <button
                     type="button"
-                    data-testid="drawer-tab-reciters"
-                    onClick={() => setDrawerTab('reciters')}
-                    className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all tabular-nums ${
-                      drawerTab === 'reciters'
-                        ? 'btn-3d-emerald text-white'
-                        : 'text-[#5A6B62] dark:text-[#92A59B]'
-                    }`}
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setExpanded(false);
+                    }}
+                    aria-label={t.closeWord}
+                    className="h-9 w-9 flex items-center justify-center rounded-full surface-3d tactile-press text-[#5A6B62] dark:text-[#92A59B] hover:text-[#142019] dark:hover:text-[#F1F5F3]"
                   >
-                    <Users className="h-3.5 w-3.5" strokeWidth={1.75} />
-                    <span>
-                      {lang === 'ar'
-                        ? `القراء (${toArabicDigits(RECITERS.length)})`
-                        : lang === 'fr'
-                          ? `Récitateurs (${RECITERS.length})`
-                          : `Reciters (${RECITERS.length})`}
-                    </span>
+                    <X className="h-4 w-4" strokeWidth={1.75} />
                   </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => setExpanded(false)}
-                  aria-label={t.closeWord}
-                  className="h-9 w-9 flex items-center justify-center rounded-full surface-3d text-[#5A6B62] dark:text-[#92A59B] hover:text-[#142019] dark:hover:text-[#F1F5F3]"
-                >
-                  <X className="h-4 w-4" strokeWidth={1.75} />
-                </button>
               </div>
             </div>
 
@@ -1145,18 +1212,21 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
           </div>
         )}
 
-        {/* 3D Reflective Emerald Waveform Capsule Player */}
+        {/* 3D Reflective Emerald Waveform Capsule Player with Ambient LED Halo */}
         <div
           data-testid="waveform-capsule-player"
-          className="w-full max-w-[366px] sm:max-w-lg pointer-events-auto rounded-full surface-3d px-2.5 py-2 flex items-center gap-3"
+          className="w-full max-w-[366px] sm:max-w-lg pointer-events-auto rounded-full surface-3d led-backdrop px-2.5 py-2 flex items-center gap-3"
         >
           {/* Left 3D Reflective Emerald Play/Pause Button */}
           <button
             type="button"
             data-testid="capsule-play-btn"
-            onClick={onTogglePlayPause}
+            onClick={() => {
+              triggerHaptic('medium');
+              onTogglePlayPause();
+            }}
             aria-label={isPlaying ? t.pauseReciter : t.playReciter}
-            className="w-10 h-10 rounded-full btn-3d-emerald text-white flex items-center justify-center transition-all shrink-0"
+            className="w-10 h-10 rounded-full btn-3d-emerald text-white flex items-center justify-center tactile-press shrink-0"
           >
             {isBuffering ? (
               <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} />
@@ -1202,14 +1272,17 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
           <button
             type="button"
             data-testid="capsule-drawer-toggle"
-            onClick={() => setExpanded((e) => !e)}
+            onClick={() => {
+              triggerHaptic('light');
+              setExpanded((e) => !e);
+            }}
             aria-expanded={expanded}
             aria-label={t.settingsBtn}
             title={`${surahTitle} · ${ayahBadge} · ${playbackSpeed}x`}
-            className={`h-8 px-2.5 inline-flex items-center gap-1 rounded-full text-[11px] font-semibold transition-all shrink-0 tabular-nums ${
+            className={`h-8 px-2.5 inline-flex items-center gap-1 rounded-full text-[11px] font-semibold tactile-press shrink-0 tabular-nums ${
               expanded
                 ? 'btn-3d-emerald text-white'
-                : 'bg-[#EAF1EC] dark:bg-[#192A22] text-[#27784C] dark:text-[#52B77F] hover:bg-[#DCE9E0] dark:hover:bg-[#1E3229]'
+                : 'led-icon-tile text-[#27784C] dark:text-[#52B77F]'
             }`}
           >
             <span className="max-w-[54px] truncate">{ayahBadge}</span>

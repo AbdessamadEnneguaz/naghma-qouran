@@ -11,17 +11,39 @@ import {
   logKhatmaPages,
   shouldTriggerFridayKahfReminder,
 } from '../utils/khatmaLogic';
+import {
+  evaluateDueChannelNotifications,
+  loadNotificationPrefs,
+  saveNotificationPrefs,
+  type NotificationChannelPrefs,
+} from '../utils/notificationCenterLogic';
+import {QIBLA_CITIES} from '../utils/qiblaLogic';
+import type {AppRoute} from '../utils/routing';
 import {loadKhatmaPlan, saveKhatmaPlan} from '../services/indexedDbVault';
 
 export interface NotificationToastPreview {
   title: string;
   body: string;
   permissionState: NotificationPermission | 'unsupported';
-  action?: 'khatma' | 'kahf';
+  action?: 'khatma' | 'kahf' | 'qibla' | 'adhkar';
+}
+
+function resolveUserCity() {
+  try {
+    const saved = localStorage.getItem('najm_city');
+    if (saved) {
+      const found = QIBLA_CITIES.find((c) => c.id === saved);
+      if (found) return found;
+    }
+  } catch {
+    // ignore storage errors
+  }
+  return QIBLA_CITIES[0];
 }
 
 export function useKhatmaReminders(lang: AppLang) {
   const [plan, setPlan] = useState<KhatmaPlan>(() => createDefaultKhatmaPlan(30));
+  const [channelPrefs, setChannelPrefs] = useState<NotificationChannelPrefs>(loadNotificationPrefs);
   const [loaded, setLoaded] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>(() => {
     if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported';
@@ -60,6 +82,17 @@ export function useKhatmaReminders(lang: AppLang) {
     });
   }, []);
 
+  const persistChannelPrefs = useCallback(
+    (updater: (prev: NotificationChannelPrefs) => NotificationChannelPrefs) => {
+      setChannelPrefs((prev) => {
+        const next = updater(prev);
+        saveNotificationPrefs(next);
+        return next;
+      });
+    },
+    []
+  );
+
   const todayISO = getLocalDateISO();
   const schedule = useMemo(() => computeKhatmaSchedule(plan, todayISO), [plan, todayISO]);
 
@@ -67,7 +100,9 @@ export function useKhatmaReminders(lang: AppLang) {
     async (
       title: string,
       body: string,
-      tag = 'najm-khatma-reminder'
+      tag = 'mihrab-reminder',
+      route: AppRoute = 'home',
+      surahId?: number
     ): Promise<NotificationPermission | 'unsupported'> => {
       if (typeof window === 'undefined' || !('Notification' in window)) {
         return 'unsupported';
@@ -93,38 +128,27 @@ export function useKhatmaReminders(lang: AppLang) {
                 icon: '/pwa-192x192.png',
                 badge: '/pwa-192x192.png',
                 tag,
+                data: {route, surahId: surahId ?? null},
               });
               return perm;
             }
           }
-          new Notification(title, {
+          const notif = new Notification(title, {
             body,
             icon: '/pwa-192x192.png',
             tag,
           });
+          notif.onclick = () => {
+            window.focus();
+          };
         } catch {
-          // Some embedded WebViews block Notification constructor; toast preview still shows
+          // Embedded WebViews may restrict window.Notification; in-app toast still surfaces
         }
       }
       return perm;
     },
     []
   );
-
-  const sendReminderNow = useCallback(async () => {
-    const curSummary = computeKhatmaSchedule(plan, getLocalDateISO());
-    const {title, body} = buildKhatmaNotificationText(curSummary, lang);
-    const perm = await dispatchBrowserNotification(title, body, 'najm-khatma-reminder');
-    setToastPreview({title, body, permissionState: perm, action: 'khatma'});
-    return {title, body, permission: perm};
-  }, [plan, lang, dispatchBrowserNotification]);
-
-  const sendFridayKahfNow = useCallback(async () => {
-    const {title, body} = buildFridayKahfNotificationText(lang);
-    const perm = await dispatchBrowserNotification(title, body, 'najm-friday-kahf');
-    setToastPreview({title, body, permissionState: perm, action: 'kahf'});
-    return {title, body, permission: perm};
-  }, [lang, dispatchBrowserNotification]);
 
   const ensureNotificationPermission = useCallback(async () => {
     let perm: NotificationPermission | 'unsupported' = permission;
@@ -143,6 +167,32 @@ export function useKhatmaReminders(lang: AppLang) {
     }
     return perm;
   }, [permission]);
+
+  const sendReminderNow = useCallback(async () => {
+    const curSummary = computeKhatmaSchedule(plan, getLocalDateISO());
+    const {title, body} = buildKhatmaNotificationText(curSummary, lang);
+    const perm = await dispatchBrowserNotification(
+      title,
+      body,
+      'mihrab-khatma-reminder',
+      'mushaf'
+    );
+    setToastPreview({title, body, permissionState: perm, action: 'khatma'});
+    return {title, body, permission: perm};
+  }, [plan, lang, dispatchBrowserNotification]);
+
+  const sendFridayKahfNow = useCallback(async () => {
+    const {title, body} = buildFridayKahfNotificationText(lang);
+    const perm = await dispatchBrowserNotification(
+      title,
+      body,
+      'mihrab-friday-kahf',
+      'mushaf',
+      18
+    );
+    setToastPreview({title, body, permissionState: perm, action: 'kahf'});
+    return {title, body, permission: perm};
+  }, [lang, dispatchBrowserNotification]);
 
   const toggleReminder = useCallback(
     async (enable: boolean) => {
@@ -168,9 +218,39 @@ export function useKhatmaReminders(lang: AppLang) {
     [ensureNotificationPermission, permission, persistPlan]
   );
 
-  // Background check every 30s + visibility change for daily Khatma & Friday Al-Kahf reminders
+  const togglePrayerAlerts = useCallback(
+    async (enable: boolean) => {
+      const perm = enable ? await ensureNotificationPermission() : permission;
+      persistChannelPrefs((prev) => ({...prev, prayerAlertsEnabled: enable}));
+      return perm;
+    },
+    [ensureNotificationPermission, permission, persistChannelPrefs]
+  );
+
+  const toggleAdhkarAlerts = useCallback(
+    async (enable: boolean) => {
+      const perm = enable ? await ensureNotificationPermission() : permission;
+      persistChannelPrefs((prev) => ({...prev, adhkarEnabled: enable}));
+      return perm;
+    },
+    [ensureNotificationPermission, permission, persistChannelPrefs]
+  );
+
+  const setAdhkarTimes = useCallback(
+    (patch: {morningAdhkarTime?: string; eveningAdhkarTime?: string; prayerLeadMinutes?: number}) => {
+      persistChannelPrefs((prev) => ({...prev, ...patch}));
+    },
+    [persistChannelPrefs]
+  );
+
+  // Unified background check every 30s + visibility change for Khatma, Friday Kahf, Prayer Alerts & Adhkar
   useEffect(() => {
-    if (!loaded || (!plan.reminderEnabled && !plan.fridayKahfEnabled)) return;
+    const hasAnyChannel =
+      plan.reminderEnabled ||
+      plan.fridayKahfEnabled ||
+      channelPrefs.prayerAlertsEnabled ||
+      channelPrefs.adhkarEnabled;
+    if (!loaded || !hasAnyChannel) return;
 
     const checkAndFire = async () => {
       const now = new Date();
@@ -185,7 +265,12 @@ export function useKhatmaReminders(lang: AppLang) {
         !schedule.isTodayComplete
       ) {
         const {title, body} = buildKhatmaNotificationText(schedule, lang);
-        const perm = await dispatchBrowserNotification(title, body, 'najm-khatma-reminder');
+        const perm = await dispatchBrowserNotification(
+          title,
+          body,
+          'mihrab-khatma-reminder',
+          'mushaf'
+        );
         persistPlan((prev) => ({...prev, lastNotifiedDateISO: nowDate}));
         setToastPreview({title, body, permissionState: perm, action: 'khatma'});
         return;
@@ -199,9 +284,42 @@ export function useKhatmaReminders(lang: AppLang) {
         )
       ) {
         const {title, body} = buildFridayKahfNotificationText(lang);
-        const perm = await dispatchBrowserNotification(title, body, 'najm-friday-kahf');
+        const perm = await dispatchBrowserNotification(
+          title,
+          body,
+          'mihrab-friday-kahf',
+          'mushaf',
+          18
+        );
         persistPlan((prev) => ({...prev, lastFridayKahfNotifiedISO: nowDate}));
         setToastPreview({title, body, permissionState: perm, action: 'kahf'});
+        return;
+      }
+
+      const city = resolveUserCity();
+      const dueEvents = evaluateDueChannelNotifications(now, channelPrefs, city, lang);
+      if (dueEvents.length > 0) {
+        const nextEvt = dueEvents[0];
+        const perm = await dispatchBrowserNotification(
+          nextEvt.title,
+          nextEvt.body,
+          nextEvt.tag,
+          nextEvt.route,
+          nextEvt.surahId
+        );
+        persistChannelPrefs((prev) => ({
+          ...prev,
+          sentSlotKeys: {
+            ...prev.sentSlotKeys,
+            [nextEvt.slotKey]: nextEvt.dateISO,
+          },
+        }));
+        setToastPreview({
+          title: nextEvt.title,
+          body: nextEvt.body,
+          permissionState: perm,
+          action: nextEvt.kind === 'prayer' ? 'qibla' : 'adhkar',
+        });
       }
     };
 
@@ -227,10 +345,12 @@ export function useKhatmaReminders(lang: AppLang) {
     plan.lastNotifiedDateISO,
     plan.fridayKahfEnabled,
     plan.lastFridayKahfNotifiedISO,
+    channelPrefs,
     schedule,
     lang,
     dispatchBrowserNotification,
     persistPlan,
+    persistChannelPrefs,
   ]);
 
   const setGoalDays = useCallback(
@@ -279,18 +399,30 @@ export function useKhatmaReminders(lang: AppLang) {
     [persistPlan]
   );
 
+  const hasActiveNotifications =
+    Boolean(plan.reminderEnabled) ||
+    Boolean(plan.fridayKahfEnabled) ||
+    channelPrefs.prayerAlertsEnabled ||
+    channelPrefs.adhkarEnabled;
+
   return {
     plan,
+    channelPrefs,
     schedule,
     permission,
+    hasActiveNotifications,
     toastPreview,
     dismissToast: () => setToastPreview(null),
+    ensureNotificationPermission,
     setGoalDays,
     resetPlan,
     logPagesRead,
     markTodayComplete,
     toggleReminder,
     toggleFridayKahf,
+    togglePrayerAlerts,
+    toggleAdhkarAlerts,
+    setAdhkarTimes,
     setReminderTime,
     sendReminderNow,
     sendFridayKahfNow,

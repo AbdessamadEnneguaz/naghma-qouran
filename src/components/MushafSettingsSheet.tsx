@@ -17,6 +17,7 @@ import type {AppLang, Translations} from '../i18n/translations';
 import {toArabicDigits} from '../utils/quranLogic';
 import {getReciterMonogram, localizeReciterSubtitle} from '../utils/reciterPickerLogic';
 import {computeSheetDragOffset, evaluateSwipeDismiss} from '../utils/swipeSheetLogic';
+import {triggerHaptic} from '../utils/haptics';
 import {ReciterPickerList} from './ReciterPickerList';
 
 interface MushafSettingsSheetProps {
@@ -295,10 +296,13 @@ export const MushafSettingsSheet: React.FC<MushafSettingsSheetProps> = ({
                     key={opt.id}
                     type="button"
                     data-testid={`settings-riwayat-${opt.id}`}
-                    onClick={() => onUpdateSettings({riwayat: opt.id})}
-                    className={`min-h-[84px] rounded-2xl p-3.5 flex flex-col justify-between gap-2 text-start transition-all active:scale-[0.97] ${
+                    onClick={() => {
+                      triggerHaptic('light');
+                      onUpdateSettings({riwayat: opt.id});
+                    }}
+                    className={`min-h-[84px] rounded-2xl p-3.5 flex flex-col justify-between gap-2 text-start tactile-press ${
                       active
-                        ? 'emerald-3d-hero text-white'
+                        ? 'emerald-3d-hero led-backdrop text-white'
                         : 'surface-3d surface-3d-interactive text-[#142019] dark:text-[#F1F5F3]'
                     }`}
                   >
@@ -307,7 +311,7 @@ export const MushafSettingsSheet: React.FC<MushafSettingsSheetProps> = ({
                         className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
                           active
                             ? 'bg-white/20 text-white'
-                            : 'bg-[#27784C]/[0.09] dark:bg-[#52B77F]/[0.14] text-[#27784C] dark:text-[#52B77F]'
+                            : 'led-icon-tile text-[#27784C] dark:text-[#52B77F]'
                         }`}
                       >
                         <BookOpen className="h-5 w-5" strokeWidth={1.75} />
@@ -336,10 +340,13 @@ export const MushafSettingsSheet: React.FC<MushafSettingsSheetProps> = ({
               <button
                 type="button"
                 data-testid="settings-theme-light"
-                onClick={() => onUpdateSettings({theme: 'light'})}
-                className={`min-h-[80px] rounded-2xl p-3.5 flex items-center gap-3 text-start transition-all active:scale-[0.97] ${
+                onClick={() => {
+                  triggerHaptic('light');
+                  onUpdateSettings({theme: 'light'});
+                }}
+                className={`min-h-[80px] rounded-2xl p-3.5 flex items-center gap-3 text-start tactile-press ${
                   settings.theme === 'light'
-                    ? 'emerald-3d-hero text-white'
+                    ? 'emerald-3d-hero led-backdrop text-white'
                     : 'surface-3d surface-3d-interactive text-[#142019] dark:text-[#F1F5F3]'
                 }`}
               >
@@ -347,7 +354,7 @@ export const MushafSettingsSheet: React.FC<MushafSettingsSheetProps> = ({
                   className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
                     settings.theme === 'light'
                       ? 'bg-white/20 text-white'
-                      : 'bg-[#27784C]/[0.09] dark:bg-[#52B77F]/[0.14] text-[#27784C] dark:text-[#52B77F]'
+                      : 'led-icon-tile text-[#27784C] dark:text-[#52B77F]'
                   }`}
                 >
                   <Sun className="h-5 w-5" strokeWidth={1.75} />
@@ -360,10 +367,13 @@ export const MushafSettingsSheet: React.FC<MushafSettingsSheetProps> = ({
               <button
                 type="button"
                 data-testid="settings-theme-dark"
-                onClick={() => onUpdateSettings({theme: 'dark'})}
-                className={`min-h-[80px] rounded-2xl p-3.5 flex items-center gap-3 text-start transition-all active:scale-[0.97] ${
+                onClick={() => {
+                  triggerHaptic('light');
+                  onUpdateSettings({theme: 'dark'});
+                }}
+                className={`min-h-[80px] rounded-2xl p-3.5 flex items-center gap-3 text-start tactile-press ${
                   settings.theme === 'dark'
-                    ? 'emerald-3d-hero text-white'
+                    ? 'emerald-3d-hero led-backdrop text-white'
                     : 'surface-3d surface-3d-interactive text-[#142019] dark:text-[#F1F5F3]'
                 }`}
               >
@@ -371,7 +381,7 @@ export const MushafSettingsSheet: React.FC<MushafSettingsSheetProps> = ({
                   className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
                     settings.theme === 'dark'
                       ? 'bg-white/20 text-white'
-                      : 'bg-[#27784C]/[0.09] dark:bg-[#52B77F]/[0.14] text-[#27784C] dark:text-[#52B77F]'
+                      : 'led-icon-tile text-[#27784C] dark:text-[#52B77F]'
                   }`}
                 >
                   <Moon className="h-5 w-5" strokeWidth={1.75} />
@@ -386,8 +396,11 @@ export const MushafSettingsSheet: React.FC<MushafSettingsSheetProps> = ({
             <button
               type="button"
               data-testid="settings-reciter-select"
-              onClick={() => setShowReciters(true)}
-              className="w-full min-h-[76px] rounded-2xl surface-3d surface-3d-interactive p-3.5 flex items-center gap-3.5 text-start"
+              onClick={() => {
+                triggerHaptic('light');
+                setShowReciters(true);
+              }}
+              className="w-full min-h-[76px] rounded-2xl surface-3d surface-3d-interactive tactile-press p-3.5 flex items-center gap-3.5 text-start"
             >
               <span className="h-12 w-12 rounded-2xl btn-3d-emerald text-white flex items-center justify-center font-bold text-sm shrink-0">
                 <AudioLines className="h-5 w-5" strokeWidth={1.85} />

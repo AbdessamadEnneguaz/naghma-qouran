@@ -1,7 +1,7 @@
 {
-  "version": "3.0.0",
-  "buildId": "2026-11-24-mihrab-300",
+  "version": "3.1.0",
+  "buildId": "2026-11-26-mihrab-310",
   "otaUrl": "https://najmqouran.vercel.app",
   "apkUrl": "/mihrab-noor.apk",
-  "apkBytes": 12690436
+  "apkBytes": 12699135
 }
