@@ -1,27 +1,35 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="16" fill="#0F5132"/>
-  <rect x="2" y="2" width="60" height="60" rx="14" stroke="#C5A46D" stroke-opacity="0.28" stroke-width="1"/>
-  <!-- Architectural Mihrab Pointed Arch -->
+  <defs>
+    <linearGradient id="mihrabIconGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#33915E"/>
+      <stop offset="55%" stop-color="#26774B"/>
+      <stop offset="100%" stop-color="#175433"/>
+    </linearGradient>
+    <radialGradient id="mihrabIconSheen" cx="20%" cy="15%" r="65%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.24"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#mihrabIconGrad)"/>
+  <rect width="64" height="64" rx="16" fill="url(#mihrabIconSheen)"/>
+  <rect x="1.5" y="1.5" width="61" height="61" rx="14.5" stroke="#FFFFFF" stroke-opacity="0.22" stroke-width="1"/>
   <path
     d="M19 47V30C19 21 32 13.5 32 13.5C32 13.5 45 21 45 30V47"
-    stroke="#C5A46D"
-    stroke-width="2"
+    stroke="#E6C687"
+    stroke-width="2.1"
     stroke-linecap="round"
     stroke-linejoin="round"
   />
-  <!-- Inner Hairline Arch -->
   <path
     d="M23.5 47V31C23.5 24 32 18.2 32 18.2C32 18.2 40.5 24 40.5 31V47"
-    stroke="#C5A46D"
-    stroke-opacity="0.45"
+    stroke="#FFFFFF"
+    stroke-opacity="0.48"
     stroke-width="1.1"
     stroke-linecap="round"
     stroke-linejoin="round"
   />
-  <!-- Geometric 8-Pointed Noor Aperture (Crisp Hairline Filigree) -->
-  <rect x="26.2" y="26.2" width="11.6" height="11.6" rx="1.4" stroke="#F9F8F6" stroke-width="0.95"/>
-  <rect x="26.2" y="26.2" width="11.6" height="11.6" rx="1.4" stroke="#F9F8F6" stroke-width="0.95" transform="rotate(45 32 32)"/>
-  <circle cx="32" cy="32" r="1.8" fill="#C5A46D"/>
-  <!-- Architectural Baseline -->
-  <path d="M15 47H49" stroke="#C5A46D" stroke-width="1.75" stroke-linecap="round"/>
+  <rect x="26.2" y="26.2" width="11.6" height="11.6" rx="1.4" stroke="#FFFFFF" stroke-width="0.95"/>
+  <rect x="26.2" y="26.2" width="11.6" height="11.6" rx="1.4" stroke="#FFFFFF" stroke-width="0.95" transform="rotate(45 32 32)"/>
+  <circle cx="32" cy="32" r="1.9" fill="#E6C687"/>
+  <path d="M15 47H49" stroke="#E6C687" stroke-width="1.8" stroke-linecap="round"/>
 </svg>

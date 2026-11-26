@@ -60,9 +60,9 @@ export async function renderAyahShareCardPng(options: {
 
   // 1. Fine Editorial Paper Gradient
   const bgGrad = ctx.createLinearGradient(0, 0, W, H);
-  bgGrad.addColorStop(0, '#F9F8F6');
-  bgGrad.addColorStop(0.55, '#F4F2EC');
-  bgGrad.addColorStop(1, '#EBE7DD');
+  bgGrad.addColorStop(0, '#F4F7F5');
+  bgGrad.addColorStop(0.55, '#EEF4F0');
+  bgGrad.addColorStop(1, '#E2ECE6');
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
@@ -75,18 +75,18 @@ export async function renderAyahShareCardPng(options: {
     H * (format === 'square' ? 0.42 : 0.34),
     560
   );
-  glow.addColorStop(0, 'rgba(15, 81, 50, 0.06)');
-  glow.addColorStop(0.6, 'rgba(140, 109, 70, 0.03)');
+  glow.addColorStop(0, 'rgba(39, 120, 76, 0.06)');
+  glow.addColorStop(0.6, 'rgba(39, 120, 76, 0.03)');
   glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, W, H);
 
   // 2. Refined Architectural Outer + Inner Hairline Double Frame
-  ctx.strokeStyle = 'rgba(15, 81, 50, 0.28)';
+  ctx.strokeStyle = 'rgba(39, 120, 76, 0.28)';
   ctx.lineWidth = 2.5;
   ctx.strokeRect(48, 48, W - 96, H - 96);
 
-  ctx.strokeStyle = 'rgba(140, 109, 70, 0.35)';
+  ctx.strokeStyle = 'rgba(39, 120, 76, 0.35)';
   ctx.lineWidth = 1.2;
   ctx.strokeRect(64, 64, W - 128, H - 128);
 
@@ -97,7 +97,7 @@ export async function renderAyahShareCardPng(options: {
     [64, H - 64],
     [W - 64, H - 64],
   ];
-  ctx.fillStyle = '#0F5132';
+  ctx.fillStyle = '#27784C';
   for (const [cx, cy] of corners) {
     ctx.save();
     ctx.translate(cx, cy);
@@ -110,7 +110,7 @@ export async function renderAyahShareCardPng(options: {
   const topHeaderY = format === 'square' ? 148 : 200;
   const cleanArName = options.surahNameAr.replace('سُورَةُ ', '').trim();
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#0F5132';
+  ctx.fillStyle = '#27784C';
   ctx.font = '700 34px "Scheherazade New", serif';
   ctx.fillText(
     `سُورَةُ ${cleanArName || toArabicDigits(options.surah)} · الآية ${toArabicDigits(options.ayah)}`,
@@ -118,7 +118,7 @@ export async function renderAyahShareCardPng(options: {
     topHeaderY
   );
 
-  ctx.fillStyle = '#8C6D46';
+  ctx.fillStyle = '#27784C';
   ctx.font = '600 20px "Plus Jakarta Sans", sans-serif';
   ctx.fillText(
     `${options.surahNameEn.toUpperCase()}  ·  ${options.surah}:${options.ayah}`,
@@ -126,7 +126,7 @@ export async function renderAyahShareCardPng(options: {
     topHeaderY + 46
   );
 
-  ctx.strokeStyle = 'rgba(15, 81, 50, 0.22)';
+  ctx.strokeStyle = 'rgba(39, 120, 76, 0.22)';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.moveTo(W / 2 - 140, topHeaderY + 84);
@@ -134,7 +134,7 @@ export async function renderAyahShareCardPng(options: {
   ctx.stroke();
 
   // 4. Primary Uthmani Arabic Ayah Typography
-  ctx.fillStyle = '#121212';
+  ctx.fillStyle = '#142019';
   ctx.direction = 'rtl';
   const arFontSize =
     options.arabic.length > 260
@@ -169,7 +169,7 @@ export async function renderAyahShareCardPng(options: {
   if (options.translation && currentY + 90 < footerReservedY) {
     ctx.direction = 'ltr';
     currentY += 28;
-    ctx.strokeStyle = 'rgba(140, 109, 70, 0.28)';
+    ctx.strokeStyle = 'rgba(39, 120, 76, 0.28)';
     ctx.beginPath();
     ctx.moveTo(W / 2 - 90, currentY);
     ctx.lineTo(W / 2 + 90, currentY);
@@ -190,7 +190,7 @@ export async function renderAyahShareCardPng(options: {
 
   if (options.reflection && currentY + 55 < footerReservedY) {
     currentY += 24;
-    ctx.fillStyle = '#0F5132';
+    ctx.fillStyle = '#27784C';
     ctx.direction = options.lang === 'ar' ? 'rtl' : 'ltr';
     ctx.font =
       options.lang === 'ar'
@@ -206,11 +206,11 @@ export async function renderAyahShareCardPng(options: {
 
   // 6. Required Brand Watermark ("Mihrab Noor · مِحْرَاب النُّور")
   ctx.direction = 'ltr';
-  ctx.fillStyle = '#0F5132';
+  ctx.fillStyle = '#27784C';
   ctx.font = '700 30px "Scheherazade New", serif';
   ctx.fillText('Mihrab Noor · مِحْرَاب النُّور', W / 2, H - (format === 'square' ? 110 : 145));
 
-  ctx.fillStyle = '#6B6A66';
+  ctx.fillStyle = '#5A6B62';
   ctx.font = '500 19px "Plus Jakarta Sans", sans-serif';
   ctx.fillText(
     `Madani Mushaf · Page ${options.page} of 604`,

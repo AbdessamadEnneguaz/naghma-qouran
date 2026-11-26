@@ -46,16 +46,16 @@ const BOOKMARK_CAT_STYLES: Record<
   {dotClass: string; badgeClass: string}
 > = {
   wird: {
-    dotClass: 'bg-[#8C6D46] dark:bg-[#C5A46D]',
-    badgeClass: 'text-[#8C6D46] dark:text-[#C5A46D]',
+    dotClass: 'bg-[#27784C] dark:bg-[#52B77F]',
+    badgeClass: 'text-[#27784C] dark:text-[#52B77F]',
   },
   memorization: {
-    dotClass: 'bg-[#0F5132] dark:bg-[#34D399]',
-    badgeClass: 'text-[#0F5132] dark:text-[#34D399]',
+    dotClass: 'bg-[#27784C] dark:bg-[#34D399]',
+    badgeClass: 'text-[#27784C] dark:text-[#34D399]',
   },
   favorites: {
-    dotClass: 'bg-[#6B6A66] dark:bg-[#A1A1AA]',
-    badgeClass: 'text-[#6B6A66] dark:text-[#A1A1AA]',
+    dotClass: 'bg-[#5A6B62] dark:bg-[#A1A1AA]',
+    badgeClass: 'text-[#5A6B62] dark:text-[#A1A1AA]',
   },
 };
 
@@ -94,44 +94,44 @@ export const VaultView: React.FC<VaultViewProps> = ({
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 pt-6 pb-8 space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E6E4DF] dark:border-[#222226] pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2EAE5] dark:border-[#1E2E26] pb-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-[#121212] dark:text-[#F4F4F5]">
+          <h1 className="text-xl sm:text-2xl font-semibold text-[#142019] dark:text-[#F1F5F3]">
             {t.vaultTitle}
           </h1>
-          <p className="text-xs sm:text-sm text-[#6B6A66] dark:text-[#8E8E93] mt-0.5">
+          <p className="text-xs sm:text-sm text-[#5A6B62] dark:text-[#92A59B] mt-0.5">
             {t.vaultSubtitle}
           </p>
         </div>
 
-        <div className="flex items-center gap-4 text-xs text-[#6B6A66] dark:text-[#8E8E93] tabular-nums">
+        <div className="flex items-center gap-4 text-xs text-[#5A6B62] dark:text-[#92A59B] tabular-nums">
           <span>
-            {t.audioCachedLabel}: <strong className="text-[#121212] dark:text-[#F4F4F5]">{formatBytes(totalAudioBytes)}</strong>
+            {t.audioCachedLabel}: <strong className="text-[#142019] dark:text-[#F1F5F3]">{formatBytes(totalAudioBytes)}</strong>
           </span>
           <span>
-            {t.totalStorageLabel}: <strong className="text-[#121212] dark:text-[#F4F4F5]">{formatBytes(storageEstimate.usage)}</strong>
+            {t.totalStorageLabel}: <strong className="text-[#142019] dark:text-[#F1F5F3]">{formatBytes(storageEstimate.usage)}</strong>
           </span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="rounded-2xl border border-[#0F5132]/25 dark:border-[#C5A46D]/30 bg-white dark:bg-[#121215] p-5 space-y-1.5">
-          <div className="flex items-center gap-2 text-sm font-semibold text-[#0F5132] dark:text-[#C5A46D]">
+        <div className="rounded-2xl border border-[#27784C]/25 dark:border-[#52B77F]/30 bg-white dark:bg-[#111C17] p-5 space-y-1.5">
+          <div className="flex items-center gap-2 text-sm font-semibold text-[#27784C] dark:text-[#52B77F]">
             <CheckCircle2 className="h-4.5 w-4.5 shrink-0" strokeWidth={1.5} />
             <span>{t.quranTextStoredTitle}</span>
           </div>
-          <p className="text-xs text-[#6B6A66] dark:text-[#8E8E93] tabular-nums">
+          <p className="text-xs text-[#5A6B62] dark:text-[#92A59B] tabular-nums">
             {t.quranTextStoredDesc} ({lang === 'ar' ? toArabicDigits(vaultKeys.length) : vaultKeys.length})
           </p>
         </div>
 
-        <div className="rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-5 flex items-center justify-between gap-4">
+        <div className="rounded-2xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] p-5 flex items-center justify-between gap-4">
           <div className="space-y-1 min-w-0">
-            <div className="flex items-center gap-2 text-sm font-semibold text-[#121212] dark:text-[#F4F4F5]">
-              <Smartphone className="h-4 w-4 text-[#0F5132] dark:text-[#C5A46D] shrink-0" strokeWidth={1.5} />
+            <div className="flex items-center gap-2 text-sm font-semibold text-[#142019] dark:text-[#F1F5F3]">
+              <Smartphone className="h-4 w-4 text-[#27784C] dark:text-[#52B77F] shrink-0" strokeWidth={1.5} />
               <span className="truncate">{t.installAppTitle}</span>
             </div>
-            <p className="text-xs text-[#6B6A66] dark:text-[#8E8E93]">
+            <p className="text-xs text-[#5A6B62] dark:text-[#92A59B]">
               {isInstalled ? t.installedStandalone : t.installAppDesc}
             </p>
           </div>
@@ -139,7 +139,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
             <button
               type="button"
               onClick={onOpenInstall}
-              className="shrink-0 rounded-xl bg-[#0F5132] dark:bg-[#C5A46D] hover:opacity-90 px-4 py-2 text-xs font-semibold text-white dark:text-[#09090B] transition-opacity whitespace-nowrap"
+              className="shrink-0 rounded-xl bg-[#27784C] dark:bg-[#52B77F] hover:opacity-90 px-4 py-2 text-xs font-semibold text-white dark:text-[#0A110E] transition-opacity whitespace-nowrap"
             >
               {t.installNowBtn}
             </button>
@@ -149,8 +149,8 @@ export const VaultView: React.FC<VaultViewProps> = ({
 
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-[#121212] dark:text-[#F4F4F5] flex items-center gap-2 tabular-nums">
-            <Bookmark className="h-4 w-4 text-[#0F5132] dark:text-[#C5A46D]" strokeWidth={1.5} />
+          <h2 className="text-sm font-semibold text-[#142019] dark:text-[#F1F5F3] flex items-center gap-2 tabular-nums">
+            <Bookmark className="h-4 w-4 text-[#27784C] dark:text-[#52B77F]" strokeWidth={1.5} />
             <span>
               {t.tabBookmarks} ({bookmarks.length})
             </span>
@@ -163,8 +163,8 @@ export const VaultView: React.FC<VaultViewProps> = ({
                 onClick={() => setBmFilter('all')}
                 className={`px-3 py-1 rounded-xl text-xs font-semibold border transition-colors ${
                   bmFilter === 'all'
-                    ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
-                    : 'border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#6B6A66] dark:text-[#8E8E93]'
+                    ? 'border-[#27784C] dark:border-[#52B77F] bg-[#27784C] dark:bg-[#52B77F] text-white dark:text-[#0A110E]'
+                    : 'border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] text-[#5A6B62] dark:text-[#92A59B]'
                 }`}
               >
                 {t.filterAll}
@@ -176,8 +176,8 @@ export const VaultView: React.FC<VaultViewProps> = ({
                   onClick={() => setBmFilter(cat)}
                   className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold border transition-colors ${
                     bmFilter === cat
-                      ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132]/10 dark:bg-[#C5A46D]/15 text-[#0F5132] dark:text-[#C5A46D]'
-                      : 'border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#6B6A66] dark:text-[#8E8E93]'
+                      ? 'border-[#27784C] dark:border-[#52B77F] bg-[#27784C]/10 dark:bg-[#52B77F]/15 text-[#27784C] dark:text-[#52B77F]'
+                      : 'border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] text-[#5A6B62] dark:text-[#92A59B]'
                   }`}
                 >
                   <span className={`h-2 w-2 rounded-full ${BOOKMARK_CAT_STYLES[cat].dotClass}`} />
@@ -189,11 +189,11 @@ export const VaultView: React.FC<VaultViewProps> = ({
         </div>
 
         {filteredBookmarks.length === 0 ? (
-          <div className="rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-8 text-center space-y-1.5">
-            <p className="text-sm font-medium text-[#121212] dark:text-[#F4F4F5]">
+          <div className="rounded-2xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] p-8 text-center space-y-1.5">
+            <p className="text-sm font-medium text-[#142019] dark:text-[#F1F5F3]">
               {t.noBookmarksTitle}
             </p>
-            <p className="text-xs text-[#6B6A66] dark:text-[#8E8E93]">
+            <p className="text-xs text-[#5A6B62] dark:text-[#92A59B]">
               {t.noBookmarksDesc}
             </p>
           </div>
@@ -206,7 +206,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
                 <div
                   key={bm.id}
                   data-testid={`vault-bookmark-${bm.id}`}
-                  className="rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-4 flex items-start justify-between gap-3"
+                  className="rounded-2xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] p-4 flex items-start justify-between gap-3"
                 >
                   <button
                     type="button"
@@ -218,8 +218,8 @@ export const VaultView: React.FC<VaultViewProps> = ({
                         <span className={`h-2 w-2 rounded-full shrink-0 ${style.dotClass}`} />
                         <span>{getCategoryLabel(cat)}</span>
                       </span>
-                      <span aria-hidden="true" className="text-[#6B6A66]/50">·</span>
-                      <span className="text-[#0F5132] dark:text-[#C5A46D]">
+                      <span aria-hidden="true" className="text-[#5A6B62]/50">·</span>
+                      <span className="text-[#27784C] dark:text-[#52B77F]">
                         {lang === 'ar' ? bm.surahNameAr : bm.surahNameEn} ·{' '}
                         {lang === 'ar'
                           ? `${toArabicDigits(bm.surah)}:${toArabicDigits(bm.ayah)}`
@@ -229,7 +229,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
                     </div>
                     <p
                       dir="rtl"
-                      className="font-quran-amiri text-xl leading-[2.1] text-[#121212] dark:text-[#F4F4F5] line-clamp-2"
+                      className="font-quran-amiri text-xl leading-[2.1] text-[#142019] dark:text-[#F1F5F3] line-clamp-2"
                     >
                       {bm.snippet}
                     </p>
@@ -238,7 +238,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
                     type="button"
                     onClick={() => onRemoveBookmark(bm.id)}
                     aria-label={`Remove bookmark ${bm.surah}:${bm.ayah}`}
-                    className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-full text-[#6B6A66] dark:text-[#8E8E93] hover:text-rose-500"
+                    className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-full text-[#5A6B62] dark:text-[#92A59B] hover:text-rose-500"
                   >
                     <Trash2 className="h-4 w-4" strokeWidth={1.5} />
                   </button>
@@ -250,8 +250,8 @@ export const VaultView: React.FC<VaultViewProps> = ({
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-[#121212] dark:text-[#F4F4F5] flex items-center gap-2">
-          <HardDrive className="h-4 w-4 text-[#0F5132] dark:text-[#C5A46D]" strokeWidth={1.5} />
+        <h2 className="text-sm font-semibold text-[#142019] dark:text-[#F1F5F3] flex items-center gap-2">
+          <HardDrive className="h-4 w-4 text-[#27784C] dark:text-[#52B77F]" strokeWidth={1.5} />
           <span>
             {t.quickDownloadFor} {lang === 'ar' ? activeReciter.nameAr : activeReciter.nameEn}
           </span>
@@ -268,11 +268,11 @@ export const VaultView: React.FC<VaultViewProps> = ({
             return (
               <div
                 key={id}
-                className="rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] px-3.5 py-2.5 flex items-center justify-between gap-2"
+                className="rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] px-3.5 py-2.5 flex items-center justify-between gap-2"
               >
                 <div className="min-w-0">
                   <div
-                    className={`font-semibold text-[#121212] dark:text-[#F4F4F5] truncate ${
+                    className={`font-semibold text-[#142019] dark:text-[#F1F5F3] truncate ${
                       lang === 'ar' ? 'font-quran-scheherazade text-base leading-normal' : 'text-xs'
                     }`}
                   >
@@ -280,27 +280,27 @@ export const VaultView: React.FC<VaultViewProps> = ({
                       ? `${toArabicDigits(sMeta.id)}. ${sMeta.nameAr}`
                       : `${sMeta.id}. ${sMeta.nameEn}`}
                   </div>
-                  <div className="text-[11px] text-[#6B6A66] dark:text-[#8E8E93] tabular-nums">
+                  <div className="text-[11px] text-[#5A6B62] dark:text-[#92A59B] tabular-nums">
                     {lang === 'ar' ? toArabicDigits(sMeta.totalAyahs) : sMeta.totalAyahs} {t.ayahsWord}
                   </div>
                 </div>
 
                 {isDownloading ? (
-                  <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0F5132] dark:text-[#C5A46D] tabular-nums">
+                  <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#27784C] dark:text-[#52B77F] tabular-nums">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
                     <span>
                       {downloadProgress.completed}/{downloadProgress.total}
                     </span>
                   </div>
                 ) : isCached ? (
-                  <span className="text-xs font-semibold text-[#0F5132] dark:text-[#C5A46D]">
+                  <span className="text-xs font-semibold text-[#27784C] dark:text-[#52B77F]">
                     {t.savedBtn}
                   </span>
                 ) : (
                   <button
                     type="button"
                     onClick={() => onDownloadSurah(sMeta)}
-                    className="inline-flex items-center gap-1 rounded-xl border border-[#E6E4DF] dark:border-[#222226] px-2.5 py-1.5 text-xs font-semibold text-[#121212] dark:text-[#F4F4F5] hover:border-[#0F5132] dark:hover:border-[#C5A46D]"
+                    className="inline-flex items-center gap-1 rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] px-2.5 py-1.5 text-xs font-semibold text-[#142019] dark:text-[#F1F5F3] hover:border-[#27784C] dark:hover:border-[#52B77F]"
                   >
                     <Download className="h-3.5 w-3.5" strokeWidth={1.5} />
                     <span>{t.saveBtn}</span>
@@ -314,7 +314,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-[#121212] dark:text-[#F4F4F5] tabular-nums">
+          <h2 className="text-sm font-semibold text-[#142019] dark:text-[#F1F5F3] tabular-nums">
             {t.savedAudioTitle} ({offlineRecords.length})
           </h2>
           {offlineRecords.length > 0 && (
@@ -329,11 +329,11 @@ export const VaultView: React.FC<VaultViewProps> = ({
         </div>
 
         {offlineRecords.length === 0 ? (
-          <p className="text-xs text-[#6B6A66] dark:text-[#8E8E93] py-2">
+          <p className="text-xs text-[#5A6B62] dark:text-[#92A59B] py-2">
             {t.noAudioSavedDesc}
           </p>
         ) : (
-          <div className="divide-y divide-[#E6E4DF] dark:divide-[#222226] rounded-2xl border border-[#E6E4DF] dark:border-[#222226] overflow-hidden">
+          <div className="divide-y divide-[#E2EAE5] dark:divide-[#1E2E26] rounded-2xl border border-[#E2EAE5] dark:border-[#1E2E26] overflow-hidden">
             {offlineRecords.map((rec) => {
               const sMeta = surahs.find((s) => s.id === rec.surah);
               const rMeta = RECITERS.find((r) => r.id === rec.reciterId);
@@ -341,11 +341,11 @@ export const VaultView: React.FC<VaultViewProps> = ({
               return (
                 <div
                   key={rec.key}
-                  className="px-4 py-3 bg-white dark:bg-[#121215] flex items-center justify-between gap-3"
+                  className="px-4 py-3 bg-white dark:bg-[#111C17] flex items-center justify-between gap-3"
                 >
                   <div className="min-w-0">
                     <div
-                      className={`font-semibold text-[#121212] dark:text-[#F4F4F5] truncate ${
+                      className={`font-semibold text-[#142019] dark:text-[#F1F5F3] truncate ${
                         lang === 'ar' ? 'font-quran-scheherazade text-base leading-normal' : 'text-xs'
                       }`}
                     >
@@ -353,7 +353,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
                         ? `${toArabicDigits(sMeta.id)}. ${sMeta.nameAr} · ${rMeta.nameAr}`
                         : `${sMeta.id}. ${sMeta.nameEn} · ${rMeta.nameEn}`}
                     </div>
-                    <div className="text-[11px] text-[#6B6A66] dark:text-[#8E8E93] tabular-nums">
+                    <div className="text-[11px] text-[#5A6B62] dark:text-[#92A59B] tabular-nums">
                       {rec.totalFiles} MP3 · {formatBytes(rec.bytes)}
                     </div>
                   </div>
@@ -361,7 +361,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
                     type="button"
                     onClick={() => onDeleteOfflineRecord(rMeta, sMeta)}
                     aria-label={`Delete offline audio for ${sMeta.nameEn}`}
-                    className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-full text-[#6B6A66] dark:text-[#8E8E93] hover:text-rose-500"
+                    className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-full text-[#5A6B62] dark:text-[#92A59B] hover:text-rose-500"
                   >
                     <Trash2 className="h-4 w-4" strokeWidth={1.5} />
                   </button>

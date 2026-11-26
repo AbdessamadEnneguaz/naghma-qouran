@@ -121,16 +121,16 @@ export const AdhkarPage: React.FC<AdhkarPageProps> = ({lang, t}) => {
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 pt-6 sm:pt-8 pb-8 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E6E4DF] dark:border-[#222226] pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2EAE5] dark:border-[#1E2E26] pb-4">
         <div className="flex items-center gap-3">
-          <div className="h-11 w-11 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#0F5132] dark:text-[#C5A46D] flex items-center justify-center shrink-0">
+          <div className="h-11 w-11 rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] text-[#27784C] dark:text-[#52B77F] flex items-center justify-center shrink-0">
             <MoonStar className="h-5 w-5" strokeWidth={1.5} />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-[#121212] dark:text-[#F4F4F5]">
+            <h1 className="text-xl sm:text-2xl font-semibold text-[#142019] dark:text-[#F1F5F3]">
               {t.adhkarTitle}
             </h1>
-            <p className="text-xs sm:text-sm text-[#6B6A66] dark:text-[#8E8E93] tabular-nums">
+            <p className="text-xs sm:text-sm text-[#5A6B62] dark:text-[#92A59B] tabular-nums">
               {numFmt(completedInCategory)} / {numFmt(items.length)} {t.completedWord} ·{' '}
               {t.tapToCountHint}
             </p>
@@ -138,7 +138,7 @@ export const AdhkarPage: React.FC<AdhkarPageProps> = ({lang, t}) => {
         </div>
 
         <div className="flex items-center gap-2.5">
-          <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-[#EFECE4] dark:bg-[#16161A] border border-[#E6E4DF] dark:border-[#222226]">
+          <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-[#EAF1EC] dark:bg-[#15241D] border border-[#E2EAE5] dark:border-[#1E2E26]">
             {categories.map((cat) => (
               <button
                 key={cat.id}
@@ -146,8 +146,8 @@ export const AdhkarPage: React.FC<AdhkarPageProps> = ({lang, t}) => {
                 onClick={() => handleCategorySwitch(cat.id)}
                 className={`py-1.5 px-3.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
                   category === cat.id
-                    ? 'bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
-                    : 'text-[#6B6A66] dark:text-[#8E8E93] hover:text-[#121212] dark:hover:text-[#F4F4F5]'
+                    ? 'bg-[#27784C] dark:bg-[#52B77F] text-white dark:text-[#0A110E]'
+                    : 'text-[#5A6B62] dark:text-[#92A59B] hover:text-[#142019] dark:hover:text-[#F1F5F3]'
                 }`}
               >
                 {cat.label}
@@ -160,7 +160,7 @@ export const AdhkarPage: React.FC<AdhkarPageProps> = ({lang, t}) => {
             onClick={handleResetCategory}
             title={t.resetAdhkarBtn}
             aria-label={t.resetAdhkarBtn}
-            className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#6B6A66] dark:text-[#8E8E93] hover:text-[#0F5132] dark:hover:text-[#C5A46D] transition-colors"
+            className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] text-[#5A6B62] dark:text-[#92A59B] hover:text-[#27784C] dark:hover:text-[#52B77F] transition-colors"
           >
             <RotateCcw className="h-4 w-4" strokeWidth={1.5} />
           </button>
@@ -173,13 +173,13 @@ export const AdhkarPage: React.FC<AdhkarPageProps> = ({lang, t}) => {
             type="button"
             data-testid="adhkar-tap-card"
             onClick={handleTapDhikr}
-            className={`w-full text-start rounded-2xl border p-5 sm:p-8 transition-colors active:scale-[0.99] space-y-6 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0F5132] dark:focus-visible:ring-[#C5A46D] ${
+            className={`w-full text-start rounded-2xl border p-5 sm:p-8 transition-colors active:scale-[0.99] space-y-6 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#27784C] dark:focus-visible:ring-[#52B77F] ${
               isDone
-                ? 'border-[#0F5132]/40 dark:border-[#C5A46D]/45 bg-[#0F5132]/5 dark:bg-[#C5A46D]/10'
-                : 'border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] hover:border-[#0F5132]/35 dark:hover:border-[#C5A46D]/35'
+                ? 'border-[#27784C]/40 dark:border-[#52B77F]/45 bg-[#27784C]/5 dark:bg-[#52B77F]/10'
+                : 'border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] hover:border-[#27784C]/35 dark:hover:border-[#52B77F]/35'
             }`}
           >
-            <div className="flex items-center justify-between gap-2 text-xs font-semibold text-[#0F5132] dark:text-[#C5A46D] tabular-nums">
+            <div className="flex items-center justify-between gap-2 text-xs font-semibold text-[#27784C] dark:text-[#52B77F] tabular-nums">
               <span>{lang === 'ar' ? currentItem.titleAr : currentItem.titleEn}</span>
               <span>
                 {numFmt(safeIdx + 1)} / {numFmt(items.length)}
@@ -188,25 +188,25 @@ export const AdhkarPage: React.FC<AdhkarPageProps> = ({lang, t}) => {
 
             <p
               dir="rtl"
-              className="font-quran-amiri text-2xl sm:text-[32px] leading-[2.25] tracking-normal text-[#121212] dark:text-[#F4F4F5] text-right whitespace-pre-line"
+              className="font-quran-amiri text-2xl sm:text-[32px] leading-[2.25] tracking-normal text-[#142019] dark:text-[#F1F5F3] text-right whitespace-pre-line"
             >
               {currentItem.arabic}
             </p>
 
             {lang !== 'ar' && (
-              <div className="space-y-1.5 border-t border-[#E6E4DF] dark:border-[#222226] pt-3.5">
-                <p className="text-xs italic text-[#8C6D46] dark:text-[#C5A46D]">
+              <div className="space-y-1.5 border-t border-[#E2EAE5] dark:border-[#1E2E26] pt-3.5">
+                <p className="text-xs italic text-[#27784C] dark:text-[#52B77F]">
                   {currentItem.transliteration}
                 </p>
-                <p className="text-xs sm:text-sm leading-relaxed text-[#6B6A66] dark:text-[#A1A1AA]">
+                <p className="text-xs sm:text-sm leading-relaxed text-[#5A6B62] dark:text-[#A1A1AA]">
                   {currentItem.translation}
                 </p>
               </div>
             )}
 
-            <div className="flex items-center justify-between gap-4 pt-4 border-t border-[#E6E4DF] dark:border-[#222226]">
-              <div className="text-xs sm:text-sm text-[#6B6A66] dark:text-[#8E8E93] space-y-1 min-w-0">
-                <div className="font-semibold text-[#0F5132] dark:text-[#C5A46D]">
+            <div className="flex items-center justify-between gap-4 pt-4 border-t border-[#E2EAE5] dark:border-[#1E2E26]">
+              <div className="text-xs sm:text-sm text-[#5A6B62] dark:text-[#92A59B] space-y-1 min-w-0">
+                <div className="font-semibold text-[#27784C] dark:text-[#52B77F]">
                   {lang === 'ar' ? currentItem.virtueAr : currentItem.virtueEn}
                 </div>
                 <div>{isDone ? t.dhikrCompletedHint : t.tapToCountHint}</div>
@@ -221,7 +221,7 @@ export const AdhkarPage: React.FC<AdhkarPageProps> = ({lang, t}) => {
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="5"
-                    className="text-[#E6E4DF] dark:text-[#222226]"
+                    className="text-[#E2EAE5] dark:text-[#1E2E26]"
                   />
                   <circle
                     cx="48"
@@ -233,17 +233,17 @@ export const AdhkarPage: React.FC<AdhkarPageProps> = ({lang, t}) => {
                     strokeLinecap="round"
                     strokeDasharray={ringCirc}
                     strokeDashoffset={ringOffset}
-                    className="transition-all duration-200 text-[#0F5132] dark:text-[#C5A46D]"
+                    className="transition-all duration-200 text-[#27784C] dark:text-[#52B77F]"
                   />
                 </svg>
                 <div
                   data-testid="adhkar-counter-value"
                   className="absolute inset-0 flex flex-col items-center justify-center tabular-nums"
                 >
-                  <span className="text-lg font-semibold text-[#121212] dark:text-[#F4F4F5]">
+                  <span className="text-lg font-semibold text-[#142019] dark:text-[#F1F5F3]">
                     {numFmt(currentCount)}
                   </span>
-                  <span className="text-[11px] text-[#6B6A66] dark:text-[#8E8E93]">
+                  <span className="text-[11px] text-[#5A6B62] dark:text-[#92A59B]">
                     / {numFmt(currentItem.targetCount)}
                   </span>
                 </div>
@@ -256,14 +256,14 @@ export const AdhkarPage: React.FC<AdhkarPageProps> = ({lang, t}) => {
               type="button"
               disabled={safeIdx === 0}
               onClick={() => setActiveIdx((i) => Math.max(0, i - 1))}
-              className="inline-flex items-center gap-1 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] px-4 py-2 text-xs sm:text-sm font-semibold text-[#121212] dark:text-[#F4F4F5] disabled:opacity-35"
+              className="inline-flex items-center gap-1 rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] px-4 py-2 text-xs sm:text-sm font-semibold text-[#142019] dark:text-[#F1F5F3] disabled:opacity-35"
             >
               <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
               <span>{t.prevWord}</span>
             </button>
 
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#6B6A66] dark:text-[#8E8E93] tabular-nums">
-              <Sparkles className="h-3.5 w-3.5 text-[#0F5132] dark:text-[#C5A46D]" strokeWidth={1.5} />
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#5A6B62] dark:text-[#92A59B] tabular-nums">
+              <Sparkles className="h-3.5 w-3.5 text-[#27784C] dark:text-[#52B77F]" strokeWidth={1.5} />
               <span>
                 {completedInCategory === items.length
                   ? t.allAdhkarDone
@@ -275,7 +275,7 @@ export const AdhkarPage: React.FC<AdhkarPageProps> = ({lang, t}) => {
               type="button"
               disabled={safeIdx >= items.length - 1}
               onClick={() => setActiveIdx((i) => Math.min(items.length - 1, i + 1))}
-              className="inline-flex items-center gap-1 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] px-4 py-2 text-xs sm:text-sm font-semibold text-[#121212] dark:text-[#F4F4F5] disabled:opacity-35"
+              className="inline-flex items-center gap-1 rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] px-4 py-2 text-xs sm:text-sm font-semibold text-[#142019] dark:text-[#F1F5F3] disabled:opacity-35"
             >
               <span>{t.nextWord}</span>
               <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
@@ -283,7 +283,7 @@ export const AdhkarPage: React.FC<AdhkarPageProps> = ({lang, t}) => {
           </div>
         </div>
 
-        <div className="lg:col-span-4 rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-3.5 space-y-1.5">
+        <div className="lg:col-span-4 rounded-2xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] p-3.5 space-y-1.5">
           {items.map((item, idx) => {
             const c = counts[item.id] || 0;
             const itemDone = c >= item.targetCount;
@@ -295,20 +295,20 @@ export const AdhkarPage: React.FC<AdhkarPageProps> = ({lang, t}) => {
                 onClick={() => setActiveIdx(idx)}
                 className={`w-full text-start rounded-xl px-3.5 py-2.5 border transition-colors flex items-center justify-between gap-2.5 ${
                   isSelected
-                    ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132]/8 dark:bg-[#C5A46D]/12 text-[#121212] dark:text-[#F4F4F5]'
-                    : 'border-transparent hover:bg-[#F9F8F6] dark:hover:bg-[#18181C] text-[#6B6A66] dark:text-[#8E8E93]'
+                    ? 'border-[#27784C] dark:border-[#52B77F] bg-[#27784C]/8 dark:bg-[#52B77F]/12 text-[#142019] dark:text-[#F1F5F3]'
+                    : 'border-transparent hover:bg-[#F4F7F5] dark:hover:bg-[#15241D] text-[#5A6B62] dark:text-[#92A59B]'
                 }`}
               >
                 <div className="min-w-0">
-                  <div className="text-xs font-semibold truncate text-[#121212] dark:text-[#F4F4F5]">
+                  <div className="text-xs font-semibold truncate text-[#142019] dark:text-[#F1F5F3]">
                     {numFmt(idx + 1)}. {lang === 'ar' ? item.titleAr : item.titleEn}
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0 text-xs tabular-nums">
                   {itemDone && (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-[#0F5132] dark:text-[#C5A46D]" strokeWidth={1.5} />
+                    <CheckCircle2 className="h-3.5 w-3.5 text-[#27784C] dark:text-[#52B77F]" strokeWidth={1.5} />
                   )}
-                  <span className={itemDone ? 'text-[#0F5132] dark:text-[#C5A46D] font-semibold' : ''}>
+                  <span className={itemDone ? 'text-[#27784C] dark:text-[#52B77F] font-semibold' : ''}>
                     {numFmt(c)}/{numFmt(item.targetCount)}
                   </span>
                 </div>

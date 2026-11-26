@@ -1,5 +1,5 @@
 import React from 'react';
-import {BookOpen, Compass, Home, Menu, MoonStar} from 'lucide-react';
+import {BookOpen, Compass, Home, LayoutGrid, MoonStar} from 'lucide-react';
 import type {AppRoute} from '../utils/routing';
 import type {Translations} from '../i18n/translations';
 
@@ -45,7 +45,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
       <nav
         aria-label="Mobile navigation"
         data-testid="mobile-bottom-nav"
-        className="pointer-events-auto w-full max-w-md rounded-2xl bg-white dark:bg-[#121215] border border-[#E6E4DF] dark:border-[#222226] shadow-lg shadow-black/[0.06] dark:shadow-black/50 px-2 py-1"
+        className="pointer-events-auto w-full max-w-md rounded-2xl surface-3d px-2 py-1"
       >
         <div className="grid grid-cols-5 h-12 items-center">
           {navItems.map((item) => {
@@ -58,13 +58,13 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                 data-testid={`mobile-nav-${item.id}`}
                 onClick={() => onNavigate(item.id)}
                 aria-current={isActive ? 'page' : undefined}
-                className={`min-h-[42px] flex flex-col items-center justify-center gap-0.5 rounded-xl transition-colors ${
+                className={`min-h-[42px] flex flex-col items-center justify-center gap-0.5 rounded-xl transition-all ${
                   isActive
-                    ? 'text-[#0F5132] dark:text-[#C5A46D] bg-[#0F5132]/[0.07] dark:bg-[#C5A46D]/[0.10]'
-                    : 'text-[#6B6A66] dark:text-[#8E8E93]'
+                    ? 'text-[#27784C] dark:text-[#52B77F] bg-[#27784C]/[0.09] dark:bg-[#52B77F]/[0.14]'
+                    : 'text-[#5A6B62] dark:text-[#92A59B]'
                 }`}
               >
-                <Icon className="h-[18px] w-[18px]" strokeWidth={1.5} />
+                <Icon className="h-[18px] w-[18px]" strokeWidth={isActive ? 2 : 1.5} />
                 <span className="text-[10px] font-semibold leading-tight whitespace-nowrap">
                   {item.label}
                 </span>
@@ -78,13 +78,13 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             onClick={onOpenMenu}
             aria-expanded={isDrawerOpen}
             aria-label={t.navMore}
-            className={`min-h-[42px] flex flex-col items-center justify-center gap-0.5 rounded-xl transition-colors ${
+            className={`min-h-[42px] flex flex-col items-center justify-center gap-0.5 rounded-xl transition-all ${
               isMoreActive
-                ? 'text-[#0F5132] dark:text-[#C5A46D] bg-[#0F5132]/[0.07] dark:bg-[#C5A46D]/[0.10]'
-                : 'text-[#6B6A66] dark:text-[#8E8E93]'
+                ? 'text-[#27784C] dark:text-[#52B77F] bg-[#27784C]/[0.09] dark:bg-[#52B77F]/[0.14]'
+                : 'text-[#5A6B62] dark:text-[#92A59B]'
             }`}
           >
-            <Menu className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            <LayoutGrid className="h-[18px] w-[18px]" strokeWidth={isMoreActive ? 2 : 1.5} />
             <span className="text-[10px] font-semibold leading-tight whitespace-nowrap">
               {t.navMore}
             </span>

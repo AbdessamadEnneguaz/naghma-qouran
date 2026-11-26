@@ -26,8 +26,8 @@ export default defineConfig(() => {
           short_name: 'Mihrab',
           description:
             'Offline-first Holy Quran, 604-page Madani Mushaf (مِحْرَاب النُّور), Prayer Times & Qibla Finder with Hafs & Warsh narrations.',
-          theme_color: '#F9F8F6',
-          background_color: '#F9F8F6',
+          theme_color: '#27784C',
+          background_color: '#F4F7F5',
           display: 'standalone',
           orientation: 'any',
           start_url: '/',

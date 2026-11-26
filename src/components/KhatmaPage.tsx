@@ -77,17 +77,17 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 pt-6 sm:pt-8 pb-8 space-y-6">
-      <div className="border-b border-[#E6E4DF] dark:border-[#222226] pb-4 space-y-1">
-        <h1 className="text-xl sm:text-2xl font-semibold text-[#121212] dark:text-[#F4F4F5]">
+      <div className="border-b border-[#E2EAE5] dark:border-[#1E2E26] pb-4 space-y-1">
+        <h1 className="text-xl sm:text-2xl font-semibold text-[#142019] dark:text-[#F1F5F3]">
           {t.khatmaTitle}
         </h1>
-        <p className="text-xs sm:text-sm text-[#6B6A66] dark:text-[#8E8E93]">
+        <p className="text-xs sm:text-sm text-[#5A6B62] dark:text-[#92A59B]">
           {t.khatmaSubtitle}
         </p>
       </div>
 
       {/* Hero Progress Ring + Today's Wird */}
-      <section className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-5 sm:p-7">
+      <section className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center rounded-2xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] p-5 sm:p-7">
         <div className="md:col-span-4 flex items-center justify-center">
           <div className="relative h-28 w-28 flex items-center justify-center">
             <svg viewBox="0 0 110 110" className="h-28 w-28 -rotate-90" aria-hidden="true">
@@ -98,7 +98,7 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="6"
-                className="text-[#E6E4DF] dark:text-[#222226]"
+                className="text-[#E2EAE5] dark:text-[#1E2E26]"
               />
               <circle
                 cx="55"
@@ -110,14 +110,14 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
                 strokeLinecap="round"
                 strokeDasharray={circumference}
                 strokeDashoffset={dashOffset}
-                className="transition-all duration-300 text-[#0F5132] dark:text-[#C5A46D]"
+                className="transition-all duration-300 text-[#27784C] dark:text-[#52B77F]"
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center tabular-nums">
-              <span className="text-xl font-semibold text-[#121212] dark:text-[#F4F4F5]">
+              <span className="text-xl font-semibold text-[#142019] dark:text-[#F1F5F3]">
                 {numFmt(schedule.percentComplete)}%
               </span>
-              <span className="text-[11px] text-[#6B6A66] dark:text-[#8E8E93]">
+              <span className="text-[11px] text-[#5A6B62] dark:text-[#92A59B]">
                 {numFmt(schedule.completedPages)}/{numFmt(604)}
               </span>
             </div>
@@ -125,7 +125,7 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
         </div>
 
         <div className="md:col-span-8 space-y-3">
-          <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm font-semibold text-[#0F5132] dark:text-[#C5A46D]">
+          <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm font-semibold text-[#27784C] dark:text-[#52B77F]">
             <span>{paceLabel}</span>
             <span aria-hidden="true">·</span>
             <span className="tabular-nums">
@@ -133,7 +133,7 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
             </span>
           </div>
 
-          <h2 className="text-lg sm:text-2xl font-semibold text-[#121212] dark:text-[#F4F4F5] tabular-nums">
+          <h2 className="text-lg sm:text-2xl font-semibold text-[#142019] dark:text-[#F1F5F3] tabular-nums">
             {schedule.isTodayComplete
               ? t.todayWirdDone
               : lang === 'ar'
@@ -147,7 +147,7 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
             <button
               type="button"
               onClick={() => onOpenMushafPage(schedule.todayStartPage)}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#0F5132] dark:bg-[#C5A46D] hover:opacity-90 px-5 py-2.5 text-xs sm:text-sm font-semibold text-white dark:text-[#09090B] transition-opacity"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#27784C] dark:bg-[#52B77F] hover:opacity-90 px-5 py-2.5 text-xs sm:text-sm font-semibold text-white dark:text-[#0A110E] transition-opacity"
             >
               <BookOpen className="h-4 w-4" strokeWidth={1.5} />
               <span>
@@ -159,7 +159,7 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
               <button
                 type="button"
                 onClick={onMarkTodayComplete}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] px-4 py-2.5 text-xs sm:text-sm font-semibold text-[#0F5132] dark:text-[#C5A46D] hover:border-[#0F5132] dark:hover:border-[#C5A46D] transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-[#F4F7F5] dark:bg-[#15241D] px-4 py-2.5 text-xs sm:text-sm font-semibold text-[#27784C] dark:text-[#52B77F] hover:border-[#27784C] dark:hover:border-[#52B77F] transition-colors"
               >
                 <CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />
                 <span>{t.markTodayDoneBtn}</span>
@@ -171,8 +171,8 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
 
       {/* Goal Duration & Custom Page Logging */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-5 space-y-3">
-          <label className="block text-xs font-semibold text-[#6B6A66] dark:text-[#8E8E93]">
+        <div className="rounded-2xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] p-5 space-y-3">
+          <label className="block text-xs font-semibold text-[#5A6B62] dark:text-[#92A59B]">
             {t.khatmaGoalDuration}
           </label>
           <div className="flex flex-wrap items-center gap-2">
@@ -186,8 +186,8 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
                 }}
                 className={`px-3.5 py-2 rounded-xl text-xs font-semibold border transition-colors tabular-nums ${
                   plan.goalDays === days
-                    ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132]/10 dark:bg-[#C5A46D]/15 text-[#0F5132] dark:text-[#C5A46D]'
-                    : 'border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#09090B] text-[#121212] dark:text-[#F4F4F5]'
+                    ? 'border-[#27784C] dark:border-[#52B77F] bg-[#27784C]/10 dark:bg-[#52B77F]/15 text-[#27784C] dark:text-[#52B77F]'
+                    : 'border-[#E2EAE5] dark:border-[#1E2E26] bg-[#F4F7F5] dark:bg-[#0A110E] text-[#142019] dark:text-[#F1F5F3]'
                 }`}
               >
                 {numFmt(days)} {t.daysUnit}
@@ -210,27 +210,27 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
                 value={customDays}
                 onChange={(e) => setCustomDays(e.target.value)}
                 aria-label={t.customDaysLabel}
-                className="w-16 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#09090B] px-3 py-2 text-xs font-semibold text-[#121212] dark:text-[#F4F4F5] tabular-nums"
+                className="w-16 rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-[#F4F7F5] dark:bg-[#0A110E] px-3 py-2 text-xs font-semibold text-[#142019] dark:text-[#F1F5F3] tabular-nums"
               />
               <button
                 type="submit"
-                className="rounded-xl border border-[#E6E4DF] dark:border-[#222226] px-3 py-2 text-xs font-semibold text-[#0F5132] dark:text-[#C5A46D]"
+                className="rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] px-3 py-2 text-xs font-semibold text-[#27784C] dark:text-[#52B77F]"
               >
                 {t.applyBtn}
               </button>
             </form>
           </div>
-          <p className="text-xs text-[#6B6A66] dark:text-[#8E8E93] tabular-nums">
+          <p className="text-xs text-[#5A6B62] dark:text-[#92A59B] tabular-nums">
             {lang === 'ar'
               ? `المعدل التكيفي الحالي: ${numFmt(schedule.adaptiveDailyTarget)} صفحة/يوم`
               : `Adaptive daily target: ${schedule.adaptiveDailyTarget} pages/day`}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-5 space-y-3">
+        <div className="rounded-2xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] p-5 space-y-3">
           <label
             htmlFor="khatma-page-log-input"
-            className="block text-xs font-semibold text-[#6B6A66] dark:text-[#8E8E93]"
+            className="block text-xs font-semibold text-[#5A6B62] dark:text-[#92A59B]"
           >
             {t.logCustomPagesLabel}
           </label>
@@ -251,11 +251,11 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
               max={604}
               value={pagesInput}
               onChange={(e) => setPagesInput(e.target.value)}
-              className="w-24 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#09090B] px-3.5 py-2 text-xs font-semibold text-[#121212] dark:text-[#F4F4F5] tabular-nums"
+              className="w-24 rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-[#F4F7F5] dark:bg-[#0A110E] px-3.5 py-2 text-xs font-semibold text-[#142019] dark:text-[#F1F5F3] tabular-nums"
             />
             <button
               type="submit"
-              className="rounded-xl bg-[#0F5132]/10 dark:bg-[#C5A46D]/15 border border-[#0F5132]/30 dark:border-[#C5A46D]/35 px-4 py-2 text-xs font-semibold text-[#0F5132] dark:text-[#C5A46D] transition-colors"
+              className="rounded-xl bg-[#27784C]/10 dark:bg-[#52B77F]/15 border border-[#27784C]/30 dark:border-[#52B77F]/35 px-4 py-2 text-xs font-semibold text-[#27784C] dark:text-[#52B77F] transition-colors"
             >
               {t.addPagesBtn}
             </button>
@@ -264,7 +264,7 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
               onClick={() => onResetPlan(plan.goalDays)}
               title={t.resetKhatmaBtn}
               aria-label={t.resetKhatmaBtn}
-              className="ms-auto min-h-[38px] min-w-[38px] flex items-center justify-center rounded-xl border border-[#E6E4DF] dark:border-[#222226] text-[#6B6A66] dark:text-[#8E8E93] hover:text-rose-500"
+              className="ms-auto min-h-[38px] min-w-[38px] flex items-center justify-center rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] text-[#5A6B62] dark:text-[#92A59B] hover:text-rose-500"
             >
               <RotateCcw className="h-4 w-4" strokeWidth={1.5} />
             </button>
@@ -273,19 +273,19 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
       </section>
 
       {/* Daily Push Reminder Settings */}
-      <section className="rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-5 space-y-3.5">
+      <section className="rounded-2xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] p-5 space-y-3.5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             {plan.reminderEnabled ? (
-              <Bell className="h-5 w-5 text-[#0F5132] dark:text-[#C5A46D]" strokeWidth={1.5} />
+              <Bell className="h-5 w-5 text-[#27784C] dark:text-[#52B77F]" strokeWidth={1.5} />
             ) : (
-              <BellOff className="h-5 w-5 text-[#6B6A66] dark:text-[#8E8E93]" strokeWidth={1.5} />
+              <BellOff className="h-5 w-5 text-[#5A6B62] dark:text-[#92A59B]" strokeWidth={1.5} />
             )}
             <div>
-              <h2 className="text-sm font-semibold text-[#121212] dark:text-[#F4F4F5]">
+              <h2 className="text-sm font-semibold text-[#142019] dark:text-[#F1F5F3]">
                 {t.dailyReminderTitle}
               </h2>
-              <p className="text-xs text-[#6B6A66] dark:text-[#8E8E93]">{t.dailyReminderDesc}</p>
+              <p className="text-xs text-[#5A6B62] dark:text-[#92A59B]">{t.dailyReminderDesc}</p>
             </div>
           </div>
 
@@ -296,19 +296,19 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
             onClick={() => void onToggleReminder(!plan.reminderEnabled)}
             className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-colors ${
               plan.reminderEnabled
-                ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
-                : 'border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#09090B] text-[#121212] dark:text-[#F4F4F5]'
+                ? 'border-[#27784C] dark:border-[#52B77F] bg-[#27784C] dark:bg-[#52B77F] text-white dark:text-[#0A110E]'
+                : 'border-[#E2EAE5] dark:border-[#1E2E26] bg-[#F4F7F5] dark:bg-[#0A110E] text-[#142019] dark:text-[#F1F5F3]'
             }`}
           >
             {plan.reminderEnabled ? t.reminderEnabledLabel : t.enableReminderBtn}
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#E6E4DF] dark:border-[#222226]">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#E2EAE5] dark:border-[#1E2E26]">
           <div className="flex items-center gap-2.5">
             <label
               htmlFor="khatma-page-reminder-time"
-              className="text-xs font-medium text-[#6B6A66] dark:text-[#8E8E93]"
+              className="text-xs font-medium text-[#5A6B62] dark:text-[#92A59B]"
             >
               {t.reminderTimeLabel}
             </label>
@@ -317,14 +317,14 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
               type="time"
               value={plan.reminderTime}
               onChange={(e) => onChangeReminderTime(e.target.value)}
-              className="rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#09090B] px-3 py-1.5 text-xs font-semibold text-[#121212] dark:text-[#F4F4F5] tabular-nums"
+              className="rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-[#F4F7F5] dark:bg-[#0A110E] px-3 py-1.5 text-xs font-semibold text-[#142019] dark:text-[#F1F5F3] tabular-nums"
             />
           </div>
 
           <button
             type="button"
             onClick={() => void handleTest()}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[#E6E4DF] dark:border-[#222226] px-4 py-2 text-xs font-semibold text-[#0F5132] dark:text-[#C5A46D] hover:border-[#0F5132] dark:hover:border-[#C5A46D] transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] px-4 py-2 text-xs font-semibold text-[#27784C] dark:text-[#52B77F] hover:border-[#27784C] dark:hover:border-[#52B77F] transition-colors"
           >
             <Send className="h-3.5 w-3.5" strokeWidth={1.5} />
             <span>{t.sendTestReminderBtn}</span>
@@ -332,7 +332,7 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
         </div>
 
         {(testSentMsg || permission === 'denied') && (
-          <p className="text-xs font-medium text-[#0F5132] dark:text-[#C5A46D]">
+          <p className="text-xs font-medium text-[#27784C] dark:text-[#52B77F]">
             {permission === 'denied' ? t.notificationBlockedHint : testSentMsg}
           </p>
         )}
@@ -341,20 +341,20 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
       {/* Friday Surah Al-Kahf Reminder Settings */}
       <section
         data-testid="friday-kahf-section"
-        className="rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] p-5 space-y-3.5"
+        className="rounded-2xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] p-5 space-y-3.5"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             {plan.fridayKahfEnabled ? (
-              <Bell className="h-5 w-5 text-[#0F5132] dark:text-[#C5A46D]" strokeWidth={1.5} />
+              <Bell className="h-5 w-5 text-[#27784C] dark:text-[#52B77F]" strokeWidth={1.5} />
             ) : (
-              <BellOff className="h-5 w-5 text-[#6B6A66] dark:text-[#8E8E93]" strokeWidth={1.5} />
+              <BellOff className="h-5 w-5 text-[#5A6B62] dark:text-[#92A59B]" strokeWidth={1.5} />
             )}
             <div>
-              <h2 className="text-sm font-semibold text-[#121212] dark:text-[#F4F4F5]">
+              <h2 className="text-sm font-semibold text-[#142019] dark:text-[#F1F5F3]">
                 {t.fridayKahfTitle}
               </h2>
-              <p className="text-xs text-[#6B6A66] dark:text-[#8E8E93]">{t.fridayKahfDesc}</p>
+              <p className="text-xs text-[#5A6B62] dark:text-[#92A59B]">{t.fridayKahfDesc}</p>
             </div>
           </div>
 
@@ -366,20 +366,20 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
             onClick={() => void onToggleFridayKahf(!plan.fridayKahfEnabled)}
             className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-colors ${
               plan.fridayKahfEnabled
-                ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
-                : 'border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#09090B] text-[#121212] dark:text-[#F4F4F5]'
+                ? 'border-[#27784C] dark:border-[#52B77F] bg-[#27784C] dark:bg-[#52B77F] text-white dark:text-[#0A110E]'
+                : 'border-[#E2EAE5] dark:border-[#1E2E26] bg-[#F4F7F5] dark:bg-[#0A110E] text-[#142019] dark:text-[#F1F5F3]'
             }`}
           >
             {plan.fridayKahfEnabled ? t.reminderEnabledLabel : t.enableReminderBtn}
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-[#E6E4DF] dark:border-[#222226]">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-[#E2EAE5] dark:border-[#1E2E26]">
           <button
             type="button"
             data-testid="open-kahf-btn"
             onClick={onOpenKahfSurah}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#0F5132]/10 dark:bg-[#C5A46D]/15 border border-[#0F5132]/30 dark:border-[#C5A46D]/35 px-4 py-2 text-xs font-semibold text-[#0F5132] dark:text-[#C5A46D] transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#27784C]/10 dark:bg-[#52B77F]/15 border border-[#27784C]/30 dark:border-[#52B77F]/35 px-4 py-2 text-xs font-semibold text-[#27784C] dark:text-[#52B77F] transition-colors"
           >
             <BookOpen className="h-3.5 w-3.5" strokeWidth={1.5} />
             <span>{t.openKahfBtn}</span>
@@ -389,7 +389,7 @@ export const KhatmaPage: React.FC<KhatmaPageProps> = ({
             type="button"
             data-testid="test-kahf-btn"
             onClick={() => void onSendTestKahf()}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[#E6E4DF] dark:border-[#222226] px-4 py-2 text-xs font-semibold text-[#0F5132] dark:text-[#C5A46D] hover:border-[#0F5132] dark:hover:border-[#C5A46D] transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] px-4 py-2 text-xs font-semibold text-[#27784C] dark:text-[#52B77F] hover:border-[#27784C] dark:hover:border-[#52B77F] transition-colors"
           >
             <Send className="h-3.5 w-3.5" strokeWidth={1.5} />
             <span>{t.testKahfBtn}</span>

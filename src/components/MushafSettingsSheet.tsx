@@ -1,10 +1,23 @@
-import React, {useCallback, useEffect, useRef} from 'react';
-import {BookOpen, Minus, Moon, Plus, Sun, Type, Volume2, X} from 'lucide-react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {
+  AudioLines,
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  Minus,
+  Moon,
+  Plus,
+  Sun,
+  Type,
+  X,
+} from 'lucide-react';
 import type {ReaderSettings} from '../types/quran';
 import {RECITERS} from '../data/reciters';
 import type {AppLang, Translations} from '../i18n/translations';
 import {toArabicDigits} from '../utils/quranLogic';
+import {getReciterMonogram, localizeReciterSubtitle} from '../utils/reciterPickerLogic';
 import {computeSheetDragOffset, evaluateSwipeDismiss} from '../utils/swipeSheetLogic';
+import {ReciterPickerList} from './ReciterPickerList';
 
 interface MushafSettingsSheetProps {
   isOpen: boolean;
@@ -26,6 +39,7 @@ export const MushafSettingsSheet: React.FC<MushafSettingsSheetProps> = ({
   onUpdateSettings,
   onClose,
 }) => {
+  const [showReciters, setShowReciters] = useState(false);
   const sheetRef = useRef<HTMLDivElement | null>(null);
   const dragStateRef = useRef<{
     active: boolean;
@@ -52,11 +66,14 @@ export const MushafSettingsSheet: React.FC<MushafSettingsSheetProps> = ({
   }, [isOpen, onClose]);
 
   useEffect(() => {
-    if (isOpen && sheetRef.current) {
-      sheetRef.current.style.transition = '';
-      sheetRef.current.style.transform = '';
-      dragStateRef.current.active = false;
-      dragStateRef.current.offsetY = 0;
+    if (isOpen) {
+      setShowReciters(false);
+      if (sheetRef.current) {
+        sheetRef.current.style.transition = '';
+        sheetRef.current.style.transform = '';
+        dragStateRef.current.active = false;
+        dragStateRef.current.offsetY = 0;
+      }
     }
   }, [isOpen]);
 
@@ -105,10 +122,13 @@ export const MushafSettingsSheet: React.FC<MushafSettingsSheetProps> = ({
     }
   }, [onClose]);
 
+  const activeReciter = useMemo(
+    () => RECITERS.find((r) => r.id === settings.reciterId) || RECITERS[0],
+    [settings.reciterId]
+  );
+
   if (!isOpen) return null;
 
-  const hafsReciters = RECITERS.filter((r) => r.riwayat === 'hafs');
-  const warshReciters = RECITERS.filter((r) => r.riwayat === 'warsh');
   const numFmt = (n: number) => (lang === 'ar' ? toArabicDigits(n) : String(n));
 
   return (
@@ -126,7 +146,7 @@ export const MushafSettingsSheet: React.FC<MushafSettingsSheetProps> = ({
       <div
         ref={sheetRef}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-t-3xl md:rounded-2xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] pb-safe-bottom shadow-2xl overflow-hidden will-change-transform"
+        className="w-full max-w-lg rounded-t-3xl md:rounded-2xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] pb-safe-bottom shadow-2xl overflow-hidden will-change-transform"
       >
         {/* Top Drag Handle Zone — Finger Swipe-Down to Dismiss */}
         <div
@@ -135,220 +155,261 @@ export const MushafSettingsSheet: React.FC<MushafSettingsSheetProps> = ({
           onPointerMove={handlePointerMove}
           onPointerUp={finishDrag}
           onPointerCancel={finishDrag}
-          className="touch-none select-none cursor-grab active:cursor-grabbing px-5 pt-3 pb-3.5 border-b border-[#E6E4DF] dark:border-[#222226]"
+          className="touch-none select-none cursor-grab active:cursor-grabbing px-5 pt-3 pb-3.5 border-b border-[#E2EAE5] dark:border-[#1E2E26]"
         >
-          <div className="w-12 h-1 rounded-full bg-[#D6D3CB] dark:bg-[#2F2F35] mx-auto mb-3" />
+          <div className="w-12 h-1 rounded-full bg-[#CBDAD0] dark:bg-[#243B30] mx-auto mb-3" />
           <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-base font-semibold text-[#121212] dark:text-[#F4F4F5]">
-                {t.quickSettingsTitle}
-              </h2>
-              <p className="text-[11px] text-[#6B6A66] dark:text-[#8E8E93]">
-                {t.swipeDownToCloseHint}
-              </p>
+            <div className="flex items-center gap-2.5 min-w-0">
+              {showReciters && (
+                <button
+                  type="button"
+                  data-testid="settings-reciters-back"
+                  onClick={() => setShowReciters(false)}
+                  aria-label="Back to settings"
+                  className="h-9 w-9 rounded-full surface-3d flex items-center justify-center text-[#27784C] dark:text-[#52B77F] shrink-0"
+                >
+                  <ChevronLeft className="h-4 w-4 rtl:rotate-180" strokeWidth={2} />
+                </button>
+              )}
+              <div className="min-w-0">
+                <h2 className="text-base font-bold text-[#142019] dark:text-[#F1F5F3] truncate">
+                  {showReciters
+                    ? lang === 'ar'
+                      ? `اختيار القارئ (${numFmt(RECITERS.length)})`
+                      : lang === 'fr'
+                        ? `Choisir un récitateur (${RECITERS.length})`
+                        : `Select Reciter (${RECITERS.length})`
+                    : t.quickSettingsTitle}
+                </h2>
+                <p className="text-[11px] text-[#5A6B62] dark:text-[#92A59B] truncate">
+                  {t.swipeDownToCloseHint}
+                </p>
+              </div>
             </div>
             <button
               type="button"
               data-testid="settings-close-btn"
               onClick={onClose}
               aria-label={t.closeWord}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-[#6B6A66] dark:text-[#8E8E93] hover:bg-[#F4F2ED] dark:hover:bg-[#1E1E22] transition-colors"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-[#5A6B62] dark:text-[#92A59B] hover:bg-[#EAF1EC] dark:hover:bg-[#1E3229] transition-colors shrink-0"
             >
               <X className="h-5 w-5" strokeWidth={1.5} />
             </button>
           </div>
         </div>
 
-        {/* 4 Clean, Touch-Friendly Reader Controls */}
-        <div className="p-4 sm:p-5 space-y-3">
-          {/* 1. Font Size (- / + large tactile controls) */}
-          <div className="min-h-[60px] rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] px-4 py-2.5 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="h-10 w-10 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#0F5132] dark:text-[#C5A46D] flex items-center justify-center shrink-0">
-                <Type className="h-5 w-5" strokeWidth={1.5} />
-              </span>
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-[#121212] dark:text-[#F4F4F5] truncate">
-                  {t.fontSizeLabel}
+        {showReciters ? (
+          <div className="p-4 sm:p-5">
+            <ReciterPickerList
+              lang={lang}
+              activeReciterId={settings.reciterId}
+              onSelectReciter={(id) => {
+                onUpdateSettings({reciterId: id});
+                setShowReciters(false);
+              }}
+              maxHeightClass="max-h-[52vh]"
+            />
+          </div>
+        ) : (
+          /* 4 Big Interactive 3D Touch-Friendly Reader Controls */
+          <div className="p-4 sm:p-5 space-y-3">
+            {/* 1. Font Size (- / + large tactile 3D card) */}
+            <div className="min-h-[76px] rounded-2xl surface-3d px-4 py-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="h-11 w-11 rounded-xl btn-3d-emerald text-white flex items-center justify-center shrink-0">
+                  <Type className="h-5 w-5" strokeWidth={1.75} />
+                </span>
+                <div className="min-w-0">
+                  <div className="text-sm font-bold text-[#142019] dark:text-[#F1F5F3] truncate">
+                    {t.fontSizeLabel}
+                  </div>
+                  <div
+                    data-testid="settings-font-size-value"
+                    className="text-xs font-semibold text-[#27784C] dark:text-[#52B77F] tabular-nums"
+                  >
+                    {numFmt(settings.fontSize)} px ·{' '}
+                    {lang === 'ar'
+                      ? 'تكبير أو تصغير الخط'
+                      : lang === 'fr'
+                        ? 'Taille du texte'
+                        : 'Text size'}
+                  </div>
                 </div>
-                <div
-                  data-testid="settings-font-size-value"
-                  className="text-xs font-medium text-[#0F5132] dark:text-[#C5A46D] tabular-nums"
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  data-testid="settings-font-decrease"
+                  aria-label="Decrease font size"
+                  disabled={settings.fontSize <= MIN_FONT_SIZE}
+                  onClick={() =>
+                    onUpdateSettings({
+                      fontSize: Math.max(MIN_FONT_SIZE, settings.fontSize - 2),
+                    })
+                  }
+                  className="min-h-[44px] min-w-[44px] rounded-xl surface-3d surface-3d-interactive text-[#142019] dark:text-[#F1F5F3] disabled:opacity-35 flex items-center justify-center"
                 >
-                  {numFmt(settings.fontSize)} px
-                </div>
+                  <Minus className="h-4 w-4" strokeWidth={1.75} />
+                </button>
+                <button
+                  type="button"
+                  data-testid="settings-font-increase"
+                  aria-label="Increase font size"
+                  disabled={settings.fontSize >= MAX_FONT_SIZE}
+                  onClick={() =>
+                    onUpdateSettings({
+                      fontSize: Math.min(MAX_FONT_SIZE, settings.fontSize + 2),
+                    })
+                  }
+                  className="min-h-[44px] min-w-[44px] rounded-xl surface-3d surface-3d-interactive text-[#142019] dark:text-[#F1F5F3] disabled:opacity-35 flex items-center justify-center"
+                >
+                  <Plus className="h-4 w-4" strokeWidth={1.75} />
+                </button>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                data-testid="settings-font-decrease"
-                aria-label="Decrease font size"
-                disabled={settings.fontSize <= MIN_FONT_SIZE}
-                onClick={() =>
-                  onUpdateSettings({
-                    fontSize: Math.max(MIN_FONT_SIZE, settings.fontSize - 2),
-                  })
-                }
-                className="min-h-[44px] min-w-[44px] rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#121212] dark:text-[#F4F4F5] hover:border-[#0F5132] dark:hover:border-[#C5A46D] disabled:opacity-35 flex items-center justify-center transition-colors"
-              >
-                <Minus className="h-4 w-4" strokeWidth={1.5} />
-              </button>
-              <button
-                type="button"
-                data-testid="settings-font-increase"
-                aria-label="Increase font size"
-                disabled={settings.fontSize >= MAX_FONT_SIZE}
-                onClick={() =>
-                  onUpdateSettings({
-                    fontSize: Math.min(MAX_FONT_SIZE, settings.fontSize + 2),
-                  })
-                }
-                className="min-h-[44px] min-w-[44px] rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#121212] dark:text-[#F4F4F5] hover:border-[#0F5132] dark:hover:border-[#C5A46D] disabled:opacity-35 flex items-center justify-center transition-colors"
-              >
-                <Plus className="h-4 w-4" strokeWidth={1.5} />
-              </button>
-            </div>
-          </div>
-
-          {/* 2. Riwayah (حفص / ورش) Big Toggle */}
-          <div className="grid grid-cols-2 gap-2.5">
-            {(
-              [
-                {
-                  id: 'hafs' as const,
-                  titleAr: 'حفص',
-                  titleEn: 'Hafs',
-                },
-                {
-                  id: 'warsh' as const,
-                  titleAr: 'ورش',
-                  titleEn: 'Warsh',
-                },
-              ]
-            ).map((opt) => {
-              const active = settings.riwayat === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  data-testid={`settings-riwayat-${opt.id}`}
-                  onClick={() => onUpdateSettings({riwayat: opt.id})}
-                  className={`min-h-[60px] rounded-xl border px-3.5 py-2.5 flex items-center gap-3 text-start transition-colors ${
-                    active
-                      ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132]/8 dark:bg-[#C5A46D]/14 text-[#0F5132] dark:text-[#C5A46D]'
-                      : 'border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#121212] dark:text-[#F4F4F5]'
-                  }`}
-                >
-                  <span
-                    className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
+            {/* 2. Riwayah (حفص / ورش) Big 3D Square Tiles */}
+            <div className="grid grid-cols-2 gap-3">
+              {(
+                [
+                  {
+                    id: 'hafs' as const,
+                    titleAr: 'حفص',
+                    titleEn: 'Hafs',
+                    descAr: 'المصحف الشريف الشائع',
+                    descEn: 'Standard narration',
+                  },
+                  {
+                    id: 'warsh' as const,
+                    titleAr: 'ورش',
+                    titleEn: 'Warsh',
+                    descAr: 'الرواية المغاربية العريقة',
+                    descEn: 'Maghrebi narration',
+                  },
+                ]
+              ).map((opt) => {
+                const active = settings.riwayat === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    data-testid={`settings-riwayat-${opt.id}`}
+                    onClick={() => onUpdateSettings({riwayat: opt.id})}
+                    className={`min-h-[84px] rounded-2xl p-3.5 flex flex-col justify-between gap-2 text-start transition-all active:scale-[0.97] ${
                       active
-                        ? 'bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
-                        : 'border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#6B6A66] dark:text-[#8E8E93]'
+                        ? 'emerald-3d-hero text-white'
+                        : 'surface-3d surface-3d-interactive text-[#142019] dark:text-[#F1F5F3]'
                     }`}
                   >
-                    <BookOpen className="h-5 w-5" strokeWidth={1.5} />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="font-quran-scheherazade text-lg font-bold leading-tight">
-                      {opt.titleAr}
+                    <div className="flex items-center justify-between gap-2">
+                      <span
+                        className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
+                          active
+                            ? 'bg-white/20 text-white'
+                            : 'bg-[#27784C]/[0.09] dark:bg-[#52B77F]/[0.14] text-[#27784C] dark:text-[#52B77F]'
+                        }`}
+                      >
+                        <BookOpen className="h-5 w-5" strokeWidth={1.75} />
+                      </span>
+                      <span className="font-quran-scheherazade text-xl font-bold leading-none">
+                        {opt.titleAr}
+                      </span>
                     </div>
-                    <div className="text-[11px] font-medium opacity-80">{opt.titleEn}</div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* 3. Theme Toggle */}
-          <div className="grid grid-cols-2 gap-2.5">
-            <button
-              type="button"
-              data-testid="settings-theme-light"
-              onClick={() => onUpdateSettings({theme: 'light'})}
-              className={`min-h-[60px] rounded-xl border px-3 py-2.5 flex items-center gap-2.5 text-start transition-colors ${
-                settings.theme === 'light'
-                  ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132]/8 dark:bg-[#C5A46D]/14 text-[#0F5132] dark:text-[#C5A46D]'
-                  : 'border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#121212] dark:text-[#F4F4F5]'
-              }`}
-            >
-              <span
-                className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
-                  settings.theme === 'light'
-                    ? 'bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
-                    : 'border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#6B6A66] dark:text-[#8E8E93]'
-                }`}
-              >
-                <Sun className="h-5 w-5" strokeWidth={1.5} />
-              </span>
-              <span className="text-xs sm:text-sm font-semibold leading-tight">
-                {t.themeWarmDay}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              data-testid="settings-theme-dark"
-              onClick={() => onUpdateSettings({theme: 'dark'})}
-              className={`min-h-[60px] rounded-xl border px-3 py-2.5 flex items-center gap-2.5 text-start transition-colors ${
-                settings.theme === 'dark'
-                  ? 'border-[#0F5132] dark:border-[#C5A46D] bg-[#0F5132]/8 dark:bg-[#C5A46D]/14 text-[#0F5132] dark:text-[#C5A46D]'
-                  : 'border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] text-[#121212] dark:text-[#F4F4F5]'
-              }`}
-            >
-              <span
-                className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
-                  settings.theme === 'dark'
-                    ? 'bg-[#0F5132] dark:bg-[#C5A46D] text-white dark:text-[#09090B]'
-                    : 'border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#6B6A66] dark:text-[#8E8E93]'
-                }`}
-              >
-                <Moon className="h-5 w-5" strokeWidth={1.5} />
-              </span>
-              <span className="text-xs sm:text-sm font-semibold leading-tight">
-                {t.themeNightComfort}
-              </span>
-            </button>
-          </div>
-
-          {/* 4. Reciter (1-Tap Prominent Selector) */}
-          <label
-            htmlFor="quick-settings-reciter"
-            className="min-h-[60px] rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-[#F9F8F6] dark:bg-[#18181C] px-4 py-2.5 flex items-center gap-3 cursor-pointer"
-          >
-            <span className="h-10 w-10 rounded-xl border border-[#E6E4DF] dark:border-[#222226] bg-white dark:bg-[#121215] text-[#0F5132] dark:text-[#C5A46D] flex items-center justify-center shrink-0">
-              <Volume2 className="h-5 w-5" strokeWidth={1.5} />
-            </span>
-            <div className="min-w-0 flex-1 space-y-0.5">
-              <div className="text-[11px] font-medium text-[#6B6A66] dark:text-[#8E8E93]">
-                {t.reciterSelectLabel}
-              </div>
-              <select
-                id="quick-settings-reciter"
-                data-testid="settings-reciter-select"
-                value={settings.reciterId}
-                onChange={(e) => onUpdateSettings({reciterId: e.target.value})}
-                className="w-full bg-transparent text-xs sm:text-sm font-semibold text-[#121212] dark:text-[#F4F4F5] focus:outline-none"
-              >
-                <optgroup label={t.warshGroup}>
-                  {warshReciters.map((r) => (
-                    <option key={r.id} value={r.id} className="text-[#121212] bg-white">
-                      {lang === 'ar' ? r.nameAr : `${r.nameEn} · ${r.nameAr}`}
-                    </option>
-                  ))}
-                </optgroup>
-                <optgroup label={t.hafsGroup}>
-                  {hafsReciters.map((r) => (
-                    <option key={r.id} value={r.id} className="text-[#121212] bg-white">
-                      {lang === 'ar' ? r.nameAr : `${r.nameEn} · ${r.nameAr}`}
-                    </option>
-                  ))}
-                </optgroup>
-              </select>
+                    <div>
+                      <div className="text-xs font-bold leading-tight">{opt.titleEn}</div>
+                      <div
+                        className={`text-[10.5px] leading-snug ${
+                          active ? 'text-white/85' : 'text-[#5A6B62] dark:text-[#92A59B]'
+                        }`}
+                      >
+                        {lang === 'ar' ? opt.descAr : opt.descEn}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-          </label>
-        </div>
+
+            {/* 3. Theme Toggle Big 3D Square Tiles */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                data-testid="settings-theme-light"
+                onClick={() => onUpdateSettings({theme: 'light'})}
+                className={`min-h-[80px] rounded-2xl p-3.5 flex items-center gap-3 text-start transition-all active:scale-[0.97] ${
+                  settings.theme === 'light'
+                    ? 'emerald-3d-hero text-white'
+                    : 'surface-3d surface-3d-interactive text-[#142019] dark:text-[#F1F5F3]'
+                }`}
+              >
+                <span
+                  className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
+                    settings.theme === 'light'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-[#27784C]/[0.09] dark:bg-[#52B77F]/[0.14] text-[#27784C] dark:text-[#52B77F]'
+                  }`}
+                >
+                  <Sun className="h-5 w-5" strokeWidth={1.75} />
+                </span>
+                <span className="text-xs sm:text-sm font-bold leading-tight">
+                  {t.themeWarmDay}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                data-testid="settings-theme-dark"
+                onClick={() => onUpdateSettings({theme: 'dark'})}
+                className={`min-h-[80px] rounded-2xl p-3.5 flex items-center gap-3 text-start transition-all active:scale-[0.97] ${
+                  settings.theme === 'dark'
+                    ? 'emerald-3d-hero text-white'
+                    : 'surface-3d surface-3d-interactive text-[#142019] dark:text-[#F1F5F3]'
+                }`}
+              >
+                <span
+                  className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
+                    settings.theme === 'dark'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-[#27784C]/[0.09] dark:bg-[#52B77F]/[0.14] text-[#27784C] dark:text-[#52B77F]'
+                  }`}
+                >
+                  <Moon className="h-5 w-5" strokeWidth={1.75} />
+                </span>
+                <span className="text-xs sm:text-sm font-bold leading-tight">
+                  {t.themeNightComfort}
+                </span>
+              </button>
+            </div>
+
+            {/* 4. Prominent Reciter Showcase Card (Opens Big Reciter Cards List) */}
+            <button
+              type="button"
+              data-testid="settings-reciter-select"
+              onClick={() => setShowReciters(true)}
+              className="w-full min-h-[76px] rounded-2xl surface-3d surface-3d-interactive p-3.5 flex items-center gap-3.5 text-start"
+            >
+              <span className="h-12 w-12 rounded-2xl btn-3d-emerald text-white flex items-center justify-center font-bold text-sm shrink-0">
+                <AudioLines className="h-5 w-5" strokeWidth={1.85} />
+              </span>
+              <div className="min-w-0 flex-1 space-y-0.5">
+                <div className="text-[11px] font-semibold text-[#27784C] dark:text-[#52B77F]">
+                  {t.reciterSelectLabel} ({numFmt(RECITERS.length)}) ·{' '}
+                  {getReciterMonogram(activeReciter.nameEn)}
+                </div>
+                <div className="text-sm font-bold text-[#142019] dark:text-[#F1F5F3] truncate">
+                  {lang === 'ar' ? activeReciter.nameAr : activeReciter.nameEn}
+                </div>
+                <div className="text-[11px] text-[#5A6B62] dark:text-[#92A59B] truncate">
+                  {localizeReciterSubtitle(activeReciter, lang)}
+                </div>
+              </div>
+              <span className="h-8 w-8 rounded-full border border-[#27784C]/25 dark:border-[#52B77F]/30 text-[#27784C] dark:text-[#52B77F] flex items-center justify-center shrink-0">
+                <ChevronRight className="h-4 w-4 rtl:rotate-180" strokeWidth={2} />
+              </span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
