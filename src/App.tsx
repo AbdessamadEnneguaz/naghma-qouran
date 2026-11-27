@@ -39,6 +39,7 @@ import {
   loadFrenchTranslation,
   loadPageVerses,
   loadStartupQuranBundle,
+  loadSurahsIndexOnly,
   loadTafsirMuyassar,
   loadWarshTexts,
   warmOfflineDatasetsInIndexedDb,
@@ -76,6 +77,7 @@ import {AppFooter} from './components/AppFooter';
 import {AudioPlayerBar} from './components/AudioPlayerBar';
 import {MobileBottomNav} from './components/MobileBottomNav';
 import {MobileMenuDrawer} from './components/MobileMenuDrawer';
+import {NotificationPermissionPrompt} from './components/NotificationPermissionPrompt';
 import {SplashScreen} from './components/SplashScreen';
 
 const MushafView = lazy(() =>
@@ -332,7 +334,13 @@ export default function App() {
         ]);
 
         const initialPage = clampPage(savedLastRead?.page || 1);
-        const startup = await loadStartupQuranBundle(initialPage);
+        const startRoute = getInitialRoute();
+        const isOpeningMushaf = startRoute === 'mushaf';
+
+        const [surahsList, initialBundle] = await Promise.all([
+          isOpeningMushaf ? Promise.resolve(null) : loadSurahsIndexOnly(),
+          isOpeningMushaf ? loadStartupQuranBundle(initialPage) : Promise.resolve(null),
+        ]);
 
         if (cancelled) return;
 
@@ -345,8 +353,10 @@ export default function App() {
           readerMode: 'mushaf',
         };
         setSettings(mergedSettings);
-        setSurahs(startup.surahs);
-        setPageVerses(startup.initialPageVerses);
+        setSurahs(initialBundle ? initialBundle.surahs : surahsList || []);
+        if (initialBundle) {
+          setPageVerses(initialBundle.initialPageVerses);
+        }
         setBookmarks(savedBookmarks);
         if (savedStats) {
           setReadingStats(savedStats);
@@ -359,6 +369,12 @@ export default function App() {
         }
 
         setLoading(false);
+
+        if (!initialBundle) {
+          void loadPageVerses(initialPage).then((v) => {
+            if (!cancelled) setPageVerses(v);
+          });
+        }
 
         if (mergedSettings.riwayat === 'warsh') {
           void loadWarshTexts().then((w) => {
@@ -380,7 +396,7 @@ export default function App() {
               if (!cancelled) void refreshVaultStats();
             });
           }
-        }, 2500);
+        }, 3200);
       } catch (err) {
         if (!cancelled) {
           setLoadError(err instanceof Error ? err.message : 'Failed to initialize Quran vault.');
@@ -998,19 +1014,21 @@ export default function App() {
   return (
     <div className="min-h-screen text-[#142019] dark:text-[#F1F5F3] transition-colors">
       <SplashScreen isDataReady={!loading} />
-      <Header
-        activeRoute={activeRoute}
-        lang={lang}
-        t={t}
-        theme={settings.theme}
-        hidden={hideAppChrome}
-        isInstalled={isInstalled}
-        hasActiveNotifications={khatma.hasActiveNotifications}
-        onNavigate={navigateToRoute}
-        onOpenNotifications={() => setShowNotifications(true)}
-        onToggleLang={cycleLang}
-        onToggleTheme={() => updateSettings({theme: settings.theme === 'dark' ? 'light' : 'dark'})}
-      />
+      {!isIntroRoute && (
+        <Header
+          activeRoute={activeRoute}
+          lang={lang}
+          t={t}
+          theme={settings.theme}
+          hidden={isMushafFocus}
+          isInstalled={isInstalled}
+          hasActiveNotifications={khatma.hasActiveNotifications}
+          onNavigate={navigateToRoute}
+          onOpenNotifications={() => setShowNotifications(true)}
+          onToggleLang={cycleLang}
+          onToggleTheme={() => updateSettings({theme: settings.theme === 'dark' ? 'light' : 'dark'})}
+        />
+      )}
 
       {updater.updateAvailable && !dismissedUpdateBanner && !isMushafFocus && (
         <div
@@ -1045,6 +1063,15 @@ export default function App() {
           <WifiOff className="h-3.5 w-3.5" strokeWidth={1.5} />
           <span>{t.offlineBanner}</span>
         </div>
+      )}
+
+      {!hideAppChrome && !showOnboarding && (
+        <NotificationPermissionPrompt
+          visible={khatma.shouldShowPermissionPrompt}
+          lang={lang}
+          onAllow={khatma.ensureNotificationPermission}
+          onDismiss={khatma.dismissPermissionPrompt}
+        />
       )}
 
       {khatma.toastPreview && (
@@ -1229,6 +1256,14 @@ export default function App() {
               isInstallable={isInstallable}
               isInstalled={isInstalled}
               currentVersion={updater.currentVersion}
+              otaServerUrl={updater.otaServerUrl}
+              autoOtaSync={updater.autoOtaSync}
+              updateAvailable={updater.updateAvailable}
+              updateStatus={updater.status}
+              onSetOtaServerUrl={updater.setOtaServerUrl}
+              onToggleAutoOtaSync={updater.setAutoOtaSync}
+              onCheckUpdates={() => updater.checkForUpdates(true)}
+              onApplyUpdate={updater.applyUpdateNow}
               onTriggerNativeInstall={triggerNativeInstall}
             />
           )}
@@ -1511,6 +1546,8 @@ export default function App() {
             t={t}
             riwayat={settings.riwayat}
             reciterId={settings.reciterId}
+            notificationPermission={khatma.permission}
+            onRequestNotifications={khatma.ensureNotificationPermission}
             onChangeLang={(nextLang) => setLang(nextLang)}
             onChangeRiwayat={(riwayat) => updateSettings({riwayat})}
             onChangeReciter={(reciterId) => updateSettings({reciterId})}

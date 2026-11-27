@@ -140,28 +140,32 @@ html.dark .emerald-3d-hero {
   .led-backdrop::after {
     content: "";
     position: absolute;
-    inset: -4px;
+    inset: -10px;
     border-radius: inherit;
     z-index: -1;
     background: radial-gradient(
-      75% 75% at 50% 55%,
-      rgba(52, 211, 153, 0.34) 0%,
-      rgba(39, 120, 76, 0.14) 55%,
-      transparent 100%
+      72% 72% at 50% 54%,
+      rgba(52, 211, 153, 0.28) 0%,
+      rgba(39, 120, 76, 0.11) 48%,
+      transparent 78%
     );
-    filter: blur(14px);
-    opacity: 0.85;
+    opacity: 0.9;
     pointer-events: none;
-    transition: opacity 220ms ease, transform 220ms ease;
+    transition: opacity 220ms ease;
   }
 
   html.dark .led-backdrop::after {
     background: radial-gradient(
-      75% 75% at 50% 55%,
-      rgba(82, 183, 127, 0.42) 0%,
-      rgba(16, 185, 129, 0.16) 58%,
-      transparent 100%
+      72% 72% at 50% 54%,
+      rgba(82, 183, 127, 0.34) 0%,
+      rgba(16, 185, 129, 0.14) 50%,
+      transparent 78%
     );
+  }
+
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: 84px;
   }
 
   .led-icon-tile {

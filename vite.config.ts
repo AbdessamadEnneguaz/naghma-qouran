@@ -5,8 +5,16 @@ import path from 'path';
 import {defineConfig} from 'vite';
 import {VitePWA} from 'vite-plugin-pwa';
 
+const BUILD_ID = `mihrab-${Date.now()}`;
+const LIVE_OTA_URL =
+  process.env.VITE_OTA_SERVER_URL ||
+  'https://ais-pre-sd7psl2bnxgqgy6mwqyrp5-846997521525.europe-west2.run.app';
+
 export default defineConfig(() => {
   return {
+    define: {
+      __APP_BUILD_ID__: JSON.stringify(BUILD_ID),
+    },
     plugins: [
       react(),
       tailwindcss(),
@@ -116,16 +124,17 @@ export default defineConfig(() => {
       {
         name: 'serve-android-apk-and-version',
         configureServer(server) {
-          const devBuildId = `dev-${Date.now()}`;
+          const devBuildId = BUILD_ID;
           server.middlewares.use((req, res, next) => {
             if (req.url && /^\/version\.json(\?.*)?$/i.test(req.url)) {
               res.setHeader('Content-Type', 'application/json');
               res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+              res.setHeader('Access-Control-Allow-Origin', '*');
               res.end(
                 JSON.stringify({
-                  version: '3.1.0',
+                  version: '3.2.0',
                   buildId: devBuildId,
-                  otaUrl: 'https://najmqouran.vercel.app',
+                  otaUrl: LIVE_OTA_URL,
                   apkUrl: '/mihrab-noor.apk',
                 })
               );
@@ -146,6 +155,7 @@ export default defineConfig(() => {
           server.middlewares.use((req, res, next) => {
             if (req.url && /^\/version\.json(\?.*)?$/i.test(req.url)) {
               res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+              res.setHeader('Access-Control-Allow-Origin', '*');
             }
             if (req.url && /^\/(naghma-quran|najm-quran)\.apk(\?.*)?$/i.test(req.url)) {
               req.url = '/mihrab-noor.apk';
@@ -160,25 +170,20 @@ export default defineConfig(() => {
         },
       },
       {
-        name: 'copy-unbundled-src-assets-and-version',
+        name: 'write-version-manifest',
         apply: 'build',
         closeBundle(error?: Error): void {
           if (error) {
             return;
           }
-          const distDir = path.resolve(__dirname, 'dist');
-          const srcAssets = path.resolve(__dirname, 'src/assets');
-          const distAssets = path.resolve(distDir, 'src/assets');
-          if (fs.existsSync(distDir) && fs.existsSync(srcAssets)) {
-            fs.cpSync(srcAssets, distAssets, {recursive: true, force: true});
-          }
+          const distDir = path.resolve(import.meta.dirname, 'dist');
           if (fs.existsSync(distDir)) {
             fs.writeFileSync(
               path.join(distDir, 'version.json'),
               JSON.stringify({
-                version: '3.1.0',
-                buildId: `prod-${Date.now()}`,
-                otaUrl: 'https://najmqouran.vercel.app',
+                version: '3.2.0',
+                buildId: BUILD_ID,
+                otaUrl: LIVE_OTA_URL,
                 apkUrl: '/mihrab-noor.apk',
               }),
               'utf-8'
@@ -189,7 +194,7 @@ export default defineConfig(() => {
     ],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(import.meta.dirname, '.'),
       },
     },
     server: {

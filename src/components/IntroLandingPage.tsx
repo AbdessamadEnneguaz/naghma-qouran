@@ -282,7 +282,7 @@ export const IntroLandingPage: React.FC<IntroLandingPageProps> = ({
                 {t.appName}
               </span>
               <span className="text-[10px] font-semibold text-[#27784C] dark:text-[#52B77F] tracking-wide uppercase block leading-none">
-                v3.1
+                v3.2
               </span>
             </div>
           </div>

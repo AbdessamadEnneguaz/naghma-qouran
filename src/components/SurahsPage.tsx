@@ -240,7 +240,7 @@ export const SurahsPage: React.FC<SurahsPageProps> = ({
                   role="button"
                   tabIndex={0}
                   data-testid={`surah-card-${surah.id}`}
-                  className="group text-start rounded-2xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] p-4 hover:border-[#27784C]/40 dark:hover:border-[#52B77F]/45 transition-colors flex items-center justify-between gap-3 cursor-pointer"
+                  className="cv-auto group text-start rounded-2xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] p-4 hover:border-[#27784C]/40 dark:hover:border-[#52B77F]/45 transition-colors flex items-center justify-between gap-3 cursor-pointer"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="h-9 w-9 rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-[#F4F7F5] dark:bg-[#15241D] flex items-center justify-center text-xs font-semibold text-[#27784C] dark:text-[#52B77F] tabular-nums shrink-0">

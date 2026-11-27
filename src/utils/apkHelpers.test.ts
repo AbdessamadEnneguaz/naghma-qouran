@@ -6,14 +6,15 @@ import {
   formatApkSizeMb,
   hasNewerBuildVersion,
   isLocalApkPath,
+  normalizeOtaBaseUrl,
   resolveVersionJsonUrl,
 } from './apkHelpers';
 
 test('formatApkSizeMb formats exact byte size cleanly', () => {
-  assert.equal(formatApkSizeMb(DEFAULT_APK_SIZE_BYTES), '8.6 MB');
+  assert.equal(formatApkSizeMb(DEFAULT_APK_SIZE_BYTES), '7.5 MB');
   assert.equal(formatApkSizeMb(10 * 1024 * 1024), '10.0 MB');
-  assert.equal(formatApkSizeMb(0), '8.6 MB');
-  assert.equal(formatApkSizeMb(-100), '8.6 MB');
+  assert.equal(formatApkSizeMb(0), '7.5 MB');
+  assert.equal(formatApkSizeMb(-100), '7.5 MB');
 });
 
 test('isLocalApkPath distinguishes local bundled APK paths from external URLs', () => {
@@ -24,6 +25,10 @@ test('isLocalApkPath distinguishes local bundled APK paths from external URLs', 
 test('resolveVersionJsonUrl resolves local /version.json for web and remote OTA URL for bundled Capacitor', () => {
   assert.equal(resolveVersionJsonUrl('https:'), '/version.json');
   assert.equal(
+    resolveVersionJsonUrl('https:', 'https://example.com', true),
+    'https://example.com/version.json'
+  );
+  assert.equal(
     resolveVersionJsonUrl('file:'),
     `${DEFAULT_OTA_SERVER_URL}/version.json`
   );
@@ -31,6 +36,7 @@ test('resolveVersionJsonUrl resolves local /version.json for web and remote OTA 
     resolveVersionJsonUrl('capacitor:', 'https://najmqouran.vercel.app/'),
     'https://najmqouran.vercel.app/version.json'
   );
+  assert.equal(normalizeOtaBaseUrl('example.com/'), 'https://example.com');
 });
 
 test('hasNewerBuildVersion detects build changes cleanly', () => {

@@ -12,12 +12,18 @@ import {
   shouldTriggerFridayKahfReminder,
 } from '../utils/khatmaLogic';
 import {
+  buildUpcomingNotificationTriggers,
   evaluateDueChannelNotifications,
   loadNotificationPrefs,
   saveNotificationPrefs,
   type NotificationChannelPrefs,
+  type ScheduledTriggerItem,
 } from '../utils/notificationCenterLogic';
-import {QIBLA_CITIES} from '../utils/qiblaLogic';
+import {
+  LOCATION_UPDATED_EVENT,
+  loadActiveLocation,
+  type ActiveLocationState,
+} from '../utils/qiblaLogic';
 import type {AppRoute} from '../utils/routing';
 import {loadKhatmaPlan, saveKhatmaPlan} from '../services/indexedDbVault';
 
@@ -28,28 +34,66 @@ export interface NotificationToastPreview {
   action?: 'khatma' | 'kahf' | 'qibla' | 'adhkar';
 }
 
-function resolveUserCity() {
-  try {
-    const saved = localStorage.getItem('najm_city');
-    if (saved) {
-      const found = QIBLA_CITIES.find((c) => c.id === saved);
-      if (found) return found;
-    }
-  } catch {
-    // ignore storage errors
-  }
-  return QIBLA_CITIES[0];
+interface CapacitorLocalNotificationsPlugin {
+  checkPermissions?: () => Promise<{display?: string}>;
+  requestPermissions?: () => Promise<{display?: string}>;
+  schedule?: (opts: {
+    notifications: Array<{
+      id: number;
+      title: string;
+      body: string;
+      schedule?: {at: Date; allowWhileIdle?: boolean};
+      extra?: Record<string, unknown>;
+    }>;
+  }) => Promise<unknown>;
+  cancel?: (opts: {notifications: Array<{id: number}>}) => Promise<unknown>;
 }
+
+function getCapacitorLocalNotifications(): CapacitorLocalNotificationsPlugin | null {
+  if (typeof window === 'undefined') return null;
+  const cap = (window as unknown as {Capacitor?: {Plugins?: Record<string, unknown>}}).Capacitor;
+  const plugin = cap?.Plugins?.LocalNotifications as CapacitorLocalNotificationsPlugin | undefined;
+  return plugin && typeof plugin.schedule === 'function' ? plugin : null;
+}
+
+const NOTIF_PROMPT_DISMISSED_KEY = 'mihrab_notif_prompt_dismissed_v1';
 
 export function useKhatmaReminders(lang: AppLang) {
   const [plan, setPlan] = useState<KhatmaPlan>(() => createDefaultKhatmaPlan(30));
   const [channelPrefs, setChannelPrefs] = useState<NotificationChannelPrefs>(loadNotificationPrefs);
+  const [activeLoc, setActiveLoc] = useState<ActiveLocationState>(() => loadActiveLocation());
   const [loaded, setLoaded] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>(() => {
-    if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported';
-    return Notification.permission;
+    if (typeof window === 'undefined') return 'unsupported';
+    if ('Notification' in window) return Notification.permission;
+    return getCapacitorLocalNotifications() ? 'default' : 'unsupported';
+  });
+  const [promptDismissed, setPromptDismissed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(NOTIF_PROMPT_DISMISSED_KEY) === '1';
+    } catch {
+      return false;
+    }
   });
   const [toastPreview, setToastPreview] = useState<NotificationToastPreview | null>(null);
+
+  useEffect(() => {
+    const syncLoc = () => setActiveLoc(loadActiveLocation());
+    window.addEventListener(LOCATION_UPDATED_EVENT, syncLoc);
+    return () => window.removeEventListener(LOCATION_UPDATED_EVENT, syncLoc);
+  }, []);
+
+  useEffect(() => {
+    const capNotif = getCapacitorLocalNotifications();
+    if (!capNotif?.checkPermissions) return;
+    void capNotif
+      .checkPermissions()
+      .then((res) => {
+        if (res?.display === 'granted') setPermission('granted');
+        else if (res?.display === 'denied') setPermission('denied');
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     setToastPreview(null);
@@ -93,8 +137,104 @@ export function useKhatmaReminders(lang: AppLang) {
     []
   );
 
+  const dismissPermissionPrompt = useCallback(() => {
+    setPromptDismissed(true);
+    try {
+      localStorage.setItem(NOTIF_PROMPT_DISMISSED_KEY, '1');
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const todayISO = getLocalDateISO();
   const schedule = useMemo(() => computeKhatmaSchedule(plan, todayISO), [plan, todayISO]);
+
+  // Sync upcoming 48h schedule to OS/ServiceWorker/Capacitor whenever preferences or location change
+  const syncOutsideAppSchedule = useCallback(
+    async (
+      nextPlan: KhatmaPlan,
+      nextPrefs: NotificationChannelPrefs,
+      permState: NotificationPermission | 'unsupported'
+    ) => {
+      if (permState !== 'granted') return;
+      const items: ScheduledTriggerItem[] = buildUpcomingNotificationTriggers(
+        new Date(),
+        nextPlan,
+        nextPrefs,
+        activeLoc,
+        lang
+      );
+
+      // 1. Native Capacitor LocalNotifications plugin (Android/iOS outside-app background alarms)
+      const capNotif = getCapacitorLocalNotifications();
+      if (capNotif?.schedule) {
+        try {
+          if (capNotif.cancel) {
+            await capNotif.cancel({
+              notifications: Array.from({length: 30}, (_, i) => ({id: 101 + i})),
+            });
+          }
+          if (items.length > 0) {
+            await capNotif.schedule({
+              notifications: items.slice(0, 20).map((it) => ({
+                id: it.id,
+                title: it.title,
+                body: it.body,
+                schedule: {at: new Date(it.fireAtMs), allowWhileIdle: true},
+                extra: {route: it.route, surahId: it.surahId ?? null},
+              })),
+            });
+          }
+        } catch {
+          // ignore native plugin errors
+        }
+      }
+
+      // 2. Service Worker Background Schedule + TimestampTrigger + PeriodicSync (Web & PWA)
+      if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+        try {
+          const reg = await navigator.serviceWorker.getRegistration();
+          const sw = reg?.active || navigator.serviceWorker.controller;
+          sw?.postMessage({type: 'MIHRAB_SYNC_SCHEDULE', items});
+
+          // Schedule Chromium OS-level Notification Triggers when available
+          const TimestampTriggerCtor = (
+            window as unknown as {TimestampTrigger?: new (ts: number) => unknown}
+          ).TimestampTrigger;
+          if (reg?.showNotification && TimestampTriggerCtor) {
+            for (const item of items.slice(0, 8)) {
+              await reg.showNotification(item.title, {
+                body: item.body,
+                icon: '/pwa-192x192.png',
+                badge: '/pwa-192x192.png',
+                tag: item.tag,
+                data: {route: item.route, surahId: item.surahId ?? null},
+                showTrigger: new TimestampTriggerCtor(item.fireAtMs),
+              } as NotificationOptions);
+            }
+          }
+
+          // Register periodic background sync (best-effort on Chrome/Edge PWA)
+          const periodicReg = reg as ServiceWorkerRegistration & {
+            periodicSync?: {register: (tag: string, opts: {minInterval: number}) => Promise<void>};
+          };
+          if (periodicReg?.periodicSync?.register) {
+            await periodicReg.periodicSync
+              .register('mihrab-daily-sync', {minInterval: 60 * 60 * 1000})
+              .catch(() => {});
+          }
+        } catch {
+          // ignore SW restrictions
+        }
+      }
+    },
+    [activeLoc, lang]
+  );
+
+  useEffect(() => {
+    if (!loaded || permission !== 'granted') return;
+    void syncOutsideAppSchedule(plan, channelPrefs, permission);
+  }, [loaded, permission, plan, channelPrefs, syncOutsideAppSchedule]);
 
   const dispatchBrowserNotification = useCallback(
     async (
@@ -104,7 +244,29 @@ export function useKhatmaReminders(lang: AppLang) {
       route: AppRoute = 'home',
       surahId?: number
     ): Promise<NotificationPermission | 'unsupported'> => {
-      if (typeof window === 'undefined' || !('Notification' in window)) {
+      if (typeof window === 'undefined') return 'unsupported';
+
+      const capNotif = getCapacitorLocalNotifications();
+      if (capNotif?.schedule && permission === 'granted') {
+        try {
+          await capNotif.schedule({
+            notifications: [
+              {
+                id: Math.floor(Date.now() % 100000),
+                title,
+                body,
+                schedule: {at: new Date(Date.now() + 500), allowWhileIdle: true},
+                extra: {route, surahId: surahId ?? null},
+              },
+            ],
+          });
+          return 'granted';
+        } catch {
+          // fallback to Web Notification
+        }
+      }
+
+      if (!('Notification' in window)) {
         return 'unsupported';
       }
 
@@ -128,8 +290,10 @@ export function useKhatmaReminders(lang: AppLang) {
                 icon: '/pwa-192x192.png',
                 badge: '/pwa-192x192.png',
                 tag,
+                renotify: true,
+                vibrate: [120, 60, 120],
                 data: {route, surahId: surahId ?? null},
-              });
+              } as NotificationOptions);
               return perm;
             }
           }
@@ -142,16 +306,28 @@ export function useKhatmaReminders(lang: AppLang) {
             window.focus();
           };
         } catch {
-          // Embedded WebViews may restrict window.Notification; in-app toast still surfaces
+          // Fallback to in-app preview toast when WebView restricts Notification constructor
         }
       }
       return perm;
     },
-    []
+    [permission]
   );
 
   const ensureNotificationPermission = useCallback(async () => {
     let perm: NotificationPermission | 'unsupported' = permission;
+    const capNotif = getCapacitorLocalNotifications();
+
+    if (capNotif?.requestPermissions) {
+      try {
+        const res = await capNotif.requestPermissions();
+        perm = res?.display === 'granted' ? 'granted' : res?.display === 'denied' ? 'denied' : 'default';
+        setPermission(perm);
+      } catch {
+        // continue to web check
+      }
+    }
+
     if (typeof window !== 'undefined' && 'Notification' in window) {
       if (Notification.permission === 'default') {
         try {
@@ -165,8 +341,35 @@ export function useKhatmaReminders(lang: AppLang) {
         setPermission(perm);
       }
     }
+
+    // Automatically activate daily Quran comeback reminder, Friday Kahf, Prayers & Adhkar on grant
+    if (perm === 'granted') {
+      dismissPermissionPrompt();
+      const nextPlan: KhatmaPlan = {
+        ...plan,
+        reminderEnabled: true,
+        fridayKahfEnabled: true,
+      };
+      const nextPrefs: NotificationChannelPrefs = {
+        ...channelPrefs,
+        prayerAlertsEnabled: true,
+        adhkarEnabled: true,
+      };
+      persistPlan(() => nextPlan);
+      persistChannelPrefs(() => nextPrefs);
+      void syncOutsideAppSchedule(nextPlan, nextPrefs, perm);
+    }
+
     return perm;
-  }, [permission]);
+  }, [
+    permission,
+    dismissPermissionPrompt,
+    plan,
+    channelPrefs,
+    persistPlan,
+    persistChannelPrefs,
+    syncOutsideAppSchedule,
+  ]);
 
   const sendReminderNow = useCallback(async () => {
     const curSummary = computeKhatmaSchedule(plan, getLocalDateISO());
@@ -243,7 +446,7 @@ export function useKhatmaReminders(lang: AppLang) {
     [persistChannelPrefs]
   );
 
-  // Unified background check every 30s + visibility change for Khatma, Friday Kahf, Prayer Alerts & Adhkar
+  // Check active timers + visibility change without blocking sibling channels
   useEffect(() => {
     const hasAnyChannel =
       plan.reminderEnabled ||
@@ -260,9 +463,7 @@ export function useKhatmaReminders(lang: AppLang) {
       if (
         plan.reminderEnabled &&
         plan.lastNotifiedDateISO !== nowDate &&
-        nowTime >= plan.reminderTime &&
-        schedule.pagesRemaining > 0 &&
-        !schedule.isTodayComplete
+        nowTime >= plan.reminderTime
       ) {
         const {title, body} = buildKhatmaNotificationText(schedule, lang);
         const perm = await dispatchBrowserNotification(
@@ -273,7 +474,6 @@ export function useKhatmaReminders(lang: AppLang) {
         );
         persistPlan((prev) => ({...prev, lastNotifiedDateISO: nowDate}));
         setToastPreview({title, body, permissionState: perm, action: 'khatma'});
-        return;
       }
 
       if (
@@ -293,11 +493,9 @@ export function useKhatmaReminders(lang: AppLang) {
         );
         persistPlan((prev) => ({...prev, lastFridayKahfNotifiedISO: nowDate}));
         setToastPreview({title, body, permissionState: perm, action: 'kahf'});
-        return;
       }
 
-      const city = resolveUserCity();
-      const dueEvents = evaluateDueChannelNotifications(now, channelPrefs, city, lang);
+      const dueEvents = evaluateDueChannelNotifications(now, channelPrefs, activeLoc, lang);
       if (dueEvents.length > 0) {
         const nextEvt = dueEvents[0];
         const perm = await dispatchBrowserNotification(
@@ -346,6 +544,7 @@ export function useKhatmaReminders(lang: AppLang) {
     plan.fridayKahfEnabled,
     plan.lastFridayKahfNotifiedISO,
     channelPrefs,
+    activeLoc,
     schedule,
     lang,
     dispatchBrowserNotification,
@@ -405,12 +604,17 @@ export function useKhatmaReminders(lang: AppLang) {
     channelPrefs.prayerAlertsEnabled ||
     channelPrefs.adhkarEnabled;
 
+  const shouldShowPermissionPrompt =
+    loaded && permission === 'default' && !promptDismissed;
+
   return {
     plan,
     channelPrefs,
     schedule,
     permission,
     hasActiveNotifications,
+    shouldShowPermissionPrompt,
+    dismissPermissionPrompt,
     toastPreview,
     dismissToast: () => setToastPreview(null),
     ensureNotificationPermission,

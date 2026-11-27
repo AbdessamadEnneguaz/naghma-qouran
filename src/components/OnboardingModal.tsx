@@ -1,5 +1,5 @@
 import React, {useMemo, useState} from 'react';
-import {Check, ChevronRight, Volume2} from 'lucide-react';
+import {BellRing, Check, ChevronRight, Volume2} from 'lucide-react';
 import type {Riwayat} from '../types/quran';
 import {RECITERS} from '../data/reciters';
 import type {AppLang, Translations} from '../i18n/translations';
@@ -11,6 +11,8 @@ interface OnboardingModalProps {
   t: Translations;
   riwayat: Riwayat;
   reciterId: string;
+  notificationPermission?: NotificationPermission | 'unsupported';
+  onRequestNotifications?: () => Promise<NotificationPermission | 'unsupported'>;
   onChangeLang: (lang: AppLang) => void;
   onChangeRiwayat: (riwayat: Riwayat) => void;
   onChangeReciter: (reciterId: string) => void;
@@ -23,6 +25,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   t,
   riwayat,
   reciterId,
+  notificationPermission = 'default',
+  onRequestNotifications,
   onChangeLang,
   onChangeRiwayat,
   onChangeReciter,
@@ -40,6 +44,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const stepTitle =
     step === 1 ? t.onboardingStep1 : step === 2 ? t.onboardingStep2 : t.onboardingStep3;
 
+  const isNotifGranted = notificationPermission === 'granted';
+
   return (
     <div
       role="dialog"
@@ -48,7 +54,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       aria-label={t.onboardingTitle}
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4"
     >
-      <div className="w-full max-w-lg rounded-2xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] p-6 sm:p-7 shadow-2xl space-y-6">
+      <div className="w-full max-w-lg rounded-2xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] p-6 sm:p-7 shadow-2xl space-y-5">
         {/* Top Brand + Skip */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
@@ -193,48 +199,96 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         )}
 
         {step === 3 && (
-          <div
-            className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-60 overflow-y-auto pe-1"
-            data-testid="onboarding-step-3"
-          >
-            {recommendedReciters.map((r) => {
-              const selected = reciterId === r.id;
-              return (
+          <div className="space-y-3" data-testid="onboarding-step-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-52 overflow-y-auto pe-1">
+              {recommendedReciters.map((r) => {
+                const selected = reciterId === r.id;
+                return (
+                  <button
+                    key={r.id}
+                    type="button"
+                    data-testid={`onboarding-reciter-${r.id}`}
+                    onClick={() => onChangeReciter(r.id)}
+                    className={`rounded-xl border p-3 text-start flex items-center justify-between gap-2.5 transition-colors ${
+                      selected
+                        ? 'border-[#27784C] dark:border-[#52B77F] bg-[#27784C]/8 dark:bg-[#52B77F]/12'
+                        : 'border-[#E2EAE5] dark:border-[#1E2E26] bg-[#F4F7F5] dark:bg-[#15241D]'
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold text-[#142019] dark:text-[#F1F5F3] truncate">
+                        {lang === 'ar' ? r.nameAr : r.nameEn}
+                      </div>
+                      <div className="text-[11px] text-[#5A6B62] dark:text-[#92A59B] truncate">
+                        {lang === 'ar' ? r.nameEn : r.nameAr}
+                      </div>
+                    </div>
+                    <Volume2
+                      strokeWidth={1.5}
+                      className={`h-4 w-4 shrink-0 ${
+                        selected
+                          ? 'text-[#27784C] dark:text-[#52B77F]'
+                          : 'text-[#5A6B62]/60 dark:text-[#92A59B]/60'
+                      }`}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+
+            {onRequestNotifications && (
+              <div className="rounded-xl border border-[#27784C]/25 dark:border-[#52B77F]/30 bg-[#F4F7F5] dark:bg-[#15241D] p-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="h-9 w-9 rounded-xl emerald-3d-hero text-white flex items-center justify-center shrink-0">
+                    <BellRing className="h-4 w-4" strokeWidth={1.8} />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-[#142019] dark:text-[#F1F5F3] truncate">
+                      {lang === 'ar'
+                        ? 'الإشعارات اليومية للقرآن والصلاة'
+                        : lang === 'fr'
+                          ? 'Rappels quotidiens Coran & Prières'
+                          : 'Daily Quran & Prayer Alerts'}
+                    </div>
+                    <p className="text-[11px] text-[#5A6B62] dark:text-[#92A59B] truncate">
+                      {isNotifGranted
+                        ? lang === 'ar'
+                          ? 'مفعّل! ستصلك تنبيهات يومية'
+                          : 'Enabled! Daily alerts active'
+                        : lang === 'ar'
+                          ? 'اسمح بالإشعارات ليذكرك يومياً'
+                          : 'Allow permission for daily reminders'}
+                    </p>
+                  </div>
+                </div>
                 <button
-                  key={r.id}
                   type="button"
-                  data-testid={`onboarding-reciter-${r.id}`}
-                  onClick={() => onChangeReciter(r.id)}
-                  className={`rounded-xl border p-3 text-start flex items-center justify-between gap-2.5 transition-colors ${
-                    selected
-                      ? 'border-[#27784C] dark:border-[#52B77F] bg-[#27784C]/8 dark:bg-[#52B77F]/12'
-                      : 'border-[#E2EAE5] dark:border-[#1E2E26] bg-[#F4F7F5] dark:bg-[#15241D]'
+                  data-testid="onboarding-notif-btn"
+                  disabled={isNotifGranted}
+                  onClick={() => void onRequestNotifications()}
+                  className={`shrink-0 rounded-xl px-3 py-1.5 text-xs font-bold whitespace-nowrap ${
+                    isNotifGranted
+                      ? 'bg-[#27784C]/15 text-[#27784C] dark:text-[#52B77F]'
+                      : 'btn-3d-emerald text-white'
                   }`}
                 >
-                  <div className="min-w-0">
-                    <div className="text-xs font-semibold text-[#142019] dark:text-[#F1F5F3] truncate">
-                      {lang === 'ar' ? r.nameAr : r.nameEn}
-                    </div>
-                    <div className="text-[11px] text-[#5A6B62] dark:text-[#92A59B] truncate">
-                      {lang === 'ar' ? r.nameEn : r.nameAr}
-                    </div>
-                  </div>
-                  <Volume2
-                    strokeWidth={1.5}
-                    className={`h-4 w-4 shrink-0 ${
-                      selected
-                        ? 'text-[#27784C] dark:text-[#52B77F]'
-                        : 'text-[#5A6B62]/60 dark:text-[#92A59B]/60'
-                    }`}
-                  />
+                  {isNotifGranted
+                    ? lang === 'ar'
+                      ? 'مفعّل'
+                      : 'Enabled'
+                    : lang === 'ar'
+                      ? 'سماح'
+                      : lang === 'fr'
+                        ? 'Autoriser'
+                        : 'Allow'}
                 </button>
-              );
-            })}
+              </div>
+            )}
           </div>
         )}
 
         {/* Footer Buttons */}
-        <div className="flex items-center justify-between gap-3 pt-2">
+        <div className="flex items-center justify-between gap-3 pt-1">
           {step > 1 ? (
             <button
               type="button"

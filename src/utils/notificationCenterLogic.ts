@@ -1,6 +1,7 @@
 import type {AppLang} from '../i18n/translations';
+import type {KhatmaPlan} from '../types/quran';
 import {computeDailyPrayerSchedule} from './prayerTimes';
-import type {QiblaCity} from './qiblaLogic';
+import type {PrayerMethodId} from './qiblaLogic';
 import {getLocalDateISO, getLocalTimeHHMM} from './khatmaLogic';
 import type {AppRoute} from './routing';
 
@@ -10,6 +11,15 @@ export type SmartNotificationKind =
   | 'adhkar_evening'
   | 'daily_wird'
   | 'friday_kahf';
+
+export interface NotificationCityLike {
+  nameEn: string;
+  nameAr: string;
+  lat: number;
+  lng: number;
+  tzOffsetHours: number;
+  method?: PrayerMethodId;
+}
 
 export interface NotificationChannelPrefs {
   prayerAlertsEnabled: boolean;
@@ -30,6 +40,18 @@ export interface DueNotificationEvent {
   route: AppRoute;
   surahId?: number;
   tag: string;
+}
+
+export interface ScheduledTriggerItem {
+  id: number;
+  slotKey: string;
+  dateISO: string;
+  fireAtMs: number;
+  title: string;
+  body: string;
+  tag: string;
+  route: AppRoute;
+  surahId?: number;
 }
 
 const PREFS_STORAGE_KEY = 'mihrab_notification_prefs_v1';
@@ -92,7 +114,7 @@ export function buildPrayerAlertPayload(
   prayerNameEn: string,
   prayerNameAr: string,
   prayerTimeFormatted: string,
-  city: QiblaCity,
+  city: NotificationCityLike,
   minutesUntil: number,
   lang: AppLang
 ): {title: string; body: string} {
@@ -165,10 +187,29 @@ export function buildAdhkarAlertPayload(
   };
 }
 
+export function buildDailyQuranComebackPayload(lang: AppLang): {title: string; body: string} {
+  if (lang === 'ar') {
+    return {
+      title: 'وِردك اليومي من القرآن الكريم · مِحْرَاب النُّور',
+      body: 'افتح المصحف الشريف الآن واقرأ بضع آيات تنوّر قلبك ويومك.',
+    };
+  }
+  if (lang === 'fr') {
+    return {
+      title: 'Votre lecture quotidienne du Coran · Mihrab Noor',
+      body: 'Ouvrez le Mushaf maintenant et lisez quelques versets pour illuminer votre journée.',
+    };
+  }
+  return {
+    title: 'Daily Quran Reading · Mihrab Noor',
+    body: 'Open the Mushaf now and read a few verses to bring light and peace to your day.',
+  };
+}
+
 export function evaluateDueChannelNotifications(
   now: Date,
   prefs: NotificationChannelPrefs,
-  city: QiblaCity,
+  city: NotificationCityLike,
   lang: AppLang
 ): DueNotificationEvent[] {
   const dateISO = getLocalDateISO(now);
@@ -177,7 +218,9 @@ export function evaluateDueChannelNotifications(
   const events: DueNotificationEvent[] = [];
 
   if (prefs.prayerAlertsEnabled) {
-    const schedule = computeDailyPrayerSchedule(now, city.lat, city.lng, city.tzOffsetHours);
+    const schedule = computeDailyPrayerSchedule(now, city.lat, city.lng, city.tzOffsetHours, {
+      method: city.method,
+    });
     for (const entry of schedule.entries) {
       const prayerMins = entry.minutesFromMidnight;
       const diffMins = prayerMins - nowMinutes;
@@ -209,7 +252,6 @@ export function evaluateDueChannelNotifications(
   }
 
   if (prefs.adhkarEnabled) {
-    // Morning window: from configured time up to 11:30
     if (
       hhmm >= prefs.morningAdhkarTime &&
       hhmm < '11:30' &&
@@ -227,7 +269,6 @@ export function evaluateDueChannelNotifications(
       });
     }
 
-    // Evening window: from configured time up to 22:30
     if (
       hhmm >= prefs.eveningAdhkarTime &&
       hhmm < '22:30' &&
@@ -247,4 +288,133 @@ export function evaluateDueChannelNotifications(
   }
 
   return events;
+}
+
+function parseHHMMToTimestamp(dayDate: Date, hhmm: string): number {
+  const [hStr, mStr] = hhmm.split(':');
+  const d = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate(), Number(hStr || 0), Number(mStr || 0), 0, 0);
+  return d.getTime();
+}
+
+/**
+ * Generates an upcoming 48-hour schedule of concrete OS notification trigger timestamps
+ * used by Service Worker PeriodicSync / TimestampTriggers and Capacitor LocalNotifications.
+ */
+export function buildUpcomingNotificationTriggers(
+  now: Date,
+  plan: KhatmaPlan,
+  prefs: NotificationChannelPrefs,
+  city: NotificationCityLike,
+  lang: AppLang
+): ScheduledTriggerItem[] {
+  const items: ScheduledTriggerItem[] = [];
+  const nowMs = now.getTime();
+  let nextId = 101;
+
+  for (let dayOffset = 0; dayOffset < 2; dayOffset++) {
+    const dayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + dayOffset, 12, 0, 0);
+    const dateISO = getLocalDateISO(dayDate);
+
+    if (plan.reminderEnabled) {
+      const fireAtMs = parseHHMMToTimestamp(dayDate, plan.reminderTime || '20:00');
+      if (fireAtMs > nowMs + 15_000) {
+        const payload = buildDailyQuranComebackPayload(lang);
+        items.push({
+          id: nextId++,
+          slotKey: 'daily_wird',
+          dateISO,
+          fireAtMs,
+          title: payload.title,
+          body: payload.body,
+          tag: `mihrab-daily-quran-${dateISO}`,
+          route: 'mushaf',
+        });
+      }
+    }
+
+    if (plan.fridayKahfEnabled && dayDate.getDay() === 5) {
+      const fireAtMs = parseHHMMToTimestamp(dayDate, '09:30');
+      if (fireAtMs > nowMs + 15_000) {
+        items.push({
+          id: nextId++,
+          slotKey: 'friday_kahf',
+          dateISO,
+          fireAtMs,
+          title: lang === 'ar' ? 'نور الجمعة · سورة الكهف' : 'Friday Noor · Surah Al-Kahf',
+          body:
+            lang === 'ar'
+              ? 'تذكير الجمعة المباركة: افتح سورة الكهف الآن.'
+              : 'Jumu’ah Mubarak! Open Mihrab Noor to recite Surah Al-Kahf.',
+          tag: `mihrab-kahf-${dateISO}`,
+          route: 'mushaf',
+          surahId: 18,
+        });
+      }
+    }
+
+    if (prefs.prayerAlertsEnabled) {
+      const schedule = computeDailyPrayerSchedule(dayDate, city.lat, city.lng, city.tzOffsetHours, {
+        method: city.method,
+      });
+      for (const entry of schedule.entries) {
+        const leadMins = Math.max(0, prefs.prayerLeadMinutes);
+        const prayerAtMs =
+          new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate()).getTime() +
+          (entry.minutesFromMidnight - leadMins) * 60_000;
+        if (prayerAtMs > nowMs + 15_000) {
+          const payload = buildPrayerAlertPayload(
+            entry.nameEn,
+            entry.nameAr,
+            entry.formatted24,
+            city,
+            leadMins,
+            lang
+          );
+          items.push({
+            id: nextId++,
+            slotKey: `prayer_${entry.id}`,
+            dateISO,
+            fireAtMs: prayerAtMs,
+            title: payload.title,
+            body: payload.body,
+            tag: `mihrab-prayer-${entry.id}-${dateISO}`,
+            route: 'qibla',
+          });
+        }
+      }
+    }
+
+    if (prefs.adhkarEnabled) {
+      const mMs = parseHHMMToTimestamp(dayDate, prefs.morningAdhkarTime);
+      if (mMs > nowMs + 15_000) {
+        const payload = buildAdhkarAlertPayload('morning', lang);
+        items.push({
+          id: nextId++,
+          slotKey: 'adhkar_morning',
+          dateISO,
+          fireAtMs: mMs,
+          title: payload.title,
+          body: payload.body,
+          tag: `mihrab-adhkar-morning-${dateISO}`,
+          route: 'adhkar',
+        });
+      }
+      const eMs = parseHHMMToTimestamp(dayDate, prefs.eveningAdhkarTime);
+      if (eMs > nowMs + 15_000) {
+        const payload = buildAdhkarAlertPayload('evening', lang);
+        items.push({
+          id: nextId++,
+          slotKey: 'adhkar_evening',
+          dateISO,
+          title: payload.title,
+          body: payload.body,
+          fireAtMs: eMs,
+          tag: `mihrab-adhkar-evening-${dateISO}`,
+          route: 'adhkar',
+        });
+      }
+    }
+  }
+
+  return items.sort((a, b) => a.fireAtMs - b.fireAtMs);
 }

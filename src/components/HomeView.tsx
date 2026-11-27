@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   Bell,
   Bookmark,
@@ -10,6 +10,7 @@ import {
   Copy,
   Download,
   Headphones,
+  LocateFixed,
   MapPin,
   MoonStar,
   Search,
@@ -25,8 +26,22 @@ import type {
 } from '../types/quran';
 import type {KhatmaScheduleSummary} from '../utils/khatmaLogic';
 import {getEffectiveReadingStats} from '../utils/readingStreakLogic';
-import {computeDailyPrayerSchedule} from '../utils/prayerTimes';
-import {QIBLA_CITIES, type QiblaCity} from '../utils/qiblaLogic';
+import {
+  buildLiveRemainingCountdown,
+  computeDailyPrayerSchedule,
+  fetchOfficialPrayerEntries,
+  PRAYER_METHODS,
+  type DailyPrayerSchedule,
+  type PrayerTimeEntry,
+} from '../utils/prayerTimes';
+import {
+  LOCATION_UPDATED_EVENT,
+  QIBLA_CITIES,
+  loadActiveLocation,
+  saveGpsLocation,
+  saveSelectedCity,
+  type ActiveLocationState,
+} from '../utils/qiblaLogic';
 import {toArabicDigits} from '../utils/quranLogic';
 import {triggerHaptic} from '../utils/haptics';
 import type {AppLang, Translations} from '../i18n/translations';
@@ -129,21 +144,6 @@ const DAILY_VERSES = [
   },
 ] as const;
 
-const CITY_STORAGE_KEY = 'najm_city';
-
-function getStoredCity(): QiblaCity {
-  try {
-    const saved = localStorage.getItem(CITY_STORAGE_KEY);
-    if (saved) {
-      const match = QIBLA_CITIES.find((c) => c.id === saved);
-      if (match) return match;
-    }
-  } catch {
-    // ignore storage errors
-  }
-  return QIBLA_CITIES[0];
-}
-
 function formatHeroDate(d: Date, lang: AppLang): string {
   try {
     return new Intl.DateTimeFormat(
@@ -154,6 +154,39 @@ function formatHeroDate(d: Date, lang: AppLang): string {
     return d.toDateString();
   }
 }
+
+/**
+ * Isolated 1-second timer so HomeView never re-renders or re-runs astronomy every second.
+ */
+const HeroPrayerStatus: React.FC<{
+  schedule: DailyPrayerSchedule;
+  lang: AppLang;
+}> = React.memo(({schedule, lang}) => {
+  const [tick, setTick] = useState<number>(() => Date.now());
+
+  useEffect(() => {
+    const id = window.setInterval(() => setTick(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const live = useMemo(
+    () => buildLiveRemainingCountdown(new Date(tick), schedule),
+    [tick, schedule]
+  );
+
+  return (
+    <div className="space-y-0.5">
+      <div className="text-xl sm:text-2xl font-bold tracking-tight">
+        {lang === 'ar' ? live.nextPrayer.nameAr : live.nextPrayer.nameEn}
+      </div>
+      <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-white/90 tabular-nums">
+        <span className="font-semibold text-white">{live.nextPrayer.formatted24}</span>
+        <span aria-hidden="true">·</span>
+        <span>{live.remainingFormatted}</span>
+      </div>
+    </div>
+  );
+});
 
 const HomeViewInner: React.FC<HomeViewProps> = ({
   lang,
@@ -179,25 +212,53 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
   onOpenQibla,
   onOpenDownloadApk,
 }) => {
-  const [selectedCity, setSelectedCity] = useState<QiblaCity>(getStoredCity);
-  const [now, setNow] = useState<Date>(() => new Date());
+  const [activeLoc, setActiveLoc] = useState<ActiveLocationState>(() => loadActiveLocation());
+  const [officialEntries, setOfficialEntries] = useState<PrayerTimeEntry[] | null>(null);
+  const [gpsLoading, setGpsLoading] = useState(false);
   const [pageJumpInput, setPageJumpInput] = useState('');
   const [copiedVerse, setCopiedVerse] = useState(false);
 
+  const todayDate = useMemo(() => new Date(), []);
+  const dateKey = `${todayDate.getFullYear()}-${todayDate.getMonth()}-${todayDate.getDate()}`;
+
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 1000);
-    return () => window.clearInterval(timer);
+    const syncLoc = () => setActiveLoc(loadActiveLocation(new Date()));
+    window.addEventListener(LOCATION_UPDATED_EVENT, syncLoc);
+    return () => window.removeEventListener(LOCATION_UPDATED_EVENT, syncLoc);
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    setOfficialEntries(null);
+    void fetchOfficialPrayerEntries(
+      new Date(),
+      activeLoc.lat,
+      activeLoc.lng,
+      activeLoc.method,
+      activeLoc.ianaTz
+    ).then((entries) => {
+      if (active && entries) {
+        setOfficialEntries(entries);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [activeLoc.lat, activeLoc.lng, activeLoc.method, activeLoc.ianaTz, dateKey]);
 
   const prayerSchedule = useMemo(
     () =>
       computeDailyPrayerSchedule(
-        now,
-        selectedCity.lat,
-        selectedCity.lng,
-        selectedCity.tzOffsetHours
+        new Date(),
+        activeLoc.lat,
+        activeLoc.lng,
+        activeLoc.tzOffsetHours,
+        {
+          method: activeLoc.method,
+          officialEntries,
+        }
       ),
-    [now, selectedCity]
+    [activeLoc, officialEntries, dateKey]
   );
 
   const nextPrayerIdx = useMemo(() => {
@@ -218,20 +279,28 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
   );
 
   const dailyVerse = useMemo(() => {
-    const dayIdx = Math.floor(now.getTime() / 86_400_000) % DAILY_VERSES.length;
+    const dayIdx = Math.floor(Date.now() / 86_400_000) % DAILY_VERSES.length;
     return DAILY_VERSES[dayIdx];
-  }, [now]);
+  }, [dateKey]);
 
-  const handleCityChange = (cityId: string) => {
-    const found = QIBLA_CITIES.find((c) => c.id === cityId);
-    if (!found) return;
-    setSelectedCity(found);
-    try {
-      localStorage.setItem(CITY_STORAGE_KEY, found.id);
-    } catch {
-      // ignore storage errors
-    }
-  };
+  const handleCityChange = useCallback((cityId: string) => {
+    setActiveLoc(saveSelectedCity(cityId));
+  }, []);
+
+  const handleUseGps = useCallback(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return;
+    setGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setActiveLoc(saveGpsLocation(pos.coords.latitude, pos.coords.longitude));
+        setGpsLoading(false);
+      },
+      () => {
+        setGpsLoading(false);
+      },
+      {enableHighAccuracy: true, timeout: 7000}
+    );
+  }, []);
 
   const handlePageJumpSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -273,10 +342,11 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
   const numFmt = (n: number) => (lang === 'ar' ? toArabicDigits(n) : String(n));
   const currentReadingPage = Math.max(1, Math.min(604, lastRead?.page || 1));
   const pageProgressPct = Math.max(2, Math.round((currentReadingPage / 604) * 100));
+  const activeMethodCfg = PRAYER_METHODS[activeLoc.method] || PRAYER_METHODS.mwl;
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 pt-4 sm:pt-6 pb-8 space-y-6">
-      {/* 1. Location & Quick Controls Bar (matching reference top location row + Riwayah/Jump) */}
+      {/* 1. Location, Live GPS & Quick Controls Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
         <div className="flex items-center justify-between gap-2 min-w-0">
           <div className="flex items-center gap-1.5 min-w-0">
@@ -286,9 +356,9 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
             />
             <select
               aria-label={t.selectCityLabel}
-              value={selectedCity.id}
+              value={activeLoc.cityId}
               onChange={(e) => handleCityChange(e.target.value)}
-              className="bg-transparent text-sm font-semibold text-[#142019] dark:text-[#F1F5F3] pe-1 py-1 focus:outline-none cursor-pointer truncate max-w-[205px] sm:max-w-none"
+              className="bg-transparent text-sm font-semibold text-[#142019] dark:text-[#F1F5F3] pe-1 py-1 focus:outline-none cursor-pointer truncate max-w-[175px] sm:max-w-none"
             >
               {QIBLA_CITIES.map((c) => (
                 <option
@@ -300,6 +370,24 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
                 </option>
               ))}
             </select>
+            <button
+              type="button"
+              data-testid="home-gps-btn"
+              onClick={() => {
+                triggerHaptic('light');
+                handleUseGps();
+              }}
+              aria-label={t.useGpsBtn}
+              title={t.useGpsBtn}
+              className={`h-7 px-2 rounded-lg surface-3d tactile-press inline-flex items-center gap-1 text-[11px] font-semibold shrink-0 ${
+                activeLoc.mode === 'gps'
+                  ? 'text-[#27784C] dark:text-[#52B77F] border-[#27784C]/35'
+                  : 'text-[#5A6B62] dark:text-[#92A59B]'
+              }`}
+            >
+              <LocateFixed className={`h-3.5 w-3.5 ${gpsLoading ? 'animate-spin' : ''}`} strokeWidth={1.8} />
+              <span className="hidden xs:inline">GPS</span>
+            </button>
           </div>
 
           {!isInstalled && (
@@ -374,36 +462,21 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
         </div>
       </div>
 
-      {/* 2. Signature 3D Reflective Emerald Hero Prayer Timeline Card with Ambient LED Halo */}
+      {/* 2. Signature 3D Reflective Emerald Hero Prayer Timeline Card */}
       <section
         aria-label={t.prayerTimesTitle}
         data-testid="home-prayer-times"
         className="relative overflow-hidden rounded-[22px] sm:rounded-3xl emerald-3d-hero led-backdrop p-5 sm:p-7 text-white"
       >
-        {/* Top-left 3D specular gloss reflection */}
         <div className="pointer-events-none absolute inset-0 gloss-sheen" />
-        {/* Delicate translucent mosque dome & minaret silhouette */}
         <div className="pointer-events-none absolute -bottom-2 end-2 text-white/[0.11]">
           <HeroMosqueWatermarkSvg className="w-48 h-28 sm:w-64 sm:h-36" />
         </div>
 
         <div className="relative z-10 space-y-5">
-          {/* Top Row: Next Prayer & Time | Bismillah Calligraphy | Date */}
+          {/* Top Row: Live Countdown | Bismillah | Date & Authority */}
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="space-y-0.5">
-              <div className="text-xl sm:text-2xl font-bold tracking-tight">
-                {lang === 'ar'
-                  ? prayerSchedule.nextPrayer.nameAr
-                  : prayerSchedule.nextPrayer.nameEn}
-              </div>
-              <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-white/90 tabular-nums">
-                <span className="font-semibold text-white">
-                  {prayerSchedule.nextPrayer.formatted24}
-                </span>
-                <span aria-hidden="true">·</span>
-                <span>{prayerSchedule.remainingFormatted}</span>
-              </div>
-            </div>
+            <HeroPrayerStatus schedule={prayerSchedule} lang={lang} />
 
             <div
               dir="rtl"
@@ -414,7 +487,10 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
 
             <div className="text-end space-y-0.5">
               <div className="text-xs font-medium text-white/85 tabular-nums">
-                {formatHeroDate(now, lang)}
+                {formatHeroDate(todayDate, lang)}
+              </div>
+              <div className="text-[10.5px] font-medium text-white/75 truncate">
+                {lang === 'ar' ? activeMethodCfg.nameAr : activeMethodCfg.nameEn}
               </div>
               <div
                 data-testid="home-reading-streak"
@@ -429,7 +505,6 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
 
           {/* 5-Prayer Connected Timeline Nodes */}
           <div className="relative pt-1 pb-1">
-            {/* Horizontal connecting bar */}
             <div
               aria-hidden="true"
               className="absolute top-[11px] inset-x-[10%] h-[1.5px] bg-white/30"
@@ -455,7 +530,7 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
                     <span className="text-[11px] sm:text-xs font-medium text-white/95 truncate max-w-full">
                       {lang === 'ar' ? entry.nameAr : entry.nameEn}
                     </span>
-                    <span className="text-[10px] sm:text-[11px] text-white/75 tabular-nums">
+                    <span className="text-[10px] sm:text-[11px] text-white/85 font-semibold tabular-nums">
                       {entry.formatted24}
                     </span>
                   </div>
@@ -487,7 +562,7 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
         </div>
       </section>
 
-      {/* 3. Features 2x2 Elevated 3D Bento Grid (Exact Layout Match) */}
+      {/* 3. Features 2x2 Elevated 3D Bento Grid */}
       <section
         aria-label={t.featuresShowcaseTitle}
         data-testid="home-features-showcase"
@@ -535,9 +610,7 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
           </div>
         </div>
 
-        {/* Primary 2x2 Bento matching screenshot */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          {/* Card 1: Featured 3D Emerald "Read Quran" Card with LED Backlight */}
           <button
             type="button"
             onClick={() => {
@@ -575,7 +648,6 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
             </span>
           </button>
 
-          {/* Card 2: "Last Read" 3D Porcelain Card */}
           <button
             type="button"
             data-testid="showcase-card-mushaf"
@@ -615,7 +687,6 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
             </div>
           </button>
 
-          {/* Card 3: "Learn Quran" / All Surahs & Audio 3D Card */}
           <button
             type="button"
             data-testid="home-browse-surahs-btn"
@@ -653,7 +724,6 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
             </div>
           </button>
 
-          {/* Card 4: "Bookmarks & Offline Vault" 3D Card */}
           <button
             type="button"
             data-testid="showcase-card-vault"
@@ -692,7 +762,7 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
           </button>
         </div>
 
-        {/* Compact Secondary Tools Strip (Qibla, Adhkar, Khatma, Search) */}
+        {/* Compact Secondary Tools Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {(
             [
@@ -752,7 +822,7 @@ const HomeViewInner: React.FC<HomeViewProps> = ({
         </div>
       </section>
 
-      {/* 4. Frequent Readings Row (4 Iconic Emerald Shamseh Rosette Cards) */}
+      {/* 4. Frequent Readings Row */}
       <section className="space-y-3.5">
         <div className="flex items-center justify-between px-0.5">
           <div className="flex items-center gap-2">

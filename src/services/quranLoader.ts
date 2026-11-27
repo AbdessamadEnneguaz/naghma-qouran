@@ -113,6 +113,16 @@ export interface StartupQuranBundle {
   fromCache: boolean;
 }
 
+export async function loadSurahsIndexOnly(): Promise<SurahMeta[]> {
+  const cachedSurahs = await getCachedQuranAsset<SurahMeta[]>('surahs');
+  if (cachedSurahs && cachedSurahs.length === 114) {
+    return cachedSurahs;
+  }
+  const surahs = await fetchJsonWithFallback<SurahMeta[]>('/data/surahs.json');
+  void setCachedQuranAsset('surahs', surahs);
+  return surahs;
+}
+
 /**
  * Loads only Surah metadata (28 KB) + the active Mushaf page (~10-20 verses)
  * on startup so mobile RAM and initial render stay minimal.
@@ -148,7 +158,7 @@ export async function loadStartupQuranBundle(
       : await fetchJsonWithFallback<SurahMeta[]>('/data/surahs.json');
 
   if (!cachedSurahs || cachedSurahs.length !== 114) {
-    await setCachedQuranAsset('surahs', surahs);
+    void setCachedQuranAsset('surahs', surahs);
   }
 
   if (cachedHafs && cachedHafs.length === 6236) {
@@ -167,10 +177,10 @@ export async function loadStartupQuranBundle(
   const initialPageVerses = hydratePageRows(targetRows, false);
   pageVersesMemCache.set(page, initialPageVerses);
 
-  // Shard all 604 pages into IndexedDB in the background right after first paint
+  // Shard all 604 pages into IndexedDB quietly without freezing touch frames
   setTimeout(() => {
     void persistShardedHafsPages(hafsRows);
-  }, 50);
+  }, 400);
 
   return {
     surahs,
@@ -375,35 +385,48 @@ export async function fetchVerseFrenchTranslation(
  * megabytes of parsed JSON inside React state.
  */
 export async function warmOfflineDatasetsInIndexedDb(): Promise<void> {
-  const [warsh, tafsir, trans] = await Promise.all([
-    getCachedQuranAsset<string[]>('warsh'),
-    getCachedQuranAsset<string[]>('tafsir'),
-    getCachedQuranAsset<string[]>('translation_en'),
-  ]);
-  const tasks: Promise<unknown>[] = [];
+  const pause = () => new Promise<void>((r) => setTimeout(r, 350));
+
+  const hafs = await getCachedQuranAsset<CompactHafsRow[]>('hafs');
+  if (!hafs || hafs.length !== 6236) {
+    try {
+      await ensureFullHafsRows();
+    } catch {
+      // ignore offline
+    }
+    await pause();
+  }
+
+  const warsh = await getCachedQuranAsset<string[]>('warsh');
   if (!warsh || warsh.length !== 6236) {
-    tasks.push(
-      fetchJsonWithFallback<string[]>('/data/quran-warsh.json').then((d) =>
-        setCachedQuranAsset('warsh', d)
-      )
-    );
+    try {
+      const d = await fetchJsonWithFallback<string[]>('/data/quran-warsh.json');
+      await setCachedQuranAsset('warsh', d);
+    } catch {
+      // ignore
+    }
+    await pause();
   }
+
+  const tafsir = await getCachedQuranAsset<string[]>('tafsir');
   if (!tafsir || tafsir.length !== 6236) {
-    tasks.push(
-      fetchJsonWithFallback<string[]>('/data/tafsir-muyassar.json').then((d) =>
-        setCachedQuranAsset('tafsir', d)
-      )
-    );
+    try {
+      const d = await fetchJsonWithFallback<string[]>('/data/tafsir-muyassar.json');
+      await setCachedQuranAsset('tafsir', d);
+    } catch {
+      // ignore
+    }
+    await pause();
   }
+
+  const trans = await getCachedQuranAsset<string[]>('translation_en');
   if (!trans || trans.length !== 6236) {
-    tasks.push(
-      fetchJsonWithFallback<string[]>('/data/translation-en.json').then((d) =>
-        setCachedQuranAsset('translation_en', d)
-      )
-    );
-  }
-  if (tasks.length > 0) {
-    await Promise.allSettled(tasks);
+    try {
+      const d = await fetchJsonWithFallback<string[]>('/data/translation-en.json');
+      await setCachedQuranAsset('translation_en', d);
+    } catch {
+      // ignore
+    }
   }
 }
 

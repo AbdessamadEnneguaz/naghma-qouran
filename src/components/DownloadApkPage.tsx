@@ -1,7 +1,8 @@
 import React, {useEffect, useState} from 'react';
-import {Download} from 'lucide-react';
+import {Check, Download, RefreshCw} from 'lucide-react';
 import type {AppLang, Translations} from '../i18n/translations';
 import {getApkDownloadUrl} from '../hooks/usePWAInstall';
+import type {UpdateCheckStatus} from '../hooks/useAppUpdater';
 import {
   APP_VERSION,
   DEFAULT_APK_FILENAME,
@@ -18,6 +19,14 @@ interface DownloadApkPageProps {
   isInstallable: boolean;
   isInstalled: boolean;
   currentVersion?: string;
+  otaServerUrl?: string;
+  autoOtaSync?: boolean;
+  updateAvailable?: boolean;
+  updateStatus?: UpdateCheckStatus;
+  onSetOtaServerUrl?: (url: string) => string;
+  onToggleAutoOtaSync?: (enabled: boolean) => void;
+  onCheckUpdates?: () => Promise<unknown>;
+  onApplyUpdate?: () => Promise<void>;
   onTriggerNativeInstall: () => Promise<boolean>;
 }
 
@@ -27,6 +36,14 @@ export const DownloadApkPage: React.FC<DownloadApkPageProps> = ({
   isInstallable,
   isInstalled,
   currentVersion = APP_VERSION,
+  otaServerUrl = '',
+  autoOtaSync = true,
+  updateAvailable = false,
+  updateStatus = 'idle',
+  onSetOtaServerUrl,
+  onToggleAutoOtaSync,
+  onCheckUpdates,
+  onApplyUpdate,
   onTriggerNativeInstall,
 }) => {
   const apkUrl = getApkDownloadUrl();
@@ -35,6 +52,12 @@ export const DownloadApkPage: React.FC<DownloadApkPageProps> = ({
   );
   const [apkVerified, setApkVerified] = useState<boolean>(false);
   const [downloadStarted, setDownloadStarted] = useState<boolean>(false);
+  const [otaUrlDraft, setOtaUrlDraft] = useState<string>(otaServerUrl);
+  const [otaSavedFeedback, setOtaSavedFeedback] = useState<boolean>(false);
+
+  useEffect(() => {
+    setOtaUrlDraft(otaServerUrl);
+  }, [otaServerUrl]);
 
   useEffect(() => {
     if (!isLocalApkPath(apkUrl) || isInstalled) return;
@@ -137,7 +160,110 @@ export const DownloadApkPage: React.FC<DownloadApkPageProps> = ({
             </div>
           )}
 
-          <div className="pt-4 border-t border-[#E2EAE5] dark:border-[#1E2E26] space-y-2">
+          {/* Live Website-to-APK Sync Controls */}
+          <div className="rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-[#F4F7F5] dark:bg-[#0A110E] p-4 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-xs font-bold text-[#142019] dark:text-[#F1F5F3]">
+                  {lang === 'ar'
+                    ? 'مزامنة التحديثات المباشرة من الموقع للـ APK'
+                    : 'Website-to-APK Live OTA Sync'}
+                </h2>
+                <p className="text-[11px] text-[#5A6B62] dark:text-[#92A59B]">
+                  {lang === 'ar'
+                    ? 'عند نشر أي تحديث جديد في الموقع يتم اكتشافه وتطبيقه داخل التطبيق بأمان.'
+                    : 'Detects new website releases and syncs updates inside the installed APK safely.'}
+                </p>
+              </div>
+              {onToggleAutoOtaSync && (
+                <button
+                  type="button"
+                  data-testid="toggle-auto-ota-btn"
+                  role="switch"
+                  aria-checked={autoOtaSync}
+                  onClick={() => onToggleAutoOtaSync(!autoOtaSync)}
+                  className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-colors ${
+                    autoOtaSync
+                      ? 'bg-[#27784C] text-white'
+                      : 'bg-[#E2EAE5] dark:bg-[#1E2E26] text-[#5A6B62] dark:text-[#92A59B]'
+                  }`}
+                >
+                  {autoOtaSync
+                    ? lang === 'ar'
+                      ? 'مزامنة تلقائية: مفعّلة'
+                      : 'Auto-Sync: ON'
+                    : lang === 'ar'
+                      ? 'مزامنة تلقائية: إيقاف'
+                      : 'Auto-Sync: OFF'}
+                </button>
+              )}
+            </div>
+
+            {onSetOtaServerUrl && (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  onSetOtaServerUrl(otaUrlDraft);
+                  setOtaSavedFeedback(true);
+                  window.setTimeout(() => setOtaSavedFeedback(false), 2000);
+                  if (onCheckUpdates) void onCheckUpdates();
+                }}
+                className="flex flex-wrap items-center gap-2"
+              >
+                <input
+                  type="url"
+                  dir="ltr"
+                  value={otaUrlDraft}
+                  onChange={(e) => setOtaUrlDraft(e.target.value)}
+                  aria-label="Live Website URL"
+                  placeholder="https://your-site.com"
+                  className="flex-1 min-w-[190px] rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-white dark:bg-[#111C17] px-3 py-1.5 text-xs text-[#142019] dark:text-[#F1F5F3]"
+                />
+                <button
+                  type="submit"
+                  className="rounded-xl bg-[#27784C] px-3.5 py-1.5 text-xs font-bold text-white"
+                >
+                  {otaSavedFeedback ? (
+                    <span className="inline-flex items-center gap-1">
+                      <Check className="h-3.5 w-3.5" />
+                      {lang === 'ar' ? 'تم الحفظ' : 'Saved'}
+                    </span>
+                  ) : lang === 'ar' ? (
+                    'حفظ وفحص'
+                  ) : (
+                    'Save & Check'
+                  )}
+                </button>
+                {onCheckUpdates && (
+                  <button
+                    type="button"
+                    data-testid="apk-check-updates-btn"
+                    onClick={() => void (updateAvailable && onApplyUpdate ? onApplyUpdate() : onCheckUpdates())}
+                    className="inline-flex items-center gap-1 rounded-xl border border-[#27784C]/35 bg-white dark:bg-[#111C17] px-3 py-1.5 text-xs font-semibold text-[#27784C] dark:text-[#52B77F]"
+                  >
+                    <RefreshCw
+                      className={`h-3.5 w-3.5 ${updateStatus === 'checking' ? 'animate-spin' : ''}`}
+                    />
+                    <span>
+                      {updateAvailable
+                        ? lang === 'ar'
+                          ? 'تطبيق التحديث'
+                          : 'Apply Update'
+                        : updateStatus === 'checking'
+                          ? lang === 'ar'
+                            ? 'جاري الفحص...'
+                            : 'Checking...'
+                          : lang === 'ar'
+                            ? 'فحص التحديثات'
+                            : 'Check Updates'}
+                    </span>
+                  </button>
+                )}
+              </form>
+            )}
+          </div>
+
+          <div className="pt-2 border-t border-[#E2EAE5] dark:border-[#1E2E26] space-y-2">
             <h2 className="text-xs font-semibold tracking-wide text-[#142019] dark:text-[#F1F5F3]">
               {lang === 'ar' ? 'خطوات التثبيت والتحديث التلقائي' : 'Installation & Auto-Update Guide'}
             </h2>
@@ -151,11 +277,6 @@ export const DownloadApkPage: React.FC<DownloadApkPageProps> = ({
               className="rounded-xl border border-[#E2EAE5] dark:border-[#1E2E26] bg-[#F4F7F5] dark:bg-[#15241D] px-3.5 py-2.5 text-xs font-medium text-[#142019] dark:text-[#F1F5F3]"
             >
               {t.apkUninstallTip}
-            </p>
-            <p className="text-xs text-[#27784C] dark:text-[#52B77F] pt-1">
-              {lang === 'ar'
-                ? 'التحديثات المباشرة: أي تحسين أو ميزة جديدة تُنشر هنا تصلك تلقائياً داخل التطبيق دون حاجة لإعادة التحميل.'
-                : 'Live OTA Sync: Future design improvements and features published here sync automatically to your installed app.'}
             </p>
           </div>
         </div>

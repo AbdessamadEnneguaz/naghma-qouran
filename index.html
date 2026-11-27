@@ -28,15 +28,30 @@
     <link
       href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Scheherazade+New:wght@400;600;700&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
-    <script
-      async
-      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7012260166484402"
-      crossorigin="anonymous"
-    ></script>
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Scheherazade+New:wght@400;600;700&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
     <script>
       (function () {
         try {
+          var isNative =
+            Boolean(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ||
+            window.location.protocol === 'file:' ||
+            window.location.protocol === 'capacitor:' ||
+            (window.location.hostname === 'localhost' && window.location.port === '');
+          if (!isNative && window.location.hostname.indexOf('localhost') === -1) {
+            var s = document.createElement('script');
+            s.async = true;
+            s.crossOrigin = 'anonymous';
+            s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7012260166484402';
+            document.head.appendChild(s);
+          }
           var saved = localStorage.getItem('najm_theme') || localStorage.getItem('naghma_theme');
           var theme = saved === 'dark' ? 'dark' : 'light';
           var root = document.documentElement;

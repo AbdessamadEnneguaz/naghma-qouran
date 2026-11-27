@@ -43,10 +43,10 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header
-      className={`sticky top-0 z-30 pt-safe-top border-b border-[#E2EAE5]/80 dark:border-[#1E2E26]/80 bg-white/85 dark:bg-[#0D1612]/88 backdrop-blur-xl shadow-[0_4px_24px_-8px_rgba(17,68,43,0.12)] transition-transform duration-300 ${
+      className={`z-30 pt-safe-top border-b border-[#E2EAE5]/80 dark:border-[#1E2E26]/80 bg-white/85 dark:bg-[#0D1612]/88 backdrop-blur-xl shadow-[0_4px_24px_-8px_rgba(17,68,43,0.12)] transition-transform duration-300 ${
         hidden
-          ? '-translate-y-full opacity-0 pointer-events-none'
-          : 'translate-y-0 opacity-100'
+          ? 'fixed inset-x-0 top-0 -translate-y-full opacity-0 pointer-events-none'
+          : 'sticky top-0 translate-y-0 opacity-100'
       }`}
     >
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
