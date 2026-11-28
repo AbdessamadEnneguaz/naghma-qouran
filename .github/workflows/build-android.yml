@@ -1,0 +1,150 @@
+name: Build Native Android APK & AAB
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    name: Build Signed APK & Play Store AAB
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Set up Java 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK Build-Tools 34 & Platform 34
+        run: |
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Install npm dependencies
+        run: npm ci || npm install --legacy-peer-deps
+
+      - name: Build Vite production web bundle
+        run: npm run build
+
+      - name: Sync Capacitor Android project
+        run: npx cap sync android
+
+      - name: Prepare release signing keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          SECRET_KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          SECRET_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          SECRET_KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          KEYSTORE_PATH="${GITHUB_WORKSPACE}/release-keystore.jks"
+          KS_PASS="${SECRET_KEYSTORE_PASS:-mihrabnoor2026}"
+          K_ALIAS="${SECRET_KEY_ALIAS:-mihrabnoor}"
+          K_PASS="${SECRET_KEY_PASS:-${KS_PASS}}"
+
+          if [ -n "${ANDROID_KEYSTORE_BASE64}" ]; then
+            echo "${ANDROID_KEYSTORE_BASE64}" | base64 --decode > "${KEYSTORE_PATH}"
+            echo "Decoded release keystore from GitHub Secret."
+          else
+            keytool -genkeypair -v \
+              -keystore "${KEYSTORE_PATH}" \
+              -storetype PKCS12 \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -alias "${K_ALIAS}" \
+              -storepass "${KS_PASS}" \
+              -keypass "${K_PASS}" \
+              -dname "CN=Mihrab Noor, OU=Quran App, O=Mihrab Noor, L=Casablanca, S=Casablanca, C=MA"
+            echo "Generated fallback deterministic release keystore."
+          fi
+
+          echo "ANDROID_KEYSTORE_PATH=${KEYSTORE_PATH}" >> "$GITHUB_ENV"
+          echo "ANDROID_KEYSTORE_PASSWORD=${KS_PASS}" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_ALIAS=${K_ALIAS}" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_PASSWORD=${K_PASS}" >> "$GITHUB_ENV"
+
+      - name: Build Release APK and Play Store AAB
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease bundleRelease --no-daemon
+
+      - name: Zipalign and sign release APK & package artifacts
+        run: |
+          mkdir -p dist-android
+
+          BUILD_TOOLS_DIR=$(find "${ANDROID_HOME}/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -n 1)
+          ZIPALIGN="${BUILD_TOOLS_DIR}/zipalign"
+          APKSIGNER="${BUILD_TOOLS_DIR}/apksigner"
+
+          RAW_APK=$(find android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          if [ -z "${RAW_APK}" ]; then
+            echo "ERROR: No release APK found in android/app/build/outputs/apk/release"
+            exit 1
+          fi
+
+          "${ZIPALIGN}" -f -p 4 "${RAW_APK}" dist-android/mihrab-noor-aligned.apk
+          "${APKSIGNER}" sign \
+            --ks "${ANDROID_KEYSTORE_PATH}" \
+            --ks-pass "pass:${ANDROID_KEYSTORE_PASSWORD}" \
+            --ks-key-alias "${ANDROID_KEY_ALIAS}" \
+            --key-pass "pass:${ANDROID_KEY_PASSWORD}" \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            --out dist-android/mihrab-noor-native.apk \
+            dist-android/mihrab-noor-aligned.apk
+
+          "${APKSIGNER}" verify --verbose dist-android/mihrab-noor-native.apk
+          rm -f dist-android/mihrab-noor-aligned.apk dist-android/mihrab-noor-native.apk.idsig
+
+          RAW_AAB=$(find android/app/build/outputs/bundle/release -name "*.aab" | head -n 1)
+          if [ -z "${RAW_AAB}" ]; then
+            echo "ERROR: No release AAB found in android/app/build/outputs/bundle/release"
+            exit 1
+          fi
+          cp "${RAW_AAB}" dist-android/mihrab-noor-playstore.aab
+          jarsigner -verify dist-android/mihrab-noor-playstore.aab
+
+      - name: Upload APK and AAB as GitHub Actions Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mihrab-noor-android-release
+          path: |
+            dist-android/mihrab-noor-native.apk
+            dist-android/mihrab-noor-playstore.aab
+          retention-days: 90
+
+      - name: Publish or Update GitHub Release (latest-apk)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-apk
+          name: Mihrab Noor Native Android (v3.1.0)
+          body: |
+            ### Mihrab Noor (مِحْرَاب النُّور) — Native Android Release
+            - **Native Foreground Service (`mediaPlayback`)**: Continuous background Quran recitation & lock-screen media controls when minimized or screen locked.
+            - **Native Local Notifications**: Reliable Android system-tray alarms for Daily Khatma Wird, Friday Surah Al-Kahf, Prayer Times & Adhkar even when the app is closed.
+            - **Direct APK**: `mihrab-noor-native.apk`
+            - **Google Play Store Bundle**: `mihrab-noor-playstore.aab`
+          make_latest: true
+          files: |
+            dist-android/mihrab-noor-native.apk
+            dist-android/mihrab-noor-playstore.aab

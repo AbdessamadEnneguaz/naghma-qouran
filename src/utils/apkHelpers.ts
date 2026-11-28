@@ -110,3 +110,71 @@ export function hasNewerBuildVersion(
   if (!localBuildId || !remoteBuildId) return false;
   return localBuildId.trim() !== remoteBuildId.trim();
 }
+
+export function hasNativeCapacitorLocalNotifications(): boolean {
+  if (typeof window === 'undefined') return false;
+  const cap = window.Capacitor as
+    | {Plugins?: Record<string, {schedule?: unknown}>}
+    | undefined;
+  return Boolean(cap?.Plugins?.LocalNotifications && typeof cap.Plugins.LocalNotifications.schedule === 'function');
+}
+
+export function isPrebuiltApkMissingNativePlugins(): boolean {
+  if (typeof window === 'undefined') return false;
+  return (
+    isCapacitorAppOrigin(window.location.protocol, window.location.hostname) &&
+    !hasNativeCapacitorLocalNotifications()
+  );
+}
+
+export const DEFAULT_GITHUB_REPO =
+  ((typeof import.meta !== 'undefined' &&
+    (import.meta as unknown as {env?: Record<string, string | undefined>}).env?.VITE_GITHUB_REPO) ||
+    'abdessamad-enneguaz/mihrab-noor').trim();
+
+const GITHUB_REPO_STORAGE_KEY = 'mihrab_github_repo_v1';
+
+export function normalizeGithubRepo(input: string | null | undefined): string {
+  const raw = (input || '').trim();
+  const stripped = raw
+    .replace(/^https?:\/\/(www\.)?github\.com\//i, '')
+    .replace(/\.git$/i, '')
+    .replace(/^\/+|\/+$/g, '');
+  const parts = stripped.split('/').filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0]}/${parts[1]}`;
+  }
+  return DEFAULT_GITHUB_REPO;
+}
+
+export function loadGithubRepo(): string {
+  if (typeof window === 'undefined') return DEFAULT_GITHUB_REPO;
+  try {
+    const saved = localStorage.getItem(GITHUB_REPO_STORAGE_KEY);
+    if (saved && saved.includes('/')) {
+      return normalizeGithubRepo(saved);
+    }
+  } catch {
+    // ignore storage errors
+  }
+  return DEFAULT_GITHUB_REPO;
+}
+
+export function saveGithubRepo(repo: string): string {
+  const normalized = normalizeGithubRepo(repo);
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(GITHUB_REPO_STORAGE_KEY, normalized);
+    } catch {
+      // ignore storage errors
+    }
+  }
+  return normalized;
+}
+
+export function buildGithubReleaseApkUrl(repo: string): string {
+  const normalized = normalizeGithubRepo(repo);
+  return `https://github.com/${normalized}/releases/download/latest-apk/mihrab-noor-native.apk`;
+}
+
+

@@ -16,6 +16,7 @@ import type {AppLang, Translations} from '../i18n/translations';
 import type {NotificationChannelPrefs} from '../utils/notificationCenterLogic';
 import {computeSheetDragOffset, evaluateSwipeDismiss} from '../utils/swipeSheetLogic';
 import {triggerHaptic} from '../utils/haptics';
+import {isPrebuiltApkMissingNativePlugins, loadOtaServerUrl} from '../utils/apkHelpers';
 
 interface NotificationsModalProps {
   isOpen: boolean;
@@ -108,6 +109,8 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
 
   const isPermGranted = permission === 'granted';
   const isPermDenied = permission === 'denied';
+  const needsPwaOrNativeBuild = isPrebuiltApkMissingNativePlugins();
+  const pwaLiveUrl = loadOtaServerUrl();
 
   const channels = [
     {
@@ -317,6 +320,40 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
               </button>
             )}
           </div>
+
+          {needsPwaOrNativeBuild && (
+            <div
+              data-testid="apk-native-limitation-notice"
+              className="rounded-2xl border border-[#27784C]/25 dark:border-[#52B77F]/30 bg-[#F4F7F5] dark:bg-[#0A110E] p-3.5 space-y-2"
+            >
+              <p className="text-xs font-semibold text-[#142019] dark:text-[#F1F5F3]">
+                {lang === 'ar'
+                  ? 'لإشعارات شريط الهاتف والصوت في الخلفية:'
+                  : lang === 'fr'
+                    ? 'Notifications système & audio en arrière-plan :'
+                    : 'Phone Status-Bar Alerts & Background Audio:'}
+              </p>
+              <p className="text-[11px] text-[#5A6B62] dark:text-[#92A59B] leading-relaxed">
+                {lang === 'ar'
+                  ? 'النسخة المجمّعة من المتصفح (APK) تعرض التنبيهات داخل التطبيق فقط. لتشغيل الإشعارات خارج التطبيق والقراءة في الخلفية فوراً على هاتفك، افتح الموقع في Chrome واختر «تثبيت التطبيق / Add to Home Screen».'
+                  : lang === 'fr'
+                    ? 'Cet APK précompilé ne contient pas le service natif d’arrière-plan. Pour recevoir les notifications système et garder l’audio en arrière-plan, ouvrez le site dans Chrome et installez la PWA.'
+                    : 'This prebuilt WebView APK lacks compiled native background services. Open the live site in Chrome and tap Install App (PWA) for full background audio & OS notifications.'}
+              </p>
+              <a
+                href={pwaLiveUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#27784C] px-3.5 py-1.5 text-[11px] font-bold text-white"
+              >
+                {lang === 'ar'
+                  ? 'فتح نسخة Chrome (PWA)'
+                  : lang === 'fr'
+                    ? 'Ouvrir dans Chrome (PWA)'
+                    : 'Open Chrome PWA'}
+              </a>
+            </div>
+          )}
 
           {/* 4 Big Interactive 3D Notification Squares */}
           <div className="grid grid-cols-2 gap-3" data-testid="notification-channels-grid">

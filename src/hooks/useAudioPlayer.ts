@@ -39,6 +39,12 @@ import {
   startAudioKeepAlive,
   stopAudioKeepAlive,
 } from '../utils/backgroundAudioKeepAlive';
+import {
+  buildMediaNotificationMetadata,
+  startOrUpdateNativeMediaService,
+  stopNativeMediaService,
+  subscribeNativeMediaActions,
+} from '../utils/nativeAndroidBridge';
 import type {AppLang} from '../i18n/translations';
 
 export type SleepTimerOption = 0 | 15 | 30 | 45 | 60 | -1; // -1 = end of surah
@@ -1049,6 +1055,7 @@ export function useAudioPlayer({
     return () => {
       clearTalqeenTimer();
       disposeAudioKeepAlive();
+      void stopNativeMediaService();
       detach0();
       detach1();
       lookahead2.removeEventListener('error', handleLookahead2Error);
@@ -1072,61 +1079,75 @@ export function useAudioPlayer({
   ]);
 
   // 60fps zero-re-render pub-sub loop for waveform bar + DOM verse highlight (throttles React clock to ~2Hz)
+  // Includes a 1s interval fallback when tab/screen is backgrounded so Surah verse sync & MediaSession stay current.
   useEffect(() => {
     if (!isPlaying) return;
     let rafId = 0;
 
-    const tick = () => {
+    const runSyncFrame = () => {
       const audio = decksRef.current?.[activeDeckIdxRef.current];
-      if (audio && !audio.paused) {
-        const curSec = audio.currentTime || 0;
-        const durSec = Number.isFinite(audio.duration) ? audio.duration : 0;
+      if (!audio || audio.paused) return;
 
-        emitProgress(curSec, durSec, false);
+      const curSec = audio.currentTime || 0;
+      const durSec = Number.isFinite(audio.duration) ? audio.duration : 0;
 
-        const {
-          reciter: r,
-          activeSurah: s,
-          audioSyncOffsetSec: offsetSec,
-          playbackSpeed: speed,
-        } = stateRef.current;
+      emitProgress(curSec, durSec, false);
 
-        if (durSec > 0) {
-          syncMediaSessionPosition(durSec, curSec, speed);
-        }
+      const {
+        reciter: r,
+        activeSurah: s,
+        audioSyncOffsetSec: offsetSec,
+        playbackSpeed: speed,
+      } = stateRef.current;
 
-        if (r.mode === 'surah' && durSec > 0) {
-          const segments = getVerifiedTimingSegments(r, s);
-          const pending = pendingSurahSeekAyahRef.current;
-          if (pending && pending.surah === s && pending.ayah > 1 && segments.length > 0) {
-            const targetSeg = segments.find((seg) => seg.ayah === pending.ayah);
-            pendingSurahSeekAyahRef.current = null;
-            if (targetSeg) {
-              audio.currentTime = Math.min(
-                Math.max(0, durSec - 0.5),
-                targetSeg.startMs / 1000
-              );
-            }
-          } else if (segments.length > 0) {
-            const matchedAyah = findAyahAtTimeMs(segments, curSec * 1000, offsetSec);
-            if (matchedAyah !== null && matchedAyah !== stateRef.current.activeAyah) {
-              stateRef.current.activeAyah = matchedAyah;
-              loadedTrackRef.current = {
-                surah: s,
-                ayah: matchedAyah,
-                reciterId: r.id,
-              };
-              setActiveAyah(matchedAyah);
-              void notifyActiveVerseChange(s, matchedAyah);
-            }
+      if (durSec > 0) {
+        syncMediaSessionPosition(durSec, curSec, speed);
+      }
+
+      if (r.mode === 'surah' && durSec > 0) {
+        const segments = getVerifiedTimingSegments(r, s);
+        const pending = pendingSurahSeekAyahRef.current;
+        if (pending && pending.surah === s && pending.ayah > 1 && segments.length > 0) {
+          const targetSeg = segments.find((seg) => seg.ayah === pending.ayah);
+          pendingSurahSeekAyahRef.current = null;
+          if (targetSeg) {
+            audio.currentTime = Math.min(
+              Math.max(0, durSec - 0.5),
+              targetSeg.startMs / 1000
+            );
+          }
+        } else if (segments.length > 0) {
+          const matchedAyah = findAyahAtTimeMs(segments, curSec * 1000, offsetSec);
+          if (matchedAyah !== null && matchedAyah !== stateRef.current.activeAyah) {
+            stateRef.current.activeAyah = matchedAyah;
+            loadedTrackRef.current = {
+              surah: s,
+              ayah: matchedAyah,
+              reciterId: r.id,
+            };
+            setActiveAyah(matchedAyah);
+            void notifyActiveVerseChange(s, matchedAyah);
           }
         }
       }
+    };
+
+    const tick = () => {
+      runSyncFrame();
       rafId = window.requestAnimationFrame(tick);
     };
 
     rafId = window.requestAnimationFrame(tick);
-    return () => window.cancelAnimationFrame(rafId);
+    const bgInterval = window.setInterval(() => {
+      if (document.hidden) {
+        runSyncFrame();
+      }
+    }, 1000);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.clearInterval(bgInterval);
+    };
   }, [
     isPlaying,
     emitProgress,
@@ -1399,6 +1420,50 @@ export function useAudioPlayer({
         true
       );
     }
+
+    if (isPlaying) {
+      const surahLabel =
+        lang === 'ar'
+          ? surahMeta?.nameAr || `سورة ${activeSurah}`
+          : surahMeta?.nameEn || `Surah ${activeSurah}`;
+      const reciterLabel = lang === 'ar' ? reciter.nameAr : reciter.nameEn;
+      const nativeMeta = buildMediaNotificationMetadata(
+        surahLabel,
+        activeSurah,
+        activeAyah,
+        reciterLabel,
+        lang
+      );
+      void startOrUpdateNativeMediaService({
+        title: nativeMeta.title,
+        body: nativeMeta.body,
+        isPlaying: true,
+        surah: activeSurah,
+        ayah: activeAyah,
+      });
+    } else if (!hasStarted) {
+      void stopNativeMediaService();
+    } else {
+      const surahLabel =
+        lang === 'ar'
+          ? surahMeta?.nameAr || `سورة ${activeSurah}`
+          : surahMeta?.nameEn || `Surah ${activeSurah}`;
+      const reciterLabel = lang === 'ar' ? reciter.nameAr : reciter.nameEn;
+      const nativeMeta = buildMediaNotificationMetadata(
+        surahLabel,
+        activeSurah,
+        activeAyah,
+        reciterLabel,
+        lang
+      );
+      void startOrUpdateNativeMediaService({
+        title: nativeMeta.title,
+        body: nativeMeta.body,
+        isPlaying: false,
+        surah: activeSurah,
+        ayah: activeAyah,
+      });
+    }
   }, [
     hasStarted,
     isPlaying,
@@ -1503,7 +1568,49 @@ export function useAudioPlayer({
       }
     });
 
+    let unsubscribeNative: (() => void) | null = null;
+    void subscribeNativeMediaActions((action) => {
+      if (action === 'play') {
+        const activeDeck = decksRef.current?.[activeDeckIdxRef.current];
+        const {activeSurah: s, activeAyah: a, hasStarted: started} = stateRef.current;
+        if (!activeDeck || !started || !activeDeck.src) {
+          void loadAndPlay(s, a, true);
+          return;
+        }
+        startAudioKeepAlive();
+        autoplayIntendedRef.current = true;
+        void activeDeck.play().then(() => setIsPlaying(true)).catch(() => {
+          void loadAndPlay(s, a, true);
+        });
+      } else if (action === 'pause') {
+        clearTalqeenTimer();
+        stopAudioKeepAlive();
+        autoplayIntendedRef.current = false;
+        decksRef.current?.[activeDeckIdxRef.current]?.pause();
+        setIsPlaying(false);
+      } else if (action === 'next') {
+        playNext();
+      } else if (action === 'previous') {
+        playPrev();
+      } else if (action === 'stop') {
+        clearTalqeenTimer();
+        stopAudioKeepAlive();
+        autoplayIntendedRef.current = false;
+        const activeDeck = decksRef.current?.[activeDeckIdxRef.current];
+        if (activeDeck) {
+          activeDeck.pause();
+          activeDeck.currentTime = 0;
+        }
+        setIsPlaying(false);
+        emitProgress(0, 0, true);
+        void stopNativeMediaService();
+      }
+    }).then((unsub) => {
+      unsubscribeNative = unsub;
+    });
+
     return () => {
+      unsubscribeNative?.();
       safeSetHandler('play', null);
       safeSetHandler('pause', null);
       safeSetHandler('previoustrack', null);

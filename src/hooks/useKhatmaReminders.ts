@@ -26,6 +26,13 @@ import {
 } from '../utils/qiblaLogic';
 import type {AppRoute} from '../utils/routing';
 import {loadKhatmaPlan, saveKhatmaPlan} from '../services/indexedDbVault';
+import {
+  checkNativeNotificationPermission,
+  fireNativeLocalNotificationNow,
+  isNativeAndroidPlatform,
+  requestNativeNotificationPermission,
+  scheduleNativeLocalNotifications,
+} from '../utils/nativeAndroidBridge';
 
 export interface NotificationToastPreview {
   title: string;
@@ -84,6 +91,12 @@ export function useKhatmaReminders(lang: AppLang) {
   }, []);
 
   useEffect(() => {
+    if (isNativeAndroidPlatform()) {
+      void checkNativeNotificationPermission().then((perm) => {
+        setPermission(perm);
+      });
+      return;
+    }
     const capNotif = getCapacitorLocalNotifications();
     if (!capNotif?.checkPermissions) return;
     void capNotif
@@ -166,27 +179,31 @@ export function useKhatmaReminders(lang: AppLang) {
       );
 
       // 1. Native Capacitor LocalNotifications plugin (Android/iOS outside-app background alarms)
-      const capNotif = getCapacitorLocalNotifications();
-      if (capNotif?.schedule) {
-        try {
-          if (capNotif.cancel) {
-            await capNotif.cancel({
-              notifications: Array.from({length: 30}, (_, i) => ({id: 101 + i})),
-            });
+      if (isNativeAndroidPlatform()) {
+        await scheduleNativeLocalNotifications(items);
+      } else {
+        const capNotif = getCapacitorLocalNotifications();
+        if (capNotif?.schedule) {
+          try {
+            if (capNotif.cancel) {
+              await capNotif.cancel({
+                notifications: Array.from({length: 30}, (_, i) => ({id: 101 + i})),
+              });
+            }
+            if (items.length > 0) {
+              await capNotif.schedule({
+                notifications: items.slice(0, 20).map((it) => ({
+                  id: it.id,
+                  title: it.title,
+                  body: it.body,
+                  schedule: {at: new Date(it.fireAtMs), allowWhileIdle: true},
+                  extra: {route: it.route, surahId: it.surahId ?? null},
+                })),
+              });
+            }
+          } catch {
+            // ignore native plugin errors
           }
-          if (items.length > 0) {
-            await capNotif.schedule({
-              notifications: items.slice(0, 20).map((it) => ({
-                id: it.id,
-                title: it.title,
-                body: it.body,
-                schedule: {at: new Date(it.fireAtMs), allowWhileIdle: true},
-                extra: {route: it.route, surahId: it.surahId ?? null},
-              })),
-            });
-          }
-        } catch {
-          // ignore native plugin errors
         }
       }
 
@@ -245,6 +262,14 @@ export function useKhatmaReminders(lang: AppLang) {
       surahId?: number
     ): Promise<NotificationPermission | 'unsupported'> => {
       if (typeof window === 'undefined') return 'unsupported';
+
+      if (isNativeAndroidPlatform() && permission === 'granted') {
+        const fired = await fireNativeLocalNotificationNow(title, body, {
+          route,
+          surahId: surahId ?? null,
+        });
+        if (fired) return 'granted';
+      }
 
       const capNotif = getCapacitorLocalNotifications();
       if (capNotif?.schedule && permission === 'granted') {
@@ -316,29 +341,34 @@ export function useKhatmaReminders(lang: AppLang) {
 
   const ensureNotificationPermission = useCallback(async () => {
     let perm: NotificationPermission | 'unsupported' = permission;
-    const capNotif = getCapacitorLocalNotifications();
+    if (isNativeAndroidPlatform()) {
+      perm = await requestNativeNotificationPermission();
+      setPermission(perm);
+    } else {
+      const capNotif = getCapacitorLocalNotifications();
 
-    if (capNotif?.requestPermissions) {
-      try {
-        const res = await capNotif.requestPermissions();
-        perm = res?.display === 'granted' ? 'granted' : res?.display === 'denied' ? 'denied' : 'default';
-        setPermission(perm);
-      } catch {
-        // continue to web check
-      }
-    }
-
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      if (Notification.permission === 'default') {
+      if (capNotif?.requestPermissions) {
         try {
-          perm = await Notification.requestPermission();
+          const res = await capNotif.requestPermissions();
+          perm = res?.display === 'granted' ? 'granted' : res?.display === 'denied' ? 'denied' : 'default';
+          setPermission(perm);
         } catch {
-          perm = Notification.permission;
+          // continue to web check
         }
-        setPermission(perm);
-      } else {
-        perm = Notification.permission;
-        setPermission(perm);
+      }
+
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        if (Notification.permission === 'default') {
+          try {
+            perm = await Notification.requestPermission();
+          } catch {
+            perm = Notification.permission;
+          }
+          setPermission(perm);
+        } else {
+          perm = Notification.permission;
+          setPermission(perm);
+        }
       }
     }
 

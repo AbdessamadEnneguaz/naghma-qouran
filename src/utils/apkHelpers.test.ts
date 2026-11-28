@@ -45,3 +45,21 @@ test('hasNewerBuildVersion detects build changes cleanly', () => {
   assert.equal(hasNewerBuildVersion(null, 'build-2'), false);
   assert.equal(hasNewerBuildVersion('build-1', null), false);
 });
+
+test('hasNativeCapacitorLocalNotifications safely returns false outside native Capacitor runtime', async () => {
+  const mod = await import('./apkHelpers');
+  assert.equal(mod.hasNativeCapacitorLocalNotifications(), false);
+  assert.equal(mod.isPrebuiltApkMissingNativePlugins(), false);
+});
+
+test('normalizeGithubRepo and buildGithubReleaseApkUrl format release APK links cleanly', async () => {
+  const mod = await import('./apkHelpers');
+  assert.equal(mod.normalizeGithubRepo('https://github.com/octocat/mihrab-noor.git'), 'octocat/mihrab-noor');
+  assert.equal(mod.normalizeGithubRepo('octocat/mihrab-noor/'), 'octocat/mihrab-noor');
+  assert.equal(
+    mod.buildGithubReleaseApkUrl('octocat/mihrab-noor'),
+    'https://github.com/octocat/mihrab-noor/releases/download/latest-apk/mihrab-noor-native.apk'
+  );
+});
+
+

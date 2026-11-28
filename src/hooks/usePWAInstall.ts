@@ -17,9 +17,10 @@ export function usePWAInstall() {
 
   useEffect(() => {
     const ua = window.navigator.userAgent.toLowerCase();
+    const cap = (window as unknown as {Capacitor?: {isNativePlatform?: () => boolean}}).Capacitor;
     const isAndroidWebView =
       /; wv\)/.test(ua) ||
-      typeof (window as unknown as {Capacitor?: unknown}).Capacitor !== 'undefined' ||
+      Boolean(cap?.isNativePlatform?.()) ||
       typeof (window as unknown as {Android?: unknown}).Android !== 'undefined';
     const isStandalone =
       window.matchMedia('(display-mode: standalone)').matches ||
